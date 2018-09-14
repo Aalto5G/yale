@@ -1,4 +1,5 @@
 *.o
+*.d
 /yale.lex.c
 /yale.lex.h
 /yale.tab.c
