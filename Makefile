@@ -1,3 +1,35 @@
+.PHONY: all clean distclean
+
+SRC := yaletest.c yyutils.c
+LEXSRC := yale.l
+YACCSRC := yale.y
+
+LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
+YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
+
+GEN := $(LEXGEN) $(YACCGEN)
+
+OBJ := $(patsubst %.c,%.o,$(SRC))
+OBJGEN := $(patsubst %.c,%.o,$(GEN))
+
+DEP := $(patsubst %.c,%.d,$(SRC))
+DEPGEN := $(patsubst %.c,%.d,$(GEN))
+
+all: yaletest
+
+$(DEP): %.d: %.c Makefile
+	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
+
+$(DEPGEN): %.d: %.c %.h Makefile
+	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
+
+$(OBJ): %.o: %.c %.d Makefile
+	$(CC) $(CFLAGS) -c -o $*.o $*.c
+$(OBJGEN): %.o: %.c %.h %.d Makefile
+	$(CC) $(CFLAGS) -c -o $*.o $*.c -Wno-sign-compare -Wno-missing-prototypes -Wno-sign-conversion
+
+-include *.d
+
 yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o
 	cc -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
 YALE.LEX.INTERMEDIATE: yale.l
@@ -21,3 +53,16 @@ yale.lex.d: yale.tab.h yale.lex.h
 yale.lex.o: yale.tab.h yale.lex.h
 yale.tab.d: yale.lex.h yale.tab.h
 yale.tab.o: yale.lex.h yale.tab.h
+
+clean:
+	rm -f $(OBJ) $(OBJGEN) $(DEP) $(DEPGEN)
+	rm -rf intermediatestore
+	rm -f YALE.TAB.INTERMEDIATE
+	rm -f YALE.LEX.INTERMEDIATE
+	rm -f yale.lex.c
+	rm -f yale.lex.h
+	rm -f yale.tab.c
+	rm -f yale.tab.h
+
+distclean: clean
+	rm -f yaletest
