@@ -18,7 +18,10 @@ fieldName = httptoken ;
 fieldValue = *( fieldContent | obsFold ) ;
 fieldContent = fieldVchar [ 1*( onespace | onehtab ) fieldVchar ] ;
 fieldVchar = vchar | obstext ;
-headerField = fieldName colon optspace fieldValue optspace ;
+headerField =
+  fieldName<val=="Host:"> colon optspace fieldValue<print> optspace
+  fieldName<val==.> colon optspace fieldValue optspace
+  ;
 version = httpname slash digit period digit ;
 requestLine = method onespace uri onespace version crlf ;
 requestWithHeaders = requestLine *( headerField crlf ) crlf ;

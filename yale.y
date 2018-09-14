@@ -160,7 +160,7 @@ maybe_repeat:
 ;
 
 element:
-FREEFORM_TOKEN
+FREEFORM_TOKEN maybe_token_ltgt
 | uint_token
 | BYTES maybe_bytes_ltgt
 | group
@@ -176,8 +176,22 @@ maybe_uint_ltgt:
 | LT uint_ltgtexp GT
 ;
 
+maybe_token_ltgt:
+| LT token_ltgtexp GT
+;
+
+token_ltgtexp:
+VAL EQUALSEQUALS valstr_literal
+| PRINT
+;
+
 uint_ltgtexp:
 VAL EQUALSEQUALS val_literal
+;
+
+valstr_literal:
+PERIOD
+| STRING_LITERAL
 ;
 
 val_literal:
