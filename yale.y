@@ -49,6 +49,14 @@ int yaleyywrap(yyscan_t scanner)
 %token TOKEN
 %token DIRECTIVE
 %token MAIN
+%token ENTRY
+
+%token BYTES
+%token PRINT
+%token DISCARD
+%token FEED
+%token REINIT_FEED
+
 %token EQUALS
 %token SEMICOLON
 %token STRING_LITERAL
@@ -61,7 +69,27 @@ int yaleyywrap(yyscan_t scanner)
 %token CLOSE_BRACKET
 %token OPEN_BRACE
 %token CLOSE_BRACE
+%token LT
+%token GT
 %token PIPE
+%token DOLLAR_LITERAL
+%token COLON
+
+%token UINT8
+%token UINT16BE
+%token UINT16LE
+%token UINT24BE
+%token UINT24LE
+%token UINT32BE
+%token UINT32LE
+%token UINT64BE
+%token UINT64LE
+
+
+%token VAL
+%token EQUALSEQUALS
+%token PERIOD
+
 
 %token ERROR_TOK
 
@@ -80,13 +108,24 @@ yalerule:
   free($4);
 }
 | FREEFORM_TOKEN EQUALS elements SEMICOLON
-| DIRECTIVE MAIN EQUALS FREEFORM_TOKEN SEMICOLON
+| DIRECTIVE directive_continued
+;
+
+directive_continued:
+MAIN EQUALS FREEFORM_TOKEN SEMICOLON
+| ENTRY EQUALS FREEFORM_TOKEN SEMICOLON
 ;
 
 elements:
 alternation
 ;
 
+alternation:
+| concatenation
+| alternation PIPE concatenation
+;
+
+/*
 alternation:
 concatenation
 maybe_alternationlist
@@ -95,6 +134,7 @@ maybe_alternationlist
 maybe_alternationlist:
 | maybe_alternationlist PIPE concatenation
 ;
+*/
 
 concatenation:
 repetition
@@ -112,6 +152,7 @@ element
 
 maybe_repeat:
 | INT_LITERAL
+| DOLLAR_LITERAL
 | INT_LITERAL ASTERISK INT_LITERAL
 | ASTERISK INT_LITERAL
 | INT_LITERAL ASTERISK
@@ -120,8 +161,51 @@ maybe_repeat:
 
 element:
 FREEFORM_TOKEN
+| uint_token
+| BYTES maybe_bytes_ltgt
 | group
 | option
+;
+
+uint_token:
+uint_token_raw
+maybe_uint_ltgt
+;
+
+maybe_uint_ltgt:
+| LT uint_ltgtexp GT
+;
+
+uint_ltgtexp:
+VAL EQUALSEQUALS val_literal
+;
+
+val_literal:
+PERIOD
+| INT_LITERAL
+;
+
+maybe_bytes_ltgt:
+| LT bytes_ltgtexp GT
+;
+
+bytes_ltgtexp:
+DISCARD
+| FEED COLON FREEFORM_TOKEN
+| REINIT_FEED COLON FREEFORM_TOKEN
+| PRINT
+;
+
+uint_token_raw:
+UINT8
+| UINT16BE
+| UINT16LE
+| UINT24BE
+| UINT24LE
+| UINT32BE
+| UINT32LE
+| UINT64BE
+| UINT64LE
 ;
 
 group:
