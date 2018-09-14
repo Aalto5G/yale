@@ -1,0 +1,26 @@
+token crlf = "\r\n" ;
+token onespace = " " ;
+token onehtab = "\t" ;
+token httpname = "HTTP" ;
+token slash = "/" ;
+token digit = "[0-9]" ;
+token colon = ":" ;
+token optspace = "[ \t]*" ;
+token httptoken = "[-!#$%&'*+.^_`|~0-9A-Za-z]+" ;
+token obstext = "[\x80-\xFF]" ;
+token vchar = "[\x21-\x7E]" ;
+token period = "." ;
+token uri = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+" ;
+
+obsFold = crlf 1*( onespace | onehtab ) ;
+method = httptoken ;
+fieldName = httptoken ;
+fieldValue = *( fieldContent | obsFold ) ;
+fieldContent = fieldVchar [ 1*( onespace | onehtab ) fieldVchar ] ;
+fieldVchar = vchar | obstext ;
+headerField = fieldName colon optspace fieldValue optspace ;
+version = httpname slash digit period digit ;
+requestLine = method onespace uri onespace version crlf ;
+requestWithHeaders = requestLine *( headerField crlf ) crlf ;
+
+directive main = requestWithHeaders;

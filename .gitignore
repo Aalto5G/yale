@@ -1,0 +1,9 @@
+*.o
+/yale.lex.c
+/yale.lex.h
+/yale.tab.c
+/yale.tab.h
+/YALE.LEX.INTERMEDIATE
+/YALE.TAB.INTERMEDIATE
+/intermediatestore/
+/yaletest
