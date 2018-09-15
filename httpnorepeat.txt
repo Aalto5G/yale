@@ -1,0 +1,28 @@
+token<prio=1> hosttoken = "[Hh][Oo][Ss][Tt]" ;
+token crlf = "\r\n" ;
+token onespace = " " ;
+token onehtab = "\t" ;
+token httpname = "HTTP" ;
+token slash = "/" ;
+token digit = "[0-9]" ;
+token colon = ":" ;
+token optspace = "[ \t]*" ;
+token httptoken = "[-!#$%&'*+.^_`|~0-9A-Za-z]+" ;
+token obstext = "[\x80-\xFF]" ;
+token vchar = "[\x21-\x7E]" ;
+token httpfield = "[\t\x20-\x7E\x80-\xFF]*" ;
+token period = "." ;
+token uri = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+" ;
+token foldstart = "[ \t]+" ;
+
+headerField =
+  foldstart httpfield
+| hosttoken colon optspace httpfield<print>
+| httptoken colon optspace httpfield
+  ;
+version = httpname slash digit period digit ;
+requestLine = httptoken onespace uri onespace version crlf ;
+requestHdrs = | headerField crlf requestHdrs;
+requestWithHeaders = requestLine requestHdrs crlf ;
+
+directive main = requestWithHeaders;

@@ -23,6 +23,12 @@ int main(int argc, char **argv)
   fclose(f);
   printf("HTTP simple parsed\n");
 
+  f = fopen("httpnorepeat.txt", "r");
+  printf("Parsing HTTP norepeat...\n");
+  yaleyydoparse(f, &yale);
+  fclose(f);
+  printf("HTTP norepeat parsed\n");
+
   f = fopen("ssl.txt", "r");
   printf("Parsing SSL...\n");
   yaleyydoparse(f, &yale);
