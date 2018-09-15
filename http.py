@@ -7,12 +7,10 @@ digit = 5
 colon = 6
 optspace = 7
 httptoken = 8
-obstext = 9
-vchar = 10
-httpfield = 11
-period = 12
-uri = 13
-foldstart = 14
+httpfield = 9
+period = 10
+uri = 11
+foldstart = 12
 
 terminals = [
   hosttoken,
@@ -24,8 +22,6 @@ terminals = [
   colon,
   optspace,
   httptoken,
-  obstext,
-  vchar,
   httpfield,
   period,
   uri,
@@ -174,6 +170,8 @@ def parse(req):
   revreq = list(reversed(req))
   stack = [eof, S]
   while True:
+    if len(stack) > max_stack_size:
+      raise Exception("stack overflow")
     if stack[-1] == eof and len(revreq) == 0:
       break
     if stack[-1] == eof or len(revreq) == 0:
@@ -196,6 +194,23 @@ def parse(req):
     for val in reversed(rhs):
       stack.append(val)
 
+max_stacks = {}
+changed = True
+for a in terminals:
+  max_stacks[a] = 1
+while changed:
+  changed = False
+  for rule in rules:
+    lhs = rule[0]
+    rhs = rule[1]
+    cursz = 0
+    end = False
+    if len(rhs) > 0:
+      cursz = len(rhs) - 1 + max_stacks[rhs[0]]
+    if lhs not in max_stacks or max_stacks[lhs] < cursz:
+      changed = True
+      max_stacks[lhs] = cursz
+max_stack_size = 1 + max_stacks[requestWithHeaders]
 
 myreq = [
   httptoken, onespace, uri, onespace,
