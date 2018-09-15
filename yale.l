@@ -2,6 +2,7 @@
 %option prefix="yaleyy"
 
 %{
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -16,11 +17,41 @@
   yylloc->first_column = yycolumn; yylloc->last_column = yycolumn+yyleng-1; \
   yycolumn += yyleng;
 
+struct CSnippet {
+  char *data;
+  size_t len;
+  size_t capacity;
+};
+
+static inline void csadd(struct CSnippet *cs, char ch)
+{
+  if (cs->len + 1 >= cs->capacity)
+  {
+    size_t new_capacity = cs->capacity * 2 + 2;
+    cs->data = realloc(cs->data, new_capacity);
+    cs->capacity = new_capacity;
+  }
+  cs->data[cs->len] = ch;
+  cs->data[cs->len + 1] = '\0';
+  cs->len++;
+}
+
 %}
 
 %option reentrant bison-bridge bison-locations
 %x COMMENTS
+%x CCOMMENTS
+%x C
 %%
+
+%{
+int openBraceCount = 0;
+struct CSnippet cSnippet = {
+  .data = NULL,
+  .len = 0,
+  .capacity = 0,
+};
+%}
 
 token     return TOKEN;
 directive return DIRECTIVE;
@@ -45,8 +76,6 @@ uint64be  return UINT64BE;
 uint64le  return UINT64LE;
 
 
-\{        return OPEN_BRACE;
-\}        return CLOSE_BRACE;
 ;         return SEMICOLON;
 =         return EQUALS;
 ==        return EQUALSEQUALS;
@@ -130,6 +159,32 @@ uint64le  return UINT64LE;
   return DOLLAR_LITERAL;
 }
 
+"{"              { BEGIN(C); openBraceCount++; cSnippet.capacity = 0; cSnippet.len = 0; cSnippet.data = NULL; }
+<C>"{"           { csadd(&cSnippet, yytext[0]); openBraceCount++; }
+<C>"/*"          BEGIN(CCOMMENTS);
+<C>\/\/.*        /* ignore single-line comments */;
+<CCOMMENTS>"*/"  BEGIN(C);
+<CCOMMENTS>"/*"  return ERROR_TOK;
+<CCOMMENTS><<EOF>> return ERROR_TOK;
+<CCOMMENTS>.     ;
+<CCOMMENTS>"\n"  { ++yylineno; yycolumn=1; }
+<C>\}            {
+                   openBraceCount--;
+                   if (!openBraceCount) {
+                     BEGIN(INITIAL);
+                     yylval->s = cSnippet.data;
+                     cSnippet.data = NULL;
+                     cSnippet.capacity = 0;
+                     cSnippet.len = 0;
+                     return C_LITERAL;
+                   }
+                   else {
+                     csadd(&cSnippet, yytext[0]);
+                   }
+                 }
+<C>.             { csadd(&cSnippet, yytext[0]); }
+<C>"\n"          { csadd(&cSnippet, yytext[0]); ++yylineno; yycolumn=1; }
+
 \n                                { ++yylineno; yycolumn=1; }
 [ \t]+                            /* ignore whitespaces */;
 \/\/.*                            /* ignore single-line comments */;
@@ -141,5 +196,6 @@ uint64le  return UINT64LE;
 <COMMENTS><<EOF>>      return ERROR_TOK;
 <COMMENTS>.          ;
 <COMMENTS>"\n"       { ++yylineno; yycolumn=1; }
+
 
 %%

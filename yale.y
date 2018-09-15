@@ -45,6 +45,9 @@ int yaleyywrap(yyscan_t scanner)
 }
 
 %destructor { free ($$); } STRING_LITERAL
+%destructor { free ($$); } C_LITERAL
+
+%token C_LITERAL
 
 %token TOKEN
 %token PRIO
@@ -68,8 +71,6 @@ int yaleyywrap(yyscan_t scanner)
 %token CLOSE_PAREN
 %token OPEN_BRACKET
 %token CLOSE_BRACKET
-%token OPEN_BRACE
-%token CLOSE_BRACE
 %token LT
 %token GT
 %token PIPE
@@ -97,6 +98,7 @@ int yaleyywrap(yyscan_t scanner)
 
 %type<i> INT_LITERAL
 %type<s> STRING_LITERAL
+%type<s> C_LITERAL
 
 %%
 
@@ -158,7 +160,15 @@ maybe_concatenationlist:
 repetition:
 maybe_repeat
 element
+maybe_c_literal
 ;
+
+maybe_c_literal:
+| C_LITERAL
+{
+  printf("%s\n", $1);
+  free($1);
+};
 
 maybe_repeat:
 | INT_LITERAL
