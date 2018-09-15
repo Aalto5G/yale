@@ -23,6 +23,7 @@ We can use fast division here.
 1.6 nsec per fastdivmod => 625 MBytes/s, quite good!
 However, direct table lookup 2 GBytes/s, even better!
 => So perhaps it's better not to compress.
+...except direct table lookup with pointer chasing 376 MBytes/s
 
 Another option would be completely uncompressed parser tables.
 
