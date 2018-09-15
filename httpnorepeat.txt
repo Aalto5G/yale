@@ -1,7 +1,6 @@
 token<prio=1> hosttoken = "[Hh][Oo][Ss][Tt]" ;
 token crlf = "\r\n" ;
 token onespace = " " ;
-token onehtab = "\t" ;
 token httpname = "HTTP" ;
 token slash = "/" ;
 token digit = "[0-9]" ;
