@@ -192,6 +192,9 @@ VAL EQUALSEQUALS val_literal
 valstr_literal:
 PERIOD
 | STRING_LITERAL
+{
+  free($1);
+}
 ;
 
 val_literal:
