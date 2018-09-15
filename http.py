@@ -254,3 +254,8 @@ myreqtrivial = [
     httpname, slash, digit, period, digit, crlf,
   crlf]
 parse(myreqtrivial)
+
+# Strategy for tokenizer:
+# uint64_t[] terminal index list for every nonterminal
+# uint64_t[] terminal index list for every DFA state
+# if bitwise AND is nonzero, continue
