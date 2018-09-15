@@ -195,6 +195,7 @@ def parse(req):
       stack.append(val)
 
 max_stacks = {}
+maxrecurse = 16384
 changed = True
 for a in terminals:
   max_stacks[a] = 1
@@ -203,12 +204,14 @@ while changed:
   for rule in rules:
     lhs = rule[0]
     rhs = list(rule[1])
-    cursz = 0
+    cursz = len(rhs)
     while len(rhs) > 0:
-      tmpsz = len(rhs) - 1 + max_stacks[rhs[0]]
+      tmpsz = len(rhs) - 1 + max_stacks.setdefault(rhs[0], 0)
       del rhs[0]
       if tmpsz > cursz:
         cursz = tmpsz
+    if cursz > maxrecurse:
+      raise Exception("language seems infinitely recursive")
     if lhs not in max_stacks or max_stacks[lhs] < cursz:
       changed = True
       max_stacks[lhs] = cursz
