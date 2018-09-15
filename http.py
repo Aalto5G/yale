@@ -202,11 +202,13 @@ while changed:
   changed = False
   for rule in rules:
     lhs = rule[0]
-    rhs = rule[1]
+    rhs = list(rule[1])
     cursz = 0
-    end = False
-    if len(rhs) > 0:
-      cursz = len(rhs) - 1 + max_stacks[rhs[0]]
+    while len(rhs) > 0:
+      tmpsz = len(rhs) - 1 + max_stacks[rhs[0]]
+      del rhs[0]
+      if tmpsz > cursz:
+        cursz = tmpsz
     if lhs not in max_stacks or max_stacks[lhs] < cursz:
       changed = True
       max_stacks[lhs] = cursz
