@@ -1,5 +1,7 @@
 .PHONY: all clean distclean
 
+CFLAGS = -O2 -Wall -Wextra -Werror -Wno-unused-parameter
+
 SRC := yaletest.c yyutils.c
 LEXSRC := yale.l
 YACCSRC := yale.y
@@ -30,29 +32,29 @@ $(OBJGEN): %.o: %.c %.h %.d Makefile
 
 -include *.d
 
-yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o
+yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o Makefile
 	cc -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
-YALE.LEX.INTERMEDIATE: yale.l
+YALE.LEX.INTERMEDIATE: yale.l Makefile
 	mkdir -p intermediatestore
 	flex --outfile=intermediatestore/yale.lex.c --header-file=intermediatestore/yale.lex.h yale.l
 	touch YALE.LEX.INTERMEDIATE
-YALE.TAB.INTERMEDIATE: yale.y
+YALE.TAB.INTERMEDIATE: yale.y Makefile
 	mkdir -p intermediatestore
 	bison --defines=intermediatestore/yale.tab.h --output=intermediatestore/yale.tab.c yale.y
 	touch YALE.TAB.INTERMEDIATE
-yale.lex.c: YALE.LEX.INTERMEDIATE
+yale.lex.c: YALE.LEX.INTERMEDIATE Makefile
 	cp intermediatestore/yale.lex.c .
-yale.lex.h: YALE.LEX.INTERMEDIATE
+yale.lex.h: YALE.LEX.INTERMEDIATE Makefile
 	cp intermediatestore/yale.lex.h .
-yale.tab.c: YALE.TAB.INTERMEDIATE
+yale.tab.c: YALE.TAB.INTERMEDIATE Makefile
 	cp intermediatestore/yale.tab.c .
-yale.tab.h: YALE.TAB.INTERMEDIATE
+yale.tab.h: YALE.TAB.INTERMEDIATE Makefile
 	cp intermediatestore/yale.tab.h .
 
-yale.lex.d: yale.tab.h yale.lex.h
-yale.lex.o: yale.tab.h yale.lex.h
-yale.tab.d: yale.lex.h yale.tab.h
-yale.tab.o: yale.lex.h yale.tab.h
+yale.lex.d: yale.tab.h yale.lex.h Makefile
+yale.lex.o: yale.tab.h yale.lex.h Makefile
+yale.tab.d: yale.lex.h yale.tab.h Makefile
+yale.tab.o: yale.lex.h yale.tab.h Makefile
 
 clean:
 	rm -f $(OBJ) $(OBJGEN) $(DEP) $(DEPGEN)
