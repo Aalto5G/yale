@@ -1,0 +1,13 @@
+token a = "a" ;
+token plus = "+" ;
+token lp = "(" ;
+token rp = ")" ;
+
+S =
+  F
+| lp S plus F rp
+;
+
+F = a ;
+
+directive main = S;

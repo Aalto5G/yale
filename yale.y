@@ -47,6 +47,7 @@ int yaleyywrap(yyscan_t scanner)
 %destructor { free ($$); } STRING_LITERAL
 
 %token TOKEN
+%token PRIO
 %token DIRECTIVE
 %token MAIN
 %token ENTRY
@@ -74,6 +75,7 @@ int yaleyywrap(yyscan_t scanner)
 %token PIPE
 %token DOLLAR_LITERAL
 %token COLON
+%token MINUS
 
 %token UINT8
 %token UINT16BE
@@ -103,13 +105,21 @@ yalerules:
 ;
 
 yalerule:
-  TOKEN FREEFORM_TOKEN EQUALS STRING_LITERAL SEMICOLON
+  TOKEN maybe_prio FREEFORM_TOKEN EQUALS STRING_LITERAL SEMICOLON
 {
-  free($4);
+  free($5);
 }
 | FREEFORM_TOKEN EQUALS elements SEMICOLON
 | DIRECTIVE directive_continued
 ;
+
+maybe_prio:
+| LT PRIO EQUALS maybe_minus INT_LITERAL GT
+;
+
+maybe_minus:
+| MINUS;
+
 
 directive_continued:
 MAIN EQUALS FREEFORM_TOKEN SEMICOLON

@@ -32,6 +32,7 @@ discard   return DISCARD;
 feed      return FEED;
 reinit_feed return REINIT_FEED;
 val       return VAL;
+prio      return PRIO;
 
 uint8     return UINT8;
 uint16be  return UINT16BE;
@@ -59,6 +60,7 @@ uint64le  return UINT64LE;
 \>        return GT;
 \.        return PERIOD;
 :         return COLON;
+-         return MINUS;
 
 
 [A-Za-z_][A-Za-z0-9_]* return FREEFORM_TOKEN;
