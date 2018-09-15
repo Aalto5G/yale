@@ -166,6 +166,39 @@ for A in nonterminals:
       Tt[A][a] = set(T[A][a]).pop()
       print "Non-conflict %d %d: %s" % (A,a,Tt[A][a])
 
+def get_max_sz_dfs(Tt, rules, terminals, S, eof=-1, maxrecurse=16384):
+  visiteds = set()
+  maxvisited = 0
+  # in case somebody uses without EOF symbol:
+  initial = (eof is None) and (S,) or (eof, S)
+  visitqueue = []
+  visitqueue.append(initial)
+  while visitqueue:
+    current = visitqueue.pop()
+    visiteds.add(current)
+    if len(current) > maxrecurse:
+      raise Exception("language seems infinitely recursive")
+    if len(current) > maxvisited:
+      maxvisited = len(current)
+    last = current[-1]
+    if last in terminals:
+      if current[:-1] not in visiteds:
+        visitqueue.append(current[:-1])
+      continue
+    if last == eof:
+      continue
+    A = last
+    for a in terminals:
+      if Tt[A][a] != None:
+        rule = rules[Tt[A][a]]
+        rhs = rule[1]
+        newtuple = current[:-1] + tuple(reversed(rhs))
+        if newtuple not in visiteds:
+          visitqueue.append(newtuple)
+  return maxvisited
+
+max_stack_size = get_max_sz_dfs(Tt, rules, terminals, S)
+
 def parse(req):
   revreq = list(reversed(req))
   stack = [eof, S]
@@ -193,29 +226,6 @@ def parse(req):
     stack.pop()
     for val in reversed(rhs):
       stack.append(val)
-
-max_stacks = {}
-maxrecurse = 16384
-changed = True
-for a in terminals:
-  max_stacks[a] = 1
-while changed:
-  changed = False
-  for rule in rules:
-    lhs = rule[0]
-    rhs = list(rule[1])
-    cursz = len(rhs)
-    while len(rhs) > 0:
-      tmpsz = len(rhs) - 1 + max_stacks.setdefault(rhs[0], 0)
-      del rhs[0]
-      if tmpsz > cursz:
-        cursz = tmpsz
-    if cursz > maxrecurse:
-      raise Exception("language seems infinitely recursive")
-    if lhs not in max_stacks or max_stacks[lhs] < cursz:
-      changed = True
-      max_stacks[lhs] = cursz
-max_stack_size = 1 + max_stacks[requestWithHeaders]
 
 myreq = [
   httptoken, onespace, uri, onespace,
