@@ -62,7 +62,7 @@ def fsmviz(begin,deterministic=False):
       for node2 in nodes:
         add_node(node2)
         if ch:
-          result.write("n%d -> n%d [label=\"%s\"];\n" % (d[node],d[node2],ch))
+          result.write("n%d -> n%d [label=\"%s\"];\n" % (d[node],d[node2],repr(repr(ch)[1:-1])[1:-1]))
         else:
           result.write("n%d -> n%d [label=\"%s\", fontname=Symbol];\n" % (d[node],d[node2],"e"))
     if deterministic:
@@ -258,9 +258,11 @@ def test_re(expr,n):
 test_re("[ab]*|[af]c*[de]",50000)
 test_re("(a|b)+|e?(a|f)c*(d|e).",50000)
 
+print fsmviz(nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa()),True)
+
 #print fsmviz(re_compilemulti("ab","abcd","abce").nfa(),False)
 #print fsmviz(nfa2dfa(re_compilemulti("ab","abcd","abce").nfa()),True)
-print fsmviz(nfa2dfa(re_compilemulti("....a","Host").nfa()),True)
+#print fsmviz(nfa2dfa(re_compilemulti("....a","Host").nfa()),True)
 #print fsmviz(nfa2dfa(re_compilemulti(".*ab",".*abcd",".*abce").nfa()),True)
 #print fsmviz(nfa2dfa(re_compile("(ab|abcd|abce)*").nfa()),True)
 raise SystemExit(1)
