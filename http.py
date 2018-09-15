@@ -229,6 +229,26 @@ except:
   ok = True
 assert ok
 
+myreqlong = [
+  httptoken, onespace, uri, onespace,
+    httpname, slash, digit, period, digit, crlf,
+  httptoken, colon, optspace, httpfield, crlf,
+  hosttoken, colon, optspace, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, crlf,
+    foldstart, httpfield, crlf,
+    foldstart, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, crlf,
+    foldstart, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, crlf,
+  crlf,
+  crlf]
+ok = False
+try:
+  parse(myreqlong)
+except:
+  ok = True
+assert ok
+
 myreqtrivial = [
   httptoken, onespace, uri, onespace,
     httpname, slash, digit, period, digit, crlf,
