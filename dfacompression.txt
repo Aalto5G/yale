@@ -1,0 +1,38 @@
+state transitions:
+
+[0, 15, 25, 300, (empty)]
+
+- Encoded using 16-bit integers to allow over 256 states
+
+There is 5 of these, and 2^3 = 8 >= 5, so 3 bits per state transition
+
+The bit array has 3 bits per 256 characters, or 96 bytes.
+
+Could use bits from {1, 2, 4, 8, 16} to ensure we can read a single word.
+- or {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 16}
+- or {1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+- actually, {1, 2, 3, 4, 5, 6, 7, 8} is enough!!!
+- stores {64, 32, 21, 16, 12, 10, 9, 8} transitions per uint64_t
+
+Example: character '{' is 123, so if there are 5 bits per transition, or 12
+transitions per uint64_t, we take the uint64_t index 10 (floor(123/12) == 10)
+and the 5 bits starting from index 5 * (123%12) = 15.
+(x >> 15) & ((1<<5)-1) is the expression.
+We can use fast division here.
+
+1.6 nsec per fastdivmod => 625 MBytes/s, quite good!
+However, direct table lookup 2 GBytes/s, even better!
+=> So perhaps it's better not to compress.
+
+Another option would be completely uncompressed parser tables.
+
+There must not be a transition from an accepting state to a non-accepting
+state. This ensures no backtracking is needed.
+
+If token data is fed to a callback function, the first character must determine
+which token it is. TODO: how to do? By marking NFA state of callback-enabled
+functions with "taint id", and ensuring that if some of the NFA states has a
+"taint id", there must not be NFA states with another "taint id" or no "taint
+id" in a given DFA state.
+
+Each nonterminal has its own DFA.
