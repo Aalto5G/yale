@@ -237,10 +237,27 @@ def parse_atom(s):
 
 def parse_bracketexpr(s,recursive=False):
   assert s
-  # TODO: -, ^
   l = s[1:].split("]",1)
   assert len(l) == 2
-  return literals(s[0]+l[0]),l[1]
+  inverse = False
+  fullstr = s[0]+l[0]
+  if s[0] == "^":
+    inverse = True
+    fullstr = l[0]
+  startidx = 1
+  while "-" in fullstr[startidx:-1]:
+    idx = fullstr[startidx:-1].index("-") + startidx
+    assert fullstr[idx+1] != "-"
+    if idx+3 < len(fullstr):
+      assert fullstr[idx+2] != "-"
+    fullstrstart = fullstr[:idx-1]
+    fullstrrange = ''.join(chr(c) for c in range(ord(fullstr[idx-1]), ord(fullstr[idx+1])+1))
+    fullstrend = fullstr[idx+2:]
+    fullstr = fullstrstart + fullstrrange + fullstrend
+    startidx = len(fullstrstart) + len(fullstrrange)
+  if inverse:
+    fullstr = ''.join(chr(c) for c in range(256) if chr(c) not in fullstr)
+  return literals(fullstr),l[1]
 
 
 def re_compile(s):
@@ -371,6 +388,14 @@ def set_ids(state):
       if queued.default not in visited:
         tovisit.append(queued.default)
   return tbl
+
+print fsmviz(nfa2dfa(re_compile("[^\x00-AC-\xff]").nfa()),True)
+print "-------------------"
+print fsmviz(nfa2dfa(re_compile("[A-Ca-c0-3]").nfa()),True)
+raise SystemExit()
+
+#print fsmviz(nfa2dfa(re_compile("[A-Ca-c0-3]").nfa()),True)
+#raise SystemExit()
 
 dfahost = nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa())
 set_accepting(dfahost, [1,0,0,0])
