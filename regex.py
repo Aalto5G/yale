@@ -542,7 +542,7 @@ def dump_headers(re_by_idx, list_of_reidx_sets):
     curbt = maximal_backtrack(dfa)
     if curbt > maxbt:
       maxbt = curbt
-  if maxbt > 255:
+  if maxbt > 250: # A bit of safety margin below 255
     assert False
   print \
   """\
@@ -557,6 +557,9 @@ def dump_headers(re_by_idx, list_of_reidx_sets):
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
+#define BACKTRACKLEN (%d)
+#define BACKTRACKLEN_PLUS_1 ((BACKTRACKLEN) + 1)
+
 struct state {
   uint8_t accepting;
   uint8_t acceptid;
@@ -567,9 +570,9 @@ struct state {
 struct rectx {
   uint8_t state; // 0 is initial state
   uint8_t last_accept; // 255 means never accepted
-  uint8_t backtracklen;
-  size_t last_accept_idx;
-  uint8_t backtrack[%d];
+  uint8_t backtrackstart;
+  uint8_t backtrackend;
+  uint8_t backtrack[BACKTRACKLEN_PLUS_1];
 };
 
 static void
@@ -577,7 +580,8 @@ init_statemachine(struct rectx *ctx)
 {
   ctx->state = 0;
   ctx->last_accept = 255;
-  ctx->backtracklen = 0;
+  ctx->backtrackstart = 0;
+  ctx->backtrackend = 0;
 }
 
 static ssize_t
@@ -590,6 +594,44 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
   {
     *state = 255;
     return -EINVAL;
+  }
+  if (unlikely(ctx->backtrackstart != ctx->backtrackend))
+  {
+    while (ctx->backtrackstart != ctx->backtrackend)
+    {
+      st = &stbl[ctx->state];
+      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];
+      if (unlikely(ctx->state == 255))
+      {
+        if (ctx->last_accept == 255)
+        {
+          *state = 255;
+          return -EINVAL;
+        }
+        ctx->state = ctx->last_accept;
+        ctx->last_accept = 255;
+        st = &stbl[ctx->state];
+        *state = st->acceptid;
+        return 0;
+      }
+      ctx->backtrackstart++;
+      if (ctx->backtrackstart >= BACKTRACKLEN_PLUS_1)
+      {
+        ctx->backtrackstart = 0;
+      }
+      if (st->accepting)
+      {
+        if (st->final)
+        {
+          *state = st->acceptid;
+          return 0;
+        }
+        else
+        {
+          ctx->last_accept = ctx->state; // FIXME correct?
+        }
+      }
+    }
   }
   for (i = 0; i < sz; i++)
   {
@@ -606,7 +648,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       ctx->last_accept = 255;
       st = &stbl[ctx->state];
       *state = st->acceptid;
-      return ctx->last_accept_idx + 1;
+      return i;
     }
     if (st->accepting)
     {
@@ -618,15 +660,21 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       else
       {
         ctx->last_accept = ctx->state; // FIXME correct?
-        ctx->last_accept_idx = i;
-        ctx->backtracklen = 0;
       }
     }
     else
     {
       if (ctx->last_accept != 255)
       {
-        ctx->backtrack[ctx->backtracklen++] = ubuf[i]; // FIXME correct?
+        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?
+        if (ctx->backtrackstart >= BACKTRACKLEN_PLUS_1)
+        {
+          ctx->backtrackstart = 0;
+        }
+        if (ctx->backtrackstart == ctx->backtrackend)
+        {
+          abort();
+        }
       }
     }
   }
