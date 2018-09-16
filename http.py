@@ -359,6 +359,58 @@ regex.dump_headers(re_by_idx, list_of_reidx_sets)
 regex.dump_all(re_by_idx, list_of_reidx_sets, priorities)
 
 print """
+struct rule {
+  uint8_t lhs;
+  uint8_t rhssz;
+  const uint8_t *rhs;
+};
+"""
+print """
+struct parserstatetblentry {
+  const struct state *re;
+  const uint8_t rhs[%d];
+};
+""" % (len(terminals),)
+
+print "const uint8_t num_terminals = %d;" % (len(terminals),)
+print "const uint8_t start_state = %d;" % (S,)
+
+print "const struct parserstatetblentry parserstatetblentries[] = {"
+
+for X in sorted(nonterminals):
+  print "{"
+  name = '_'.join(str(x) for x in sorted([x for x in terminals if T[X][x]]))
+  print ".re = states_" + name + ","
+  print ".rhs = {",
+  for x in sorted(terminals):
+    if Tt[X][x] == None:
+      print 255,",",
+    else:
+      print Tt[X][x],",",
+  print "},"
+  print "},"
+
+print "};"
+
+for n in range(len(rules)):
+  lhs,rhs = rules[n]
+  print "const uint8_t rule_%d[] = {" % (n,)
+  for rhsitem in rhs:
+    print rhsitem, ",",
+  print
+  print "};"
+  print "const uint8_t rule_%d_len = sizeof(rule_%d)/sizeof(uint8_t);" % (n,n,)
+print "const struct rule rules[] = {"
+for n in range(len(rules)):
+  lhs,rhs = rules[n]
+  print "{"
+  print "  .lhs =", lhs, ","
+  print "  .rhssz = sizeof(rule_%d)/sizeof(uint8_t)," % (n,)
+  print "  .rhs = rule_%d," % (n,)
+  print "},"
+print "};"
+
+print """
 int main(int argc, char **argv)
 {
   char *input = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
