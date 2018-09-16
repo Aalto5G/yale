@@ -301,12 +301,12 @@ def parse_bracketexpr(s):
     literalstr = ''.join(chr(c) for c in range(256) if chr(c) not in literalstr)
   return literals(literalstr),l[1]
 
-print parse_bracketexpr("[A-Za-z0-9]"[1:])[0].s
-print parse_bracketexpr("[^\x00-AC-\xff]"[1:])[0].s
-print parse_bracketexpr("[^\\x00-AC-\\xff]"[1:])[0].s
-print parse_bracketexpr("[-!#$%&'*+.^_`|~0-9A-Za-z]"[1:])[0].s
-print parse_bracketexpr("[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]"[1:])[0].s
-raise SystemExit()
+#print parse_bracketexpr("[A-Za-z0-9]"[1:])[0].s
+#print parse_bracketexpr("[^\x00-AC-\xff]"[1:])[0].s
+#print parse_bracketexpr("[^\\x00-AC-\\xff]"[1:])[0].s
+#print parse_bracketexpr("[-!#$%&'*+.^_`|~0-9A-Za-z]"[1:])[0].s
+#print parse_bracketexpr("[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]"[1:])[0].s
+#raise SystemExit()
 
 def re_compile(s):
   re,remainder = parse_re(s)
@@ -413,7 +413,7 @@ def set_accepting(state, prios):
 
 def set_ids(state):
   if "id" in state.__dict__:
-    return
+    return state.tbl
   tbl = []
   tovisit = [state]
   visited = set([])
@@ -440,12 +440,79 @@ def set_ids(state):
     if "default" in queued.__dict__ and queued.default != None:
       if queued.default not in visited:
         tovisit.append(queued.default)
+  state.tbl = tbl
   return tbl
 
-print fsmviz(nfa2dfa(re_compile("[^\x00-AC-\xff]").nfa()),True)
-print "-------------------"
-print fsmviz(nfa2dfa(re_compile("[A-Ca-c0-3]").nfa()),True)
-raise SystemExit()
+re_by_idx = []
+priorities = []
+
+hosttoken = 0
+hosttoken_re = "[Hh][Oo][Ss][Tt]"
+re_by_idx.append(hosttoken_re)
+priorities.append(1)
+crlf = 1
+crlf_re = "\r\n"
+re_by_idx.append(crlf_re)
+priorities.append(0)
+onespace = 2
+onespace_re = " "
+re_by_idx.append(onespace_re)
+priorities.append(0)
+httpname = 3
+httpname_re = "HTTP"
+re_by_idx.append(httpname_re)
+priorities.append(0)
+slash = 4
+slash_re = "/"
+re_by_idx.append(slash_re)
+priorities.append(0)
+digit = 5
+digit_re = "[0-9]"
+re_by_idx.append(digit_re)
+priorities.append(0)
+colon = 6
+colon_re = ":"
+re_by_idx.append(colon_re)
+priorities.append(0)
+optspace = 7
+optspace_re = "[ \t]*"
+re_by_idx.append(optspace_re)
+priorities.append(0)
+httptoken = 8
+httptoken_re = "[-!#$%&'*+.^_`|~0-9A-Za-z]+"
+re_by_idx.append(httptoken_re)
+priorities.append(0)
+httpfield = 9
+httpfield_re = "[\t\x20-\x7E\x80-\xFF]*"
+re_by_idx.append(httpfield_re)
+priorities.append(0)
+period = 10
+period_re = "."
+re_by_idx.append(period_re)
+priorities.append(0)
+uri = 11
+uri_re = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+"
+re_by_idx.append(uri_re)
+priorities.append(0)
+foldstart = 12
+foldstart_re = "[ \t]+"
+re_by_idx.append(foldstart_re)
+priorities.append(0)
+
+
+num_terminals = 13
+
+#print fsmviz(re_compile(foldstart).nfa(),False)
+#print "------------------"
+#print fsmviz(nfa2dfa(re_compile(foldstart).nfa()),True)
+#raise SystemExit()
+
+
+
+#print fsmviz(nfa2dfa(re_compile("[^\x00-AC-\xff]").nfa()),True)
+#print "-------------------"
+#print fsmviz(nfa2dfa(re_compile("[A-Ca-c0-3]").nfa()),True)
+#raise SystemExit()
 
 #print fsmviz(nfa2dfa(re_compile("[A-Ca-c0-3]").nfa()),True)
 #raise SystemExit()
@@ -459,8 +526,18 @@ if len(dfatbl) > 255:
 if maximal_backtrack(dfahost) > 255:
   assert False
 
-print \
-"""\
+def dump_headers(re_by_idx, list_of_reidx_sets):
+  maxbt = 0
+  for reidx_set in list_of_reidx_sets:
+    re_set = set([re_by_idx[idx] for idx in reidx_set])
+    dfa = nfa2dfa(re_compilemulti(*re_set).nfa())
+    curbt = maximal_backtrack(dfa)
+    if curbt > maxbt:
+      maxbt = curbt
+  if maxbt > 255:
+    assert False
+  print \
+  """\
 #include <stdint.h>
 
 struct state {
@@ -475,32 +552,88 @@ struct rectx {
   uint8_t backtracklen;
   uint8_t backtrack[%d];
 };
-""" % (maximal_backtrack(dfahost),)
+""" % (maxbt,)
+  return
 
-print "const struct state states[] = {"
-for stateid in range(len(dfatbl)):
-  state = dfatbl[stateid]
-  print "{",
-  print ".accepting =",
-  print state.accepting and "1," or "0,",
-  print ".acceptid =",
-  if state.accepting:
-    print state.acceptid,",",
-  else:
-    print 0,",",
-  print ".transitions =",
-  print "{",
-  for n in range(256):
-    ch = chr(n)
-    if ch in state.d:
-      print state.d[ch].id,",",
-    elif state.default:
-      print state.default.id,",",
+def dump_all(re_by_idx, list_of_reidx_sets, priorities):
+  for reidx_set in list_of_reidx_sets:
+    name = '_'.join(str(x) for x in sorted(reidx_set))
+    re_set = set([re_by_idx[idx] for idx in reidx_set])
+    dfa = nfa2dfa(re_compilemulti(*re_set).nfa())
+    set_accepting(dfa, priorities)
+    dfatbl = set_ids(dfa)
+    if len(dfatbl) > 255:
+      assert False # 255 is reserved for invalid non-accepting state
+    print "const struct state states_%s[] = {" % (name,)
+    for stateid in range(len(dfatbl)):
+      state = dfatbl[stateid]
+      print "{",
+      print ".accepting =",
+      print state.accepting and "1," or "0,",
+      print ".acceptid =",
+      if state.accepting:
+        print state.acceptid,",",
+      else:
+        print 0,",",
+      print ".transitions =",
+      print "{",
+      for n in range(256):
+        ch = chr(n)
+        if ch in state.d:
+          print state.d[ch].id,",",
+        elif state.default:
+          print state.default.id,",",
+        else:
+          print 255,",",
+      print "},",
+      print "},"
+    print "};"
+  return
+
+list_of_reidx_sets = set()
+# Single token DFAs
+list_of_reidx_sets.update([frozenset([x]) for x in range(num_terminals)])
+# Multi-token DFAs, TODO obtain from parser table
+list_of_reidx_sets.add(frozenset([0,8,12]))
+list_of_reidx_sets.add(frozenset([3]))
+list_of_reidx_sets.add(frozenset([8]))
+list_of_reidx_sets.add(frozenset([0,1,8,12]))
+list_of_reidx_sets.add(frozenset([8]))
+
+dump_headers(re_by_idx, list_of_reidx_sets)
+dump_all(re_by_idx, list_of_reidx_sets, priorities)
+
+raise SystemExit()
+
+
+
+def dump_state(state):
+  dfatbl = set_ids(state)
+  
+  print "const struct state states[] = {"
+  for stateid in range(len(dfatbl)):
+    state = dfatbl[stateid]
+    print "{",
+    print ".accepting =",
+    print state.accepting and "1," or "0,",
+    print ".acceptid =",
+    if state.accepting:
+      print state.acceptid,",",
     else:
-      print 255,",",
-  print "},",
-  print "},"
-print "};"
+      print 0,",",
+    print ".transitions =",
+    print "{",
+    for n in range(256):
+      ch = chr(n)
+      if ch in state.d:
+        print state.d[ch].id,",",
+      elif state.default:
+        print state.default.id,",",
+      else:
+        print 255,",",
+    print "},",
+    print "},"
+  print "};"
 
 #print fsmviz(dfahost,True)
 raise SystemExit()
