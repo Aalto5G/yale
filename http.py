@@ -256,6 +256,8 @@ def get_max_sz_dfs(Tt, rules, terminals, S, eof=-1, maxrecurse=16384):
   return maxvisited
 
 max_stack_size = get_max_sz_dfs(Tt, rules, terminals, S)
+if max_stack_size > 255:
+  assert False
 
 def parse(req):
   revreq = list(reversed(req))
@@ -358,6 +360,25 @@ for X in nonterminals:
 regex.dump_headers(re_by_idx, list_of_reidx_sets)
 regex.dump_all(re_by_idx, list_of_reidx_sets, priorities)
 
+print "const uint8_t num_terminals;"
+
+print """
+struct parserctx {
+  uint8_t stacksz;
+  uint8_t stack[%d];
+  struct rectx rctx;
+  uint8_t saved_token;
+};
+
+static inline void parserctx_init(struct parserctx *pctx)
+{
+  pctx->saved_token = 255;
+  pctx->stacksz = 1;
+  pctx->stack[0] = %d;
+  init_statemachine(&pctx->rctx);
+}
+""" % (max_stack_size, S, )
+
 print """
 struct rule {
   uint8_t lhs;
@@ -372,8 +393,24 @@ struct parserstatetblentry {
 };
 """ % (len(terminals),)
 
+print """
+struct reentry {
+  const struct state *re;
+};
+"""
+
 print "const uint8_t num_terminals = %d;" % (len(terminals),)
 print "const uint8_t start_state = %d;" % (S,)
+
+print "const struct reentry reentries[] = {"
+
+for x in sorted(terminals):
+  print "{"
+  name = str(x)
+  print ".re = states_" + name + ","
+  print "},"
+
+print "};"
 
 print "const struct parserstatetblentry parserstatetblentries[] = {"
 
@@ -411,6 +448,122 @@ for n in range(len(rules)):
 print "};"
 
 print """
+
+static inline ssize_t
+get_saved_token(struct parserctx *pctx, const struct state *restates,
+                char *blkoff, size_t szoff, uint8_t *state)
+{
+  if (pctx->saved_token != 255)
+  {
+    *state = pctx->saved_token;
+    pctx->saved_token = 255;
+    return 0;
+  }
+  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state);
+}
+
+static __attribute__((unused)) int
+parse_block(struct parserctx *pctx, char *blk, size_t sz)
+{
+  size_t off = 0;
+  ssize_t ret;
+  uint8_t curstate;
+  while (off < sz)
+  {
+    if (pctx->stacksz == 0)
+    {
+      if (off == sz)
+      {
+        return sz; // EOF
+      }
+      else
+      {
+        return -EBADMSG;
+      }
+    }
+    curstate = pctx->stack[pctx->stacksz - 1];
+    if (curstate < num_terminals)
+    {
+      uint8_t state;
+      const struct state *restates = reentries[curstate].re;
+      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state);
+      if (ret == -EAGAIN)
+      {
+        off = sz;
+        return -EAGAIN;
+      }
+      else if (ret < 0)
+      {
+        fprintf(stderr, "Parser error: tokenizer error, curstate=%d\\n", curstate);
+        exit(1);
+      }
+      else
+      {
+        off += ret;
+        if (off > sz)
+        {
+          abort();
+        }
+      }
+      if (curstate != state)
+      {
+        fprintf(stderr, "Parser error: state mismatch\\n");
+        exit(1);
+      }
+      printf("Got expected token %d\\n", (int)state);
+      pctx->stacksz--;
+    }
+    else
+    {
+      uint8_t state;
+      uint8_t curstateoff = curstate - num_terminals;
+      uint8_t ruleid;
+      size_t i;
+      const struct rule *rule;
+      const struct state *restates = parserstatetblentries[curstateoff].re;
+      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state);
+      if (ret == -EAGAIN)
+      {
+        off = sz;
+        return -EAGAIN;
+      }
+      else if (ret < 0 || state == 255)
+      {
+        fprintf(stderr, "Parser error: tokenizer error, curstate=%d, token=%d\\n", (int)curstate, (int)state);
+        exit(1);
+      }
+      else
+      {
+        off += ret;
+        if (off > sz)
+        {
+          abort();
+        }
+      }
+      printf("Got token %d, curstate=%d\\n", (int)state, (int)curstate);
+      ruleid = parserstatetblentries[curstateoff].rhs[state];
+      rule = &rules[ruleid];
+      pctx->stacksz--;
+      if (rule->lhs != curstate)
+      {
+        abort();
+      }
+      for (i = rule->rhssz; i > 0; i--)
+      {
+        if (pctx->stacksz == sizeof(pctx->stack)/sizeof(uint8_t))
+        {
+          abort();
+        }
+        pctx->stack[pctx->stacksz++] = rule->rhs[i-1];
+      }
+      pctx->saved_token = state;
+    }
+  }
+  return -EAGAIN;
+}
+"""
+
+print """
 int main(int argc, char **argv)
 {
   char *input = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
@@ -438,8 +591,12 @@ int main(int argc, char **argv)
   uint8_t state = 255;
   struct rectx ctx = {};
   size_t i;
+  struct parserctx pctx = {};
+  char *http = "GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n";
 
-  for (i = 0; i < 1000*1000; i++)
+  parserctx_init(&pctx);
+
+  for (i = 0; i < /* 1000* */ 1000; i++)
   {
     init_statemachine(&ctx);
     consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
@@ -453,6 +610,8 @@ int main(int argc, char **argv)
   init_statemachine(&ctx);
   consumed = feed_statemachine(&ctx, states_0_1_8_12, input, strlen(input), &state);
   printf("Consumed %zd state %d\\n", consumed, (int)state);
+
+  parse_block(&pctx, http, strlen(http));
 
   return 0;
 }
