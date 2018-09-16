@@ -8,11 +8,12 @@ import time
 
 
 class dfanode(object):
-  def __init__(self,accepting=False,tainted=False):
+  def __init__(self,accepting=False,tainted=False,acceptidset=frozenset([])):
     self.d = {}
     self.accepting = accepting
     self.default = None
     self.tainted = tainted
+    self.acceptidset = acceptidset
   def connect(self,ch,node):
     assert ch not in self.d
     self.d[ch] = node
@@ -58,7 +59,10 @@ def fsmviz(begin,deterministic=False):
       tainted = False
       if deterministic:
         tainted = node2.tainted
-      result.write("n%d [label=\"%d%s%s\"];\n" % (n,n,(node2.accepting and "+" or ""),(node2.tainted and "*" or "")))
+      acceptid = ""
+      if "acceptid" in node2.__dict__:
+        acceptid = "{%d}" % (node2.acceptid,)
+      result.write("n%d [label=\"%d%s%s%s\"];\n" % (n,n,(node2.accepting and "+" or ""),(node2.tainted and "*" or ""),acceptid))
       d[node2] = n
       q.append(node2)
   add_node(begin)
@@ -94,15 +98,18 @@ def epsilonclosure(nodes):
         closure.add(n2)
         q.append(n2)
   taintidset = set()
+  acceptidset = set()
   for item in closure:
     if item.taintid != None:
       taintidset.add(item.taintid)
-  return (frozenset(closure), len(taintidset)>1)
+      if item.accepting:
+        acceptidset.add(item.taintid)
+  return (frozenset(closure), len(taintidset)>1, frozenset(acceptidset))
 
 def nfa2dfa(begin):
-  dfabegin,tainted = epsilonclosure(set([begin]))
+  dfabegin,tainted,acceptidset = epsilonclosure(set([begin]))
   d = {}
-  d[dfabegin] = dfanode(True in (x.accepting for x in dfabegin), tainted=tainted)
+  d[dfabegin] = dfanode(True in (x.accepting for x in dfabegin), tainted=tainted, acceptidset=acceptidset)
   q = collections.deque([dfabegin])
   while q:
     nns = q.popleft()
@@ -113,18 +120,18 @@ def nfa2dfa(begin):
       defaults.update(nn.defaults)
       for ch,nns2 in nn.d.items():
         d2.setdefault(ch,set()).update(nns2)
-    defaultsec,tainted = epsilonclosure(defaults)
+    defaultsec,tainted,acceptidset = epsilonclosure(defaults)
     if defaultsec:
       if defaultsec not in d:
-        d[defaultsec] = dfanode(True in (x.accepting for x in defaultsec), tainted=tainted)
+        d[defaultsec] = dfanode(True in (x.accepting for x in defaultsec), tainted=tainted, acceptidset=acceptidset)
         q.append(defaultsec)
       d[nns].connect_default(d[defaultsec])
     for ch,nns2 in d2.items():
       if ch:
         nns2.update(defaults)
-        ec,tainted = epsilonclosure(nns2) # XXX: hidas!
+        ec,tainted,acceptidset = epsilonclosure(nns2) # XXX: hidas!
         if ec not in d:
-          d[ec] = dfanode(True in (x.accepting for x in ec), tainted=tainted)
+          d[ec] = dfanode(True in (x.accepting for x in ec), tainted=tainted, acceptidset=acceptidset)
           q.append(ec)
         d[nns].connect(ch,d[ec])
   return d[dfabegin]
@@ -318,6 +325,31 @@ def maximal_backtrack(state):
       if queued.default not in visited:
         tovisit.append(queued.default)
   return max_backtrack
+
+def set_accepting(state, prios):
+  tovisit = [state]
+  visited = set([])
+  max_backtrack = 0
+  while tovisit:
+    queued = tovisit.pop()
+    visited.add(queued)
+    if queued.accepting:
+      sortlist = sorted([(prios[x],x) for x in queued.acceptidset])
+      if len(sortlist) > 1 and sortlist[-1][0] == sortlist[-2][0]:
+        assert False # priority conflict
+      queued.acceptid = sortlist[-1][1]
+    for ch,node in queued.d.items():
+      if node not in visited:
+        tovisit.append(node)
+    if queued.default != None:
+      if queued.default not in visited:
+        tovisit.append(queued.default)
+  return max_backtrack
+
+dfahost = nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa())
+set_accepting(dfahost, [1,0,0,0])
+print fsmviz(dfahost,True)
+raise SystemExit()
 
 dfaproblematic = nfa2dfa(re_compilemulti("ab","abcd","abce").nfa())
 #print maximal_backtrack(dfaproblematic)
