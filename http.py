@@ -462,17 +462,17 @@ get_saved_token(struct parserctx *pctx, const struct state *restates,
   return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state);
 }
 
-static __attribute__((unused)) int
+static __attribute__((unused)) ssize_t
 parse_block(struct parserctx *pctx, char *blk, size_t sz)
 {
   size_t off = 0;
   ssize_t ret;
   uint8_t curstate;
-  while (off < sz)
+  while (off < sz || pctx->saved_token != 255)
   {
     if (pctx->stacksz == 0)
     {
-      if (off == sz)
+      if (off == sz && pctx->saved_token == 255)
       {
         return sz; // EOF
       }
@@ -557,6 +557,13 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
         pctx->stack[pctx->stacksz++] = rule->rhs[i-1];
       }
       pctx->saved_token = state;
+    }
+  }
+  if (pctx->stacksz == 0)
+  {
+    if (off == sz && pctx->saved_token == 255)
+    {
+      return sz; // EOF
     }
   }
   return -EAGAIN;
