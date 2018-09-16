@@ -4,12 +4,13 @@ import collections
 import random
 import re
 import cStringIO
+import time
 
 
 class dfanode(object):
-  def __init__(self,final=False):
+  def __init__(self,accepting=False):
     self.d = {}
-    self.final = final
+    self.accepting = accepting
     self.default = None
   def connect(self,ch,node):
     assert ch not in self.d
@@ -19,7 +20,7 @@ class dfanode(object):
     self.default = node
   def execute(self,str):
     if not str:
-      return self.final
+      return self.accepting
     elif str[0] in self.d:
       return self.d[str[0]].execute(str[1:])
     elif self.default:
@@ -28,9 +29,9 @@ class dfanode(object):
       return False
 
 class nfanode(object):
-  def __init__(self,final=False):
+  def __init__(self,accepting=False):
     self.d = {}
-    self.final = final
+    self.accepting = accepting
     self.defaults = set()
   def connect(self,ch,node):
     self.d.setdefault(ch,set()).add(node)
@@ -50,7 +51,7 @@ def fsmviz(begin,deterministic=False):
   def add_node(node2):
     if not node2 in d:
       n = next_id.next()
-      result.write("n%d [label=\"%d%s\"];\n" % (n,n,(node2.final and "+" or "")))
+      result.write("n%d [label=\"%d%s\"];\n" % (n,n,(node2.accepting and "+" or "")))
       d[node2] = n
       q.append(node2)
   add_node(begin)
@@ -90,7 +91,7 @@ def epsilonclosure(nodes):
 def nfa2dfa(begin):
   dfabegin = epsilonclosure(set([begin]))
   d = {}
-  d[dfabegin] = dfanode(True in (x.final for x in dfabegin))
+  d[dfabegin] = dfanode(True in (x.accepting for x in dfabegin))
   q = collections.deque([dfabegin])
   while q:
     nns = q.popleft()
@@ -104,7 +105,7 @@ def nfa2dfa(begin):
     defaultsec = epsilonclosure(defaults)
     if defaultsec:
       if defaultsec not in d:
-        d[defaultsec] = dfanode(True in (x.final for x in defaultsec))
+        d[defaultsec] = dfanode(True in (x.accepting for x in defaultsec))
         q.append(defaultsec)
       d[nns].connect_default(d[defaultsec])
     for ch,nns2 in d2.items():
@@ -112,7 +113,7 @@ def nfa2dfa(begin):
         nns2.update(defaults)
         ec = epsilonclosure(nns2) # XXX: hidas!
         if ec not in d:
-          d[ec] = dfanode(True in (x.final for x in ec))
+          d[ec] = dfanode(True in (x.accepting for x in ec))
           q.append(ec)
         d[nns].connect(ch,d[ec])
   return d[dfabegin]
@@ -255,8 +256,65 @@ def test_re(expr,n):
 #  #re.compile("^((a|b)*|(a|f)c*(d|e))$")
 #  #re.compile("^((a|b)+|e?(a|f)c*(d|e).)$")
 
-test_re("[ab]*|[af]c*[de]",50000)
-test_re("(a|b)+|e?(a|f)c*(d|e).",50000)
+#test_re("[ab]*|[af]c*[de]",50000)
+#test_re("(a|b)+|e?(a|f)c*(d|e).",50000)
+
+
+def state_backtrack(state):
+  tovisit = [(state, 0)]
+  visited = set([])
+  max_backtrack = 0
+  assert state.accepting
+  while tovisit:
+    queued,bt = tovisit.pop()
+    if bt > max_backtrack:
+      max_backtrack = bt
+    visited.add(queued)
+    for ch,node in queued.d.items():
+      if node.accepting:
+        continue
+      if node not in visited:
+        tovisit.append((node, bt+1))
+      else:
+        return -1
+    if queued.default != None:
+      if not queued.default.accepting:
+        if queued.default not in visited:
+          tovisit.append((queued.default, bt+1))
+        else:
+          return -1
+  return max_backtrack
+
+def maximal_backtrack(state):
+  tovisit = [state]
+  visited = set([])
+  max_backtrack = 0
+  while tovisit:
+    queued = tovisit.pop()
+    visited.add(queued)
+    if queued.accepting:
+      state_bt = state_backtrack(queued)
+      if state_bt < 0:
+        return -1
+      if state_bt > max_backtrack:
+        max_backtrack = state_bt
+    for ch,node in queued.d.items():
+      if node not in visited:
+        tovisit.append(node)
+    if queued.default != None:
+      if queued.default not in visited:
+        tovisit.append(queued.default)
+  return max_backtrack
+
+dfaproblematic = nfa2dfa(re_compilemulti("ab","abcd","abce").nfa())
+#print maximal_backtrack(dfaproblematic)
+#raise SystemExit(1)
+
+dfaproblematic2 = nfa2dfa(re_compilemulti("ab","abc*d","abc*e").nfa())
+#print maximal_backtrack(dfaproblematic2)
+#raise SystemExit(1)
+
+
 
 print fsmviz(nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa()),True)
 
