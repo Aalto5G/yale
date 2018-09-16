@@ -552,6 +552,10 @@ def dump_headers(re_by_idx, list_of_reidx_sets):
 #include <errno.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+
+#define likely(x)       __builtin_expect((x),1)
+#define unlikely(x)     __builtin_expect((x),0)
 
 struct state {
   uint8_t accepting;
@@ -564,6 +568,7 @@ struct rectx {
   uint8_t state; // 0 is initial state
   uint8_t last_accept; // 255 means never accepted
   uint8_t backtracklen;
+  size_t last_accept_idx;
   uint8_t backtrack[%d];
 };
 
@@ -576,9 +581,9 @@ init_statemachine(struct rectx *ctx)
 }
 
 static ssize_t
-feed_statemachine(struct rectx *ctx, const struct state *stbl, const char *buf, size_t sz, uint8_t *state)
+feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state)
 {
-  const unsigned char *ubuf = buf;
+  const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st;
   size_t i;
   if (ctx->state == 255)
@@ -590,7 +595,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const char *buf, 
   {
     st = &stbl[ctx->state];
     ctx->state = st->transitions[ubuf[i]];
-    if (ctx->state == 255)
+    if (unlikely(ctx->state == 255))
     {
       if (ctx->last_accept == 255)
       {
@@ -601,18 +606,27 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const char *buf, 
       ctx->last_accept = 255;
       st = &stbl[ctx->state];
       *state = st->acceptid;
-      return i;
+      return ctx->last_accept_idx + 1;
     }
     if (st->accepting)
     {
       if (st->final)
       {
         *state = st->acceptid;
-        return i;
+        return i + 1;
       }
       else
       {
-        ctx->last_accept = ctx->state;
+        ctx->last_accept = ctx->state; // FIXME correct?
+        ctx->last_accept_idx = i;
+        ctx->backtracklen = 0;
+      }
+    }
+    else
+    {
+      if (ctx->last_accept != 255)
+      {
+        ctx->backtrack[ctx->backtracklen++] = ubuf[i]; // FIXME correct?
       }
     }
   }
@@ -676,14 +690,42 @@ dump_all(re_by_idx, list_of_reidx_sets, priorities)
 print """
 int main(int argc, char **argv)
 {
-  char *input = "GET / HTTP/1.1";
+  char *input = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" // 500
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" 
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHI "; // 1000
+
   ssize_t consumed;
   uint8_t state = 255;
   struct rectx ctx = {};
+  size_t i;
 
-  init_statemachine(&ctx);
-  consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
-  printf("Consumed %zd state %d\\n", consumed, (int)state);
+  for (i = 0; i < 1000*1000; i++)
+  {
+    init_statemachine(&ctx);
+    consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
+    if (consumed != 999 || state != 8)
+    {
+      abort();
+    }
+    //printf("Consumed %zd state %d\\n", consumed, (int)state);
+  }
 
   init_statemachine(&ctx);
   consumed = feed_statemachine(&ctx, states_0_1_8_12, input, strlen(input), &state);
