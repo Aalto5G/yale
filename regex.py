@@ -349,6 +349,7 @@ def set_accepting(state, prios):
 def set_ids(state):
   if "id" in state.__dict__:
     return
+  tbl = []
   tovisit = [state]
   visited = set([])
   def idgen(n):
@@ -362,17 +363,68 @@ def set_ids(state):
       continue
     visited.add(queued)
     queued.id = next_id.next()
+    tbl.append(queued)
     for ch,node in queued.d.items():
       if node not in visited:
         tovisit.append(node)
     if queued.default != None:
       if queued.default not in visited:
         tovisit.append(queued.default)
+  return tbl
 
 dfahost = nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa())
 set_accepting(dfahost, [1,0,0,0])
-#set_ids(dfahost)
-print fsmviz(dfahost,True)
+dfatbl = set_ids(dfahost)
+
+if len(dfatbl) > 255:
+  assert False # 255 is reserved for invalid non-accepting state
+if maximal_backtrack(dfahost) > 255:
+  assert False
+
+print \
+"""\
+#include <stdint.h>
+
+struct state {
+  uint8_t accepting;
+  uint8_t acceptid;
+  uint8_t transitions[256];
+};
+
+struct rectx {
+  uint8_t state; // 0 is initial state
+  uint8_t last_accept; // 255 means never accepted
+  uint8_t backtracklen;
+  uint8_t backtrack[%d];
+};
+""" % (maximal_backtrack(dfahost),)
+
+print "const struct state states[] = {"
+for stateid in range(len(dfatbl)):
+  state = dfatbl[stateid]
+  print "{",
+  print ".accepting =",
+  print state.accepting and "1," or "0,",
+  print ".acceptid =",
+  if state.accepting:
+    print state.acceptid,",",
+  else:
+    print 0,",",
+  print ".transitions =",
+  print "{",
+  for n in range(256):
+    ch = chr(n)
+    if ch in state.d:
+      print state.d[ch].id,",",
+    elif state.default:
+      print state.default.id,",",
+    else:
+      print 255,",",
+  print "},",
+  print "},"
+print "};"
+
+#print fsmviz(dfahost,True)
 raise SystemExit()
 
 dfaproblematic = nfa2dfa(re_compilemulti("ab","abcd","abce").nfa())
