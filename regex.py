@@ -612,6 +612,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         ctx->last_accept = 255;
         st = &stbl[ctx->state];
         *state = st->acceptid;
+        ctx->state = 0;
         return 0;
       }
       ctx->backtrackstart++;
@@ -624,6 +625,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         if (st->final)
         {
           *state = st->acceptid;
+          ctx->state = 0;
           return 0;
         }
         else
@@ -648,6 +650,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       ctx->last_accept = 255;
       st = &stbl[ctx->state];
       *state = st->acceptid;
+      ctx->state = 0;
       return i;
     }
     if (st->accepting)
@@ -655,6 +658,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       if (st->final)
       {
         *state = st->acceptid;
+        ctx->state = 0;
         return i + 1;
       }
       else
