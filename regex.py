@@ -58,7 +58,7 @@ def fsmviz(begin,deterministic=False):
       acceptid = ""
       if "acceptid" in node2.__dict__:
         acceptid = "{%d}" % (node2.acceptid,)
-      result.write("n%d [label=\"%d%s%s%s\"];\n" % (n,n,(node2.accepting and "+" or ""),(node2.tainted and "*" or ""),acceptid))
+      result.write("n%d [label=\"%d%s%s%s\"];\n" % (n,n,(node2.accepting and "+" or ""),(tainted and "*" or ""),acceptid))
       d[node2] = n
       q.append(node2)
   add_node(begin)
@@ -382,9 +382,14 @@ def set_ids(state):
     queued.id = next_id.next()
     tbl.append(queued)
     for ch,node in queued.d.items():
-      if node not in visited:
-        tovisit.append(node)
-    if queued.default != None:
+      if type(node) == set:
+        for n in node:
+          if n not in visited:
+            tovisit.append(n)
+      else:
+        if node not in visited:
+          tovisit.append(node)
+    if "default" in queued.__dict__ and queued.default != None:
       if queued.default not in visited:
         tovisit.append(queued.default)
   return tbl
