@@ -295,6 +295,8 @@ def parse_bracketexpr(s):
       if last != None:
         literalstr += last
       last = newlast
+  if last != None:
+    literalstr += last
   if inverse:
     literalstr = ''.join(chr(c) for c in range(256) if chr(c) not in literalstr)
   return literals(literalstr),l[1]
@@ -302,6 +304,8 @@ def parse_bracketexpr(s):
 print parse_bracketexpr("[A-Za-z0-9]"[1:])[0].s
 print parse_bracketexpr("[^\x00-AC-\xff]"[1:])[0].s
 print parse_bracketexpr("[^\\x00-AC-\\xff]"[1:])[0].s
+print parse_bracketexpr("[-!#$%&'*+.^_`|~0-9A-Za-z]"[1:])[0].s
+print parse_bracketexpr("[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]"[1:])[0].s
 raise SystemExit()
 
 def re_compile(s):
