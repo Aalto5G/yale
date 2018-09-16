@@ -3,6 +3,7 @@ from __future__ import division
 import collections
 import random
 import re
+import sys
 import cStringIO
 import time
 
@@ -443,6 +444,13 @@ def set_ids(state):
   state.tbl = tbl
   return tbl
 
+def state_is_final(state):
+  if state.default:
+    return False
+  if state.d:
+    return False
+  return True
+
 re_by_idx = []
 priorities = []
 
@@ -517,14 +525,14 @@ num_terminals = 13
 #print fsmviz(nfa2dfa(re_compile("[A-Ca-c0-3]").nfa()),True)
 #raise SystemExit()
 
-dfahost = nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa())
-set_accepting(dfahost, [1,0,0,0])
-dfatbl = set_ids(dfahost)
+#dfahost = nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa())
+#set_accepting(dfahost, [1,0,0,0])
+#dfatbl = set_ids(dfahost)
 
-if len(dfatbl) > 255:
-  assert False # 255 is reserved for invalid non-accepting state
-if maximal_backtrack(dfahost) > 255:
-  assert False
+#if len(dfatbl) > 255:
+#  assert False # 255 is reserved for invalid non-accepting state
+#if maximal_backtrack(dfahost) > 255:
+#  assert False
 
 def dump_headers(re_by_idx, list_of_reidx_sets):
   maxbt = 0
@@ -539,10 +547,16 @@ def dump_headers(re_by_idx, list_of_reidx_sets):
   print \
   """\
 #include <stdint.h>
+#include <stddef.h>
+#include <unistd.h>
+#include <errno.h>
+#include <string.h>
+#include <stdio.h>
 
 struct state {
   uint8_t accepting;
   uint8_t acceptid;
+  uint8_t final;
   uint8_t transitions[256];
 };
 
@@ -552,16 +566,71 @@ struct rectx {
   uint8_t backtracklen;
   uint8_t backtrack[%d];
 };
+
+static void
+init_statemachine(struct rectx *ctx)
+{
+  ctx->state = 0;
+  ctx->last_accept = 255;
+  ctx->backtracklen = 0;
+}
+
+static ssize_t
+feed_statemachine(struct rectx *ctx, const struct state *stbl, const char *buf, size_t sz, uint8_t *state)
+{
+  const unsigned char *ubuf = buf;
+  const struct state *st;
+  size_t i;
+  if (ctx->state == 255)
+  {
+    *state = 255;
+    return -EINVAL;
+  }
+  for (i = 0; i < sz; i++)
+  {
+    st = &stbl[ctx->state];
+    ctx->state = st->transitions[ubuf[i++]];
+    if (ctx->state == 255)
+    {
+      if (ctx->last_accept == 255)
+      {
+        *state = 255;
+        return -EINVAL;
+      }
+      ctx->state = ctx->last_accept;
+      ctx->last_accept = 255;
+      st = &stbl[ctx->state];
+      *state = st->acceptid;
+      return i;
+    }
+    if (st->accepting)
+    {
+      if (st->final)
+      {
+        *state = st->acceptid;
+        return i;
+      }
+      else
+      {
+        ctx->last_accept = ctx->state;
+      }
+    }
+  }
+  *state = 255;
+  return -EAGAIN; // Not yet
+}
 """ % (maxbt,)
   return
 
 def dump_all(re_by_idx, list_of_reidx_sets, priorities):
   for reidx_set in list_of_reidx_sets:
-    name = '_'.join(str(x) for x in sorted(reidx_set))
-    re_set = set([re_by_idx[idx] for idx in reidx_set])
+    sorted_reidx_set = list(sorted(reidx_set))
+    name = '_'.join(str(x) for x in sorted_reidx_set)
+    re_set = set([re_by_idx[idx] for idx in sorted_reidx_set])
     dfa = nfa2dfa(re_compilemulti(*re_set).nfa())
     set_accepting(dfa, priorities)
     dfatbl = set_ids(dfa)
+    print >> sys.stderr, "DFA %s has %d entries" % (name, len(dfatbl))
     if len(dfatbl) > 255:
       assert False # 255 is reserved for invalid non-accepting state
     print "const struct state states_%s[] = {" % (name,)
@@ -572,9 +641,10 @@ def dump_all(re_by_idx, list_of_reidx_sets, priorities):
       print state.accepting and "1," or "0,",
       print ".acceptid =",
       if state.accepting:
-        print state.acceptid,",",
+        print sorted_reidx_set[state.acceptid],",",
       else:
         print 0,",",
+      print ".final =", (state_is_final(state) and 1 or 0), ","
       print ".transitions =",
       print "{",
       for n in range(256):
@@ -602,6 +672,26 @@ list_of_reidx_sets.add(frozenset([8]))
 
 dump_headers(re_by_idx, list_of_reidx_sets)
 dump_all(re_by_idx, list_of_reidx_sets, priorities)
+
+print """
+int main(int argc, char **argv)
+{
+  char *input = "GET / HTTP/1.1";
+  ssize_t consumed;
+  uint8_t state = 255;
+  struct rectx ctx = {};
+
+  init_statemachine(&ctx);
+  consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
+  printf("Consumed %zd state %d\\n", consumed, (int)state);
+
+  init_statemachine(&ctx);
+  consumed = feed_statemachine(&ctx, states_0_1_8_12, input, strlen(input), &state);
+  printf("Consumed %zd state %d\\n", consumed, (int)state);
+
+  return 0;
+}
+"""
 
 raise SystemExit()
 
