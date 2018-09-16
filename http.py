@@ -1,16 +1,75 @@
+import regex
+
+#hosttoken = 0
+#crlf = 1
+#onespace = 2
+#httpname = 3
+#slash = 4
+#digit = 5
+#colon = 6
+#optspace = 7
+#httptoken = 8
+#httpfield = 9
+#period = 10
+#uri = 11
+#foldstart = 12
+
+re_by_idx = []
+priorities = []
+
 hosttoken = 0
+hosttoken_re = "[Hh][Oo][Ss][Tt]"
+re_by_idx.append(hosttoken_re)
+priorities.append(1)
 crlf = 1
+crlf_re = "\r\n"
+re_by_idx.append(crlf_re)
+priorities.append(0)
 onespace = 2
+onespace_re = " "
+re_by_idx.append(onespace_re)
+priorities.append(0)
 httpname = 3
+httpname_re = "HTTP"
+re_by_idx.append(httpname_re)
+priorities.append(0)
 slash = 4
+slash_re = "/"
+re_by_idx.append(slash_re)
+priorities.append(0)
 digit = 5
+digit_re = "[0-9]"
+re_by_idx.append(digit_re)
+priorities.append(0)
 colon = 6
+colon_re = ":"
+re_by_idx.append(colon_re)
+priorities.append(0)
 optspace = 7
+optspace_re = "[ \t]*"
+re_by_idx.append(optspace_re)
+priorities.append(0)
 httptoken = 8
+httptoken_re = "[-!#$%&'*+.^_`|~0-9A-Za-z]+"
+re_by_idx.append(httptoken_re)
+priorities.append(0)
 httpfield = 9
+httpfield_re = "[\t\x20-\x7E\x80-\xFF]*"
+re_by_idx.append(httpfield_re)
+priorities.append(0)
 period = 10
+period_re = "."
+re_by_idx.append(period_re)
+priorities.append(0)
 uri = 11
+uri_re = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+"
+re_by_idx.append(uri_re)
+priorities.append(0)
 foldstart = 12
+foldstart_re = "[ \t]+"
+re_by_idx.append(foldstart_re)
+priorities.append(0)
+num_terminals = 13
 
 terminals = [
   hosttoken,
@@ -28,11 +87,11 @@ terminals = [
   foldstart,
 ]
 
-headerField = 100
-version = 101
-requestLine = 102
-requestHdrs = 103
-requestWithHeaders = 104
+headerField = num_terminals + 0
+version = num_terminals + 1
+requestLine = num_terminals + 2
+requestHdrs = num_terminals + 3
+requestWithHeaders = num_terminals + 4
 
 nonterminals = [
   headerField,
@@ -46,7 +105,7 @@ epsilon = -1
 eof = -2
 
 def isTerminal(x):
-  return x >= 0 and x < 100
+  return x >= 0 and x < num_terminals
 
 S = requestWithHeaders
 
@@ -160,11 +219,10 @@ for A in nonterminals:
 for A in nonterminals:
   for a in terminals:
     if len(T[A][a]) > 1:
-      print "Conflict %d %d" % (A,a,)
-      raise Exception("error")
+      raise Exception("Conflict %d %d" % (A,a,))
     elif len(T[A][a]) == 1:
       Tt[A][a] = set(T[A][a]).pop()
-      print "Non-conflict %d %d: %s" % (A,a,Tt[A][a])
+      #print "Non-conflict %d %d: %s" % (A,a,Tt[A][a])
 
 def get_max_sz_dfs(Tt, rules, terminals, S, eof=-1, maxrecurse=16384):
   visiteds = set()
@@ -211,13 +269,13 @@ def parse(req):
       raise Exception("parse error")
     sym = revreq[-1]
     if isTerminal(stack[-1]):
-      print "Removing terminal %d" % (sym,)
+      #print "Removing terminal %d" % (sym,)
       if stack[-1] != sym:
         raise Exception("parse error")
       revreq.pop()
       stack.pop()
       continue
-    print "Getting action %d %d" % (stack[-1], sym,)
+    #print "Getting action %d %d" % (stack[-1], sym,)
     action = Tt[stack[-1]][sym]
     if action == None:
       raise Exception("parse error")
@@ -289,3 +347,61 @@ parse(myreqtrivial)
 # uint64_t[] terminal index list for every nonterminal
 # uint64_t[] terminal index list for every DFA state
 # if bitwise AND is nonzero, continue
+
+list_of_reidx_sets = set()
+# Single token DFAs
+list_of_reidx_sets.update([frozenset([x]) for x in range(num_terminals)])
+
+for X in nonterminals:
+  list_of_reidx_sets.add(frozenset([x for x in terminals if T[X][x]]))
+
+regex.dump_headers(re_by_idx, list_of_reidx_sets)
+regex.dump_all(re_by_idx, list_of_reidx_sets, priorities)
+
+print """
+int main(int argc, char **argv)
+{
+  char *input = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" // 500
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" 
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHI "; // 1000
+
+  ssize_t consumed;
+  uint8_t state = 255;
+  struct rectx ctx = {};
+  size_t i;
+
+  for (i = 0; i < 1000*1000; i++)
+  {
+    init_statemachine(&ctx);
+    consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
+    if (consumed != 999 || state != 8)
+    {
+      abort();
+    }
+    //printf("Consumed %zd state %d\\n", consumed, (int)state);
+  }
+
+  init_statemachine(&ctx);
+  consumed = feed_statemachine(&ctx, states_0_1_8_12, input, strlen(input), &state);
+  printf("Consumed %zd state %d\\n", consumed, (int)state);
+
+  return 0;
+}
+"""

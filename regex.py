@@ -722,71 +722,6 @@ def dump_all(re_by_idx, list_of_reidx_sets, priorities):
     print "};"
   return
 
-list_of_reidx_sets = set()
-# Single token DFAs
-list_of_reidx_sets.update([frozenset([x]) for x in range(num_terminals)])
-# Multi-token DFAs, TODO obtain from parser table
-list_of_reidx_sets.add(frozenset([0,8,12]))
-list_of_reidx_sets.add(frozenset([3]))
-list_of_reidx_sets.add(frozenset([8]))
-list_of_reidx_sets.add(frozenset([0,1,8,12]))
-list_of_reidx_sets.add(frozenset([8]))
-
-dump_headers(re_by_idx, list_of_reidx_sets)
-dump_all(re_by_idx, list_of_reidx_sets, priorities)
-
-print """
-int main(int argc, char **argv)
-{
-  char *input = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" // 500
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" 
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHI "; // 1000
-
-  ssize_t consumed;
-  uint8_t state = 255;
-  struct rectx ctx = {};
-  size_t i;
-
-  for (i = 0; i < 1000*1000; i++)
-  {
-    init_statemachine(&ctx);
-    consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
-    if (consumed != 999 || state != 8)
-    {
-      abort();
-    }
-    //printf("Consumed %zd state %d\\n", consumed, (int)state);
-  }
-
-  init_statemachine(&ctx);
-  consumed = feed_statemachine(&ctx, states_0_1_8_12, input, strlen(input), &state);
-  printf("Consumed %zd state %d\\n", consumed, (int)state);
-
-  return 0;
-}
-"""
-
-raise SystemExit()
-
-
-
 def dump_state(state):
   dfatbl = set_ids(state)
   
@@ -815,38 +750,38 @@ def dump_state(state):
     print "},"
   print "};"
 
-#print fsmviz(dfahost,True)
-raise SystemExit()
-
-dfaproblematic = nfa2dfa(re_compilemulti("ab","abcd","abce").nfa())
-#print maximal_backtrack(dfaproblematic)
+##print fsmviz(dfahost,True)
+#raise SystemExit()
+#
+#dfaproblematic = nfa2dfa(re_compilemulti("ab","abcd","abce").nfa())
+##print maximal_backtrack(dfaproblematic)
+##raise SystemExit(1)
+#
+#dfaproblematic2 = nfa2dfa(re_compilemulti("ab","abc*d","abc*e").nfa())
+##print maximal_backtrack(dfaproblematic2)
+##raise SystemExit(1)
+#
+#print fsmviz(nfa2dfa(re_compilemulti("ab","ac","de").nfa()),True)
+#raise SystemExit()
+#
+#
+#print fsmviz(nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa()),True)
+#
+##print fsmviz(re_compilemulti("ab","abcd","abce").nfa(),False)
+##print fsmviz(nfa2dfa(re_compilemulti("ab","abcd","abce").nfa()),True)
+##print fsmviz(nfa2dfa(re_compilemulti("....a","Host").nfa()),True)
+##print fsmviz(nfa2dfa(re_compilemulti(".*ab",".*abcd",".*abce").nfa()),True)
+##print fsmviz(nfa2dfa(re_compile("(ab|abcd|abce)*").nfa()),True)
 #raise SystemExit(1)
-
-dfaproblematic2 = nfa2dfa(re_compilemulti("ab","abc*d","abc*e").nfa())
-#print maximal_backtrack(dfaproblematic2)
-#raise SystemExit(1)
-
-print fsmviz(nfa2dfa(re_compilemulti("ab","ac","de").nfa()),True)
-raise SystemExit()
-
-
-print fsmviz(nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa()),True)
-
-#print fsmviz(re_compilemulti("ab","abcd","abce").nfa(),False)
-#print fsmviz(nfa2dfa(re_compilemulti("ab","abcd","abce").nfa()),True)
-#print fsmviz(nfa2dfa(re_compilemulti("....a","Host").nfa()),True)
-#print fsmviz(nfa2dfa(re_compilemulti(".*ab",".*abcd",".*abce").nfa()),True)
-#print fsmviz(nfa2dfa(re_compile("(ab|abcd|abce)*").nfa()),True)
-raise SystemExit(1)
-
-#print fsmviz(re_compile("ab|abcd|abce").nfa(),False)
-#print fsmviz(nfa2dfa(re_compile("ab|abcd|abce").nfa()),True)
-
-#print fsmviz(nfa2dfa(re_compile("[ab]*|[af]c*[de]").nfa()),True)
-#print fsmviz(nfa2dfa(re_compile("(a|b)+|e?(a|f)c*(d|e).").nfa()),True)
-#print fsmviz(re_compile("[ab]*|[^af]c*[de]").nfa())
-#print fsmviz(nfa2dfa(re_compile("[^af]").nfa()),True)
-
-
-dfa = nfa2dfa(re_compile("[ab]*|[af]c*[de].").nfa())
-print dfa.execute("accef")
+#
+##print fsmviz(re_compile("ab|abcd|abce").nfa(),False)
+##print fsmviz(nfa2dfa(re_compile("ab|abcd|abce").nfa()),True)
+#
+##print fsmviz(nfa2dfa(re_compile("[ab]*|[af]c*[de]").nfa()),True)
+##print fsmviz(nfa2dfa(re_compile("(a|b)+|e?(a|f)c*(d|e).").nfa()),True)
+##print fsmviz(re_compile("[ab]*|[^af]c*[de]").nfa())
+##print fsmviz(nfa2dfa(re_compile("[^af]").nfa()),True)
+#
+#
+#dfa = nfa2dfa(re_compile("[ab]*|[af]c*[de].").nfa())
+#print dfa.execute("accef")
