@@ -8,10 +8,11 @@ import time
 
 
 class dfanode(object):
-  def __init__(self,accepting=False):
+  def __init__(self,accepting=False,tainted=False):
     self.d = {}
     self.accepting = accepting
     self.default = None
+    self.tainted = tainted
   def connect(self,ch,node):
     assert ch not in self.d
     self.d[ch] = node
@@ -28,11 +29,14 @@ class dfanode(object):
     else:
       return False
 
+tainted = object()
+
 class nfanode(object):
-  def __init__(self,accepting=False):
+  def __init__(self,accepting=False,taintid=None):
     self.d = {}
     self.accepting = accepting
     self.defaults = set()
+    self.taintid = taintid
   def connect(self,ch,node):
     self.d.setdefault(ch,set()).add(node)
   def connect_default(self,node):
@@ -51,7 +55,10 @@ def fsmviz(begin,deterministic=False):
   def add_node(node2):
     if not node2 in d:
       n = next_id.next()
-      result.write("n%d [label=\"%d%s\"];\n" % (n,n,(node2.accepting and "+" or "")))
+      tainted = False
+      if deterministic:
+        tainted = node2.tainted
+      result.write("n%d [label=\"%d%s%s\"];\n" % (n,n,(node2.accepting and "+" or ""),(node2.tainted and "*" or "")))
       d[node2] = n
       q.append(node2)
   add_node(begin)
@@ -86,12 +93,16 @@ def epsilonclosure(nodes):
       if n2 not in closure:
         closure.add(n2)
         q.append(n2)
-  return frozenset(closure)
+  taintidset = set()
+  for item in closure:
+    if item.taintid != None:
+      taintidset.add(item.taintid)
+  return (frozenset(closure), len(taintidset)>1)
 
 def nfa2dfa(begin):
-  dfabegin = epsilonclosure(set([begin]))
+  dfabegin,tainted = epsilonclosure(set([begin]))
   d = {}
-  d[dfabegin] = dfanode(True in (x.accepting for x in dfabegin))
+  d[dfabegin] = dfanode(True in (x.accepting for x in dfabegin), tainted=tainted)
   q = collections.deque([dfabegin])
   while q:
     nns = q.popleft()
@@ -102,40 +113,40 @@ def nfa2dfa(begin):
       defaults.update(nn.defaults)
       for ch,nns2 in nn.d.items():
         d2.setdefault(ch,set()).update(nns2)
-    defaultsec = epsilonclosure(defaults)
+    defaultsec,tainted = epsilonclosure(defaults)
     if defaultsec:
       if defaultsec not in d:
-        d[defaultsec] = dfanode(True in (x.accepting for x in defaultsec))
+        d[defaultsec] = dfanode(True in (x.accepting for x in defaultsec), tainted=tainted)
         q.append(defaultsec)
       d[nns].connect_default(d[defaultsec])
     for ch,nns2 in d2.items():
       if ch:
         nns2.update(defaults)
-        ec = epsilonclosure(nns2) # XXX: hidas!
+        ec,tainted = epsilonclosure(nns2) # XXX: hidas!
         if ec not in d:
-          d[ec] = dfanode(True in (x.accepting for x in ec))
+          d[ec] = dfanode(True in (x.accepting for x in ec), tainted=tainted)
           q.append(ec)
         d[nns].connect(ch,d[ec])
   return d[dfabegin]
 
 class regexp(object):
-  def nfa(self):
+  def nfa(self, taintid=None):
     begin,end = nfanode(),nfanode(True)
-    self.gennfa(begin,end)
+    self.gennfa(begin,end,taintid=taintid)
     return begin
 
 class wildcard(regexp):
-  def gennfa(self,begin,end):
+  def gennfa(self,begin,end,taintid=None):
     begin.connect_default(end)
 
 class emptystr(regexp):
-  def gennfa(self,begin,end):
+  def gennfa(self,begin,end,taintid=None):
     begin.connect("",end)
 
 class literals(regexp):
   def __init__(self,s):
     self.s = s
-  def gennfa(self,begin,end):
+  def gennfa(self,begin,end,taintid=None):
     for ch in self.s:
       begin.connect(ch,end)
 
@@ -143,35 +154,37 @@ class concat(regexp):
   def __init__(self,re1,re2):
     self.re1 = re1
     self.re2 = re2
-  def gennfa(self,begin,end):
-    middle = nfanode()
-    self.re1.gennfa(begin,middle)
-    self.re2.gennfa(middle,end)
+  def gennfa(self,begin,end,taintid=None):
+    middle = nfanode(taintid=taintid)
+    self.re1.gennfa(begin,middle,taintid=taintid)
+    self.re2.gennfa(middle,end,taintid=taintid)
 
 class altern(regexp):
   def __init__(self,re1,re2):
     self.re1 = re1
     self.re2 = re2
-  def gennfa(self,begin,end):
-    self.re1.gennfa(begin,end)
-    self.re2.gennfa(begin,end)
+  def gennfa(self,begin,end, taintid=None):
+    self.re1.gennfa(begin,end,taintid=taintid)
+    self.re2.gennfa(begin,end,taintid=taintid)
 
 class alternmulti(regexp):
   def __init__(self,*res):
     self.res = res
   def nfa(self):
     begin = nfanode()
+    taintid = 0
     for re in self.res:
-      end = nfanode(True)
-      re.gennfa(begin, end)
+      end = nfanode(True, taintid = taintid)
+      taintid += 1
+      re.gennfa(begin, end, taintid=taintid)
     return begin
 
 class star(regexp):
   def __init__(self,re):
     self.re = re
-  def gennfa(self,begin,end):
-    begin1,end1 = nfanode(),nfanode()
-    self.re.gennfa(begin1,end1)
+  def gennfa(self,begin,end, taintid=None):
+    begin1,end1 = nfanode(taintid=taintid),nfanode(taintid=taintid)
+    self.re.gennfa(begin1,end1,taintid=taintid)
     begin.connect("",begin1)
     begin.connect("",end)
     end1.connect("",begin1)
@@ -314,6 +327,8 @@ dfaproblematic2 = nfa2dfa(re_compilemulti("ab","abc*d","abc*e").nfa())
 #print maximal_backtrack(dfaproblematic2)
 #raise SystemExit(1)
 
+print fsmviz(nfa2dfa(re_compilemulti("ab","ac","de").nfa()),True)
+raise SystemExit()
 
 
 print fsmviz(nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa()),True)
