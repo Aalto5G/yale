@@ -589,7 +589,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const char *buf, 
   for (i = 0; i < sz; i++)
   {
     st = &stbl[ctx->state];
-    ctx->state = st->transitions[ubuf[i++]];
+    ctx->state = st->transitions[ubuf[i]];
     if (ctx->state == 255)
     {
       if (ctx->last_accept == 255)
@@ -626,8 +626,8 @@ def dump_all(re_by_idx, list_of_reidx_sets, priorities):
   for reidx_set in list_of_reidx_sets:
     sorted_reidx_set = list(sorted(reidx_set))
     name = '_'.join(str(x) for x in sorted_reidx_set)
-    re_set = set([re_by_idx[idx] for idx in sorted_reidx_set])
-    dfa = nfa2dfa(re_compilemulti(*re_set).nfa())
+    re_list = list([re_by_idx[idx] for idx in sorted_reidx_set])
+    dfa = nfa2dfa(re_compilemulti(*re_list).nfa())
     set_accepting(dfa, priorities)
     dfatbl = set_ids(dfa)
     print >> sys.stderr, "DFA %s has %d entries" % (name, len(dfatbl))
