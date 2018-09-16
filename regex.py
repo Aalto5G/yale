@@ -44,18 +44,14 @@ class nfanode(object):
     self.defaults.add(node)
 
 def fsmviz(begin,deterministic=False):
-  def idgen(n):
-    while True:
-      yield n
-      n+=1
-  next_id = idgen(0)
   d = {}
   q = collections.deque()
   result = cStringIO.StringIO()
   result.write("digraph fsm {\n")
+  set_ids(begin)
   def add_node(node2):
     if not node2 in d:
-      n = next_id.next()
+      n = node2.id
       tainted = False
       if deterministic:
         tainted = node2.tainted
@@ -287,6 +283,8 @@ def state_backtrack(state):
   assert state.accepting
   while tovisit:
     queued,bt = tovisit.pop()
+    #if queued in visited: # XXX harmful?
+    #  continue
     if bt > max_backtrack:
       max_backtrack = bt
     visited.add(queued)
@@ -311,6 +309,8 @@ def maximal_backtrack(state):
   max_backtrack = 0
   while tovisit:
     queued = tovisit.pop()
+    if queued in visited:
+      continue
     visited.add(queued)
     if queued.accepting:
       state_bt = state_backtrack(queued)
@@ -329,9 +329,10 @@ def maximal_backtrack(state):
 def set_accepting(state, prios):
   tovisit = [state]
   visited = set([])
-  max_backtrack = 0
   while tovisit:
     queued = tovisit.pop()
+    if queued in visited:
+      continue
     visited.add(queued)
     if queued.accepting:
       sortlist = sorted([(prios[x],x) for x in queued.acceptidset])
@@ -344,10 +345,33 @@ def set_accepting(state, prios):
     if queued.default != None:
       if queued.default not in visited:
         tovisit.append(queued.default)
-  return max_backtrack
+
+def set_ids(state):
+  if "id" in state.__dict__:
+    return
+  tovisit = [state]
+  visited = set([])
+  def idgen(n):
+    while True:
+      yield n
+      n+=1
+  next_id = idgen(0)
+  while tovisit:
+    queued = tovisit.pop()
+    if queued in visited:
+      continue
+    visited.add(queued)
+    queued.id = next_id.next()
+    for ch,node in queued.d.items():
+      if node not in visited:
+        tovisit.append(node)
+    if queued.default != None:
+      if queued.default not in visited:
+        tovisit.append(queued.default)
 
 dfahost = nfa2dfa(re_compilemulti("[Hh][Oo][Ss][Tt]","\r\n","[#09AHOSTZahostz]+","[ \t]+").nfa())
 set_accepting(dfahost, [1,0,0,0])
+#set_ids(dfahost)
 print fsmviz(dfahost,True)
 raise SystemExit()
 
