@@ -595,6 +595,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
     *state = 255;
     return -EINVAL;
   }
+  //printf("Called: %%s\\n", buf);
   if (unlikely(ctx->backtrackstart != ctx->backtrackend))
   {
     while (ctx->backtrackstart != ctx->backtrackend)
@@ -620,6 +621,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       {
         ctx->backtrackstart = 0;
       }
+      st = &stbl[ctx->state];
       if (st->accepting)
       {
         if (st->final)
@@ -640,11 +642,13 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
   {
     st = &stbl[ctx->state];
     ctx->state = st->transitions[ubuf[i]];
+    //printf("New state: %%d\\n", ctx->state);
     if (unlikely(ctx->state == 255))
     {
       if (ctx->last_accept == 255)
       {
         *state = 255;
+        //printf("Error\\n");
         return -EINVAL;
       }
       ctx->state = ctx->last_accept;
@@ -654,6 +658,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       ctx->state = 0;
       return i;
     }
+    st = &stbl[ctx->state];
     if (st->accepting)
     {
       if (st->final)
