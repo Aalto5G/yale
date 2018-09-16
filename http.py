@@ -600,10 +600,10 @@ int main(int argc, char **argv)
   size_t i;
   struct parserctx pctx = {};
   char *http = "GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n";
+  char *httpa = "GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\na";
 
-  parserctx_init(&pctx);
 
-  for (i = 0; i < /* 1000* */ 1000; i++)
+  for (i = 0; i < /* 1000* */ 1000 * 0; i++)
   {
     init_statemachine(&ctx);
     consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
@@ -614,11 +614,13 @@ int main(int argc, char **argv)
     //printf("Consumed %zd state %d\\n", consumed, (int)state);
   }
 
-  init_statemachine(&ctx);
-  consumed = feed_statemachine(&ctx, states_0_1_8_12, input, strlen(input), &state);
-  printf("Consumed %zd state %d\\n", consumed, (int)state);
+  parserctx_init(&pctx);
+  consumed = parse_block(&pctx, http, strlen(http));
+  printf("Consumed %zd stack %d\\n", consumed, (int)pctx.stacksz);
 
-  parse_block(&pctx, http, strlen(http));
+  parserctx_init(&pctx);
+  consumed = parse_block(&pctx, httpa, strlen(httpa));
+  printf("Consumed %zd stack %d\\n", consumed, (int)pctx.stacksz);
 
   return 0;
 }
