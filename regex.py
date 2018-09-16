@@ -235,7 +235,7 @@ def parse_atom(s):
   else:
     return literals(s[0]),s[1:]
 
-def parse_bracketexpr(s,recursive=False):
+def parse_bracketexpr(s):
   assert s
   l = s[1:].split("]",1)
   assert len(l) == 2
@@ -244,21 +244,65 @@ def parse_bracketexpr(s,recursive=False):
   if s[0] == "^":
     inverse = True
     fullstr = l[0]
-  startidx = 1
-  while "-" in fullstr[startidx:-1]:
-    idx = fullstr[startidx:-1].index("-") + startidx
-    assert fullstr[idx+1] != "-"
-    if idx+3 < len(fullstr):
-      assert fullstr[idx+2] != "-"
-    fullstrstart = fullstr[:idx-1]
-    fullstrrange = ''.join(chr(c) for c in range(ord(fullstr[idx-1]), ord(fullstr[idx+1])+1))
-    fullstrend = fullstr[idx+2:]
-    fullstr = fullstrstart + fullstrrange + fullstrend
-    startidx = len(fullstrstart) + len(fullstrrange)
+  last = None
+  literalstr = ""
+  idx = 0
+  while idx < len(fullstr):
+    first = fullstr[idx]
+    idx += 1
+    if first == "\\":
+      first = fullstr[idx]
+      idx += 1
+      if first == "n":
+        newlast = "\n"
+      elif first == "r":
+        newlast = "\r"
+      elif first == "t":
+        newlast = "\t"
+      elif first == "x":
+        newlast = chr(int(fullstr[idx:idx+2], 16))
+        idx += 2
+      else:
+        assert False
+      if last:
+        literalstr += last
+      last = newlast
+    elif first == "-":
+      first = fullstr[idx]
+      idx += 1
+      if first == "\\":
+        first = fullstr[idx]
+        idx += 1
+        if first == "n":
+          newlast = "\n"
+        elif first == "r":
+          newlast = "\r"
+        elif first == "t":
+          newlast = "\t"
+        elif first == "x":
+          newlast = chr(int(fullstr[idx:idx+2], 16))
+          idx += 2
+        else:
+          assert False
+      elif first == "-":
+        assert False
+      else:
+        newlast = first
+      literalstr += ''.join(chr(c) for c in range(ord(last), ord(newlast)+1))
+      last = None
+    else:
+      newlast = first
+      if last:
+        literalstr += last
+      last = newlast
   if inverse:
-    fullstr = ''.join(chr(c) for c in range(256) if chr(c) not in fullstr)
-  return literals(fullstr),l[1]
+    literalstr = ''.join(chr(c) for c in range(256) if chr(c) not in literalstr)
+  return literals(literalstr),l[1]
 
+print parse_bracketexpr("[A-Za-z0-9]"[1:])[0].s
+print parse_bracketexpr("[^\x00-AC-\xff]"[1:])[0].s
+print parse_bracketexpr("[^\\x00-AC-\\xff]"[1:])[0].s
+raise SystemExit()
 
 def re_compile(s):
   re,remainder = parse_re(s)
