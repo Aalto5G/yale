@@ -264,10 +264,10 @@ def parse_bracketexpr(s):
         idx += 2
       else:
         assert False
-      if last:
+      if last != None:
         literalstr += last
       last = newlast
-    elif first == "-":
+    elif first == "-" and (last!=None) and idx < len(fullstr):
       first = fullstr[idx]
       idx += 1
       if first == "\\":
@@ -292,7 +292,7 @@ def parse_bracketexpr(s):
       last = None
     else:
       newlast = first
-      if last:
+      if last != None:
         literalstr += last
       last = newlast
   if inverse:
