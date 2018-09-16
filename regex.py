@@ -111,7 +111,7 @@ def nfa2dfa(begin):
     nns = q.popleft()
     d2 = {}
     defaults = set()
-    # lis‰t‰‰n kaikki tilasiirrot d2:een ja defaultsiin
+    # add all state transitions to d2 and defaults
     for nn in nns:
       defaults.update(nn.defaults)
       for ch,nns2 in nn.d.items():
@@ -125,7 +125,7 @@ def nfa2dfa(begin):
     for ch,nns2 in d2.items():
       if ch:
         nns2.update(defaults)
-        ec,tainted,acceptidset = epsilonclosure(nns2) # XXX: hidas!
+        ec,tainted,acceptidset = epsilonclosure(nns2) # XXX: slow!
         if ec not in d:
           d[ec] = dfanode(True in (x.accepting for x in ec), tainted=tainted, acceptidset=acceptidset)
           q.append(ec)
