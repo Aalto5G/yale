@@ -37,4 +37,8 @@ functions with "taint id", and ensuring that if some of the NFA states has a
 "taint id", there must not be NFA states with another "taint id" or no "taint
 id" in a given DFA state.
 
+Also, there should be code for checking that the first character is accepting
+and that there is no transition from an accepting state to a non-accepting
+state.
+
 Each nonterminal has its own DFA.
