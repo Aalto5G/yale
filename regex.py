@@ -626,6 +626,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         {
           *state = st->acceptid;
           ctx->state = 0;
+          ctx->last_accept = 255;
           return 0;
         }
         else
@@ -659,6 +660,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       {
         *state = st->acceptid;
         ctx->state = 0;
+        ctx->last_accept = 255;
         return i + 1;
       }
       else
