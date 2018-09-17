@@ -652,6 +652,50 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
     if (is_fastpath(st, ubuf[i]))
     {
       ctx->last_accept = ctx->state;
+      while (i + 8 <= sz)
+      {
+        if (!is_fastpath(st, ubuf[i+0]))
+        {
+          i -= 1;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+1]))
+        {
+          i += 0;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+2]))
+        {
+          i += 1;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+3]))
+        {
+          i += 2;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+4]))
+        {
+          i += 3;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+5]))
+        {
+          i += 4;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+6]))
+        {
+          i += 5;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+7]))
+        {
+          i += 6;
+          break;
+        }
+        i += 8;
+      }
       continue;
     }
     newstate = st->transitions[ubuf[i]];
