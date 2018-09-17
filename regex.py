@@ -564,6 +564,7 @@ struct state {
   uint8_t accepting;
   uint8_t acceptid;
   uint8_t final;
+  uint64_t fastpathbitmask[4];
   uint8_t transitions[256];
 };
 
@@ -582,6 +583,12 @@ init_statemachine(struct rectx *ctx)
   ctx->last_accept = 255;
   ctx->backtrackstart = 0;
   ctx->backtrackend = 0;
+}
+
+static inline int
+is_fastpath(const struct state *st, unsigned char uch)
+{
+  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%%64)));
 }
 
 static ssize_t
@@ -642,6 +649,11 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
   for (i = 0; i < sz; i++)
   {
     st = &stbl[ctx->state];
+    if (is_fastpath(st, ubuf[i]))
+    {
+      ctx->last_accept = ctx->state;
+      continue;
+    }
     newstate = st->transitions[ubuf[i]];
     if (newstate != ctx->state) // Improves perf a lot
     {
@@ -723,6 +735,19 @@ def dump_all(re_by_idx, list_of_reidx_sets, priorities):
       else:
         print 0,",",
       print ".final =", (state_is_final(state) and 1 or 0), ","
+      print ".fastpathbitmask = {",
+      if state.accepting and not state_is_final(state):
+        for iid in range(4):
+          curval = 0
+          for jid in range(64):
+            uch = 64*iid + jid
+            ch = chr(uch)
+            if ch in state.d and state.d[ch].id == stateid:
+              curval |= (1<<jid)
+            elif state.default and state.default.id == stateid:
+              curval |= (1<<jid)
+          print "0x%x," % (curval,),
+      print "},"
       print ".transitions =",
       print "{",
       for n in range(256):
