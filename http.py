@@ -66,7 +66,7 @@ uri_re = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+"
 re_by_idx.append(uri_re)
 priorities.append(0)
 foldstart = 12
-foldstart_re = "[ \t]+"
+foldstart_re = "\r\n[ \t]+"
 re_by_idx.append(foldstart_re)
 priorities.append(0)
 num_terminals = 13
@@ -92,6 +92,8 @@ version = num_terminals + 1
 requestLine = num_terminals + 2
 requestHdrs = num_terminals + 3
 requestWithHeaders = num_terminals + 4
+httpFoldField = num_terminals + 5
+httpFoldFieldEnd = num_terminals + 6
 
 nonterminals = [
   headerField,
@@ -99,6 +101,8 @@ nonterminals = [
   requestLine,
   requestHdrs,
   requestWithHeaders,
+  httpFoldField,
+  httpFoldFieldEnd,
 ]
 
 epsilon = -1
@@ -110,9 +114,11 @@ def isTerminal(x):
 S = requestWithHeaders
 
 rules = [
-  (headerField, [foldstart, httpfield]),
-  (headerField, [hosttoken, colon, optspace, httpfield]),
-  (headerField, [httptoken, colon, optspace, httpfield]),
+  (httpFoldField, [httpfield, httpFoldFieldEnd]),
+  (httpFoldFieldEnd, []),
+  (httpFoldFieldEnd, [foldstart, httpfield, httpFoldFieldEnd]),
+  (headerField, [hosttoken, colon, optspace, httpFoldField]),
+  (headerField, [httptoken, colon, optspace, httpFoldField]),
   (version, [httpname, slash, digit, period, digit]),
   (requestLine, [httptoken, onespace, uri, onespace, version, crlf]),
   (requestHdrs, []),
@@ -292,10 +298,10 @@ myreq = [
     httpname, slash, digit, period, digit, crlf,
   httptoken, colon, optspace, httpfield, crlf,
   hosttoken, colon, optspace, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
+  httptoken, colon, optspace, httpfield,# crlf,
+    foldstart, httpfield, #crlf,
     foldstart, httpfield, crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, #crlf,
     foldstart, httpfield, crlf,
   httptoken, colon, optspace, httpfield, crlf,
   crlf]
@@ -306,10 +312,10 @@ myreqshort = [
     httpname, slash, digit, period, digit, crlf,
   httptoken, colon, optspace, httpfield, crlf,
   hosttoken, colon, optspace, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, #crlf,
+    foldstart, httpfield, #crlf,
     foldstart, httpfield, crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, #crlf,
     foldstart, httpfield, crlf,
   httptoken, colon, optspace, httpfield, crlf]
 ok = False
@@ -324,10 +330,10 @@ myreqlong = [
     httpname, slash, digit, period, digit, crlf,
   httptoken, colon, optspace, httpfield, crlf,
   hosttoken, colon, optspace, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, #crlf,
+    foldstart, httpfield, #crlf,
     foldstart, httpfield, crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
+  httptoken, colon, optspace, httpfield, #crlf,
     foldstart, httpfield, crlf,
   httptoken, colon, optspace, httpfield, crlf,
   crlf,
