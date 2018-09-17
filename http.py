@@ -438,7 +438,7 @@ print "};"
 for n in range(len(rules)):
   lhs,rhs = rules[n]
   print "const uint8_t rule_%d[] = {" % (n,)
-  for rhsitem in rhs:
+  for rhsitem in reversed(rhs):
     print rhsitem, ",",
   print
   print "};"
@@ -468,6 +468,8 @@ get_saved_token(struct parserctx *pctx, const struct state *restates,
   return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state);
 }
 
+#undef EXTRA_SANITY
+
 static __attribute__((unused)) ssize_t
 parse_block(struct parserctx *pctx, char *blk, size_t sz)
 {
@@ -478,12 +480,24 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
   {
     if (pctx->stacksz == 0)
     {
-      if (off == sz && pctx->saved_token == 255)
+      if (off >= sz && pctx->saved_token == 255)
       {
+#ifdef EXTRA_SANITY
+        if (off > sz)
+        {
+          abort();
+        }
+#endif
         return sz; // EOF
       }
       else
       {
+#ifdef EXTRA_SANITY
+        if (off > sz)
+        {
+          abort();
+        }
+#endif
         return -EBADMSG;
       }
     }
@@ -506,17 +520,19 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
       else
       {
         off += ret;
+#if 0
         if (off > sz)
         {
           abort();
         }
+#endif
       }
       if (curstate != state)
       {
         fprintf(stderr, "Parser error: state mismatch\\n");
         exit(1);
       }
-      printf("Got expected token %d\\n", (int)state);
+      //printf("Got expected token %d\\n", (int)state);
       pctx->stacksz--;
     }
     else
@@ -541,37 +557,62 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
       else
       {
         off += ret;
+#if 0
         if (off > sz)
         {
           abort();
         }
+#endif
       }
-      printf("Got token %d, curstate=%d\\n", (int)state, (int)curstate);
+      //printf("Got token %d, curstate=%d\\n", (int)state, (int)curstate);
       ruleid = parserstatetblentries[curstateoff].rhs[state];
       rule = &rules[ruleid];
       pctx->stacksz--;
+#if 0
       if (rule->lhs != curstate)
       {
         abort();
       }
-      for (i = rule->rhssz; i > 0; i--)
+#endif
+      if (pctx->stacksz + rule->rhssz > sizeof(pctx->stack)/sizeof(uint8_t))
       {
-        if (pctx->stacksz == sizeof(pctx->stack)/sizeof(uint8_t))
-        {
-          abort();
-        }
-        pctx->stack[pctx->stacksz++] = rule->rhs[i-1];
+        abort();
+      }
+      i = 0;
+      while (i + 4 <= rule->rhssz)
+      {
+        pctx->stack[pctx->stacksz++] = rule->rhs[i+0];
+        pctx->stack[pctx->stacksz++] = rule->rhs[i+1];
+        pctx->stack[pctx->stacksz++] = rule->rhs[i+2];
+        pctx->stack[pctx->stacksz++] = rule->rhs[i+3];
+        i += 4;
+      }
+      for (; i < rule->rhssz; i++)
+      {
+        pctx->stack[pctx->stacksz++] = rule->rhs[i];
       }
       pctx->saved_token = state;
     }
   }
   if (pctx->stacksz == 0)
   {
-    if (off == sz && pctx->saved_token == 255)
+    if (off >= sz && pctx->saved_token == 255)
     {
+#ifdef EXTRA_SANITY
+      if (off > sz)
+      {
+        abort();
+      }
+#endif
       return sz; // EOF
     }
   }
+#ifdef EXTRA_SANITY
+  if (off > sz)
+  {
+    abort();
+  }
+#endif
   return -EAGAIN;
 }
 """
@@ -627,6 +668,41 @@ int main(int argc, char **argv)
   parserctx_init(&pctx);
   consumed = parse_block(&pctx, httpa, strlen(httpa));
   printf("Consumed %zd stack %d\\n", consumed, (int)pctx.stacksz);
+
+  return 0;
+}
+"""[:0]
+
+print """
+int main(int argc, char **argv)
+{
+  ssize_t consumed;
+  uint8_t state = 255;
+  size_t i;
+  struct parserctx pctx = {};
+  char http[] =
+    "GET /foo/bar/baz/barf/quux.html HTTP/1.1\\r\\n"
+    "Host: www.google.fi\\r\\n"
+    "User-Agent: Mozilla/5.0 (Linux; Android 7.0; SM-G930VC Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/58.0.3029.83 Mobile Safari/537.36\\r\\n"
+    "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1\\r\\n"
+    "Accept-Language: en-us,en;q=0.5\\r\\n"
+    "Accept-Encoding: gzip,deflate\\r\\n"
+    "Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.7\\r\\n"
+    "Keep-Alive: 300\\r\\n"
+    "Connection: keep-alive\\r\\n"
+    "Referer: http://www.google.fi/quux/barf/baz/bar/foo.html\\r\\n"
+    "Cookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;\\r\\n"
+    "\\r\\n";
+
+  for (i = 0; i < 1000 * 1000; i++)
+  {
+    parserctx_init(&pctx);
+    consumed = parse_block(&pctx, http, sizeof(http)-1);
+    if (consumed != sizeof(http)-1)
+    {
+      abort();
+    }
+  }
 
   return 0;
 }
