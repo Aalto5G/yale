@@ -560,12 +560,18 @@ def dump_headers(re_by_idx, list_of_reidx_sets):
 #define BACKTRACKLEN (%d)
 #define BACKTRACKLEN_PLUS_1 ((BACKTRACKLEN) + 1)
 
+#undef SMALL_CODE
+
 struct state {
   uint8_t accepting;
   uint8_t acceptid;
   uint8_t final;
   uint64_t fastpathbitmask[4];
+#ifdef SMALL_CODE
+  const uint8_t *transitions;
+#else
   uint8_t transitions[256];
+#endif
 };
 
 struct rectx {
@@ -756,7 +762,45 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
 """ % (maxbt,)
   return
 
+def get_transitions(state):
+  transitions = []
+  for n in range(256):
+    ch = chr(n)
+    if ch in state.d:
+      transitions.append(state.d[ch].id)
+      #print state.d[ch].id,",",
+    elif state.default:
+      transitions.append(state.default.id)
+      #print state.default.id,",",
+    else:
+      transitions.append(255)
+      #print 255,",",
+  return tuple(transitions)
+
 def dump_all(re_by_idx, list_of_reidx_sets, priorities):
+  dict_transitions = {}
+  print "#ifdef SMALL_CODE"
+  print "const uint8_t transitiontbl[][256] = {"
+  cur_dictid = 0
+  for reidx_set in list_of_reidx_sets:
+    sorted_reidx_set = list(sorted(reidx_set))
+    re_list = list([re_by_idx[idx] for idx in sorted_reidx_set])
+    dfa = nfa2dfa(re_compilemulti(*re_list).nfa())
+    set_accepting(dfa, priorities)
+    dfatbl = set_ids(dfa)
+    for stateid in range(len(dfatbl)):
+      state = dfatbl[stateid]
+      transitions = get_transitions(state)
+      if transitions in dict_transitions:
+        continue
+      dict_transitions[transitions] = cur_dictid
+      cur_dictid += 1
+      print "{"
+      for t in transitions:
+        print t,",",
+      print "},"
+  print "};"
+  print "#endif"
   for reidx_set in list_of_reidx_sets:
     sorted_reidx_set = list(sorted(reidx_set))
     name = '_'.join(str(x) for x in sorted_reidx_set)
@@ -792,17 +836,16 @@ def dump_all(re_by_idx, list_of_reidx_sets, priorities):
               curval |= (1<<jid)
           print "0x%x," % (curval,),
       print "},"
-      print ".transitions =",
+      transitions = get_transitions(state)
+      print "#ifdef SMALL_CODE"
+      print ".transitions = transitiontbl[", dict_transitions[transitions],"],"
+      print "#else"
+      print ".transitions = ",
       print "{",
-      for n in range(256):
-        ch = chr(n)
-        if ch in state.d:
-          print state.d[ch].id,",",
-        elif state.default:
-          print state.default.id,",",
-        else:
-          print 255,",",
-      print "},",
+      for t in transitions:
+        print t,",",
+      print "},"
+      print "#endif"
       print "},"
     print "};"
   return
