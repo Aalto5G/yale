@@ -652,13 +652,8 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
     if (is_fastpath(st, ubuf[i]))
     {
       ctx->last_accept = ctx->state;
-      while (i + 8 <= sz)
+      while (i + 8 < sz) // FIXME test this thoroughly, all branches!
       {
-        if (!is_fastpath(st, ubuf[i+0]))
-        {
-          i -= 1;
-          break;
-        }
         if (!is_fastpath(st, ubuf[i+1]))
         {
           i += 0;
@@ -692,6 +687,11 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         if (!is_fastpath(st, ubuf[i+7]))
         {
           i += 6;
+          break;
+        }
+        if (!is_fastpath(st, ubuf[i+8]))
+        {
+          i += 7;
           break;
         }
         i += 8;
