@@ -590,6 +590,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st;
   size_t i;
+  uint8_t newstate;
   if (ctx->state == 255)
   {
     *state = 255;
@@ -641,9 +642,13 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
   for (i = 0; i < sz; i++)
   {
     st = &stbl[ctx->state];
-    ctx->state = st->transitions[ubuf[i]];
+    newstate = st->transitions[ubuf[i]];
+    if (newstate != ctx->state) // Improves perf a lot
+    {
+      ctx->state = newstate;
+    }
     //printf("New state: %%d\\n", ctx->state);
-    if (unlikely(ctx->state == 255))
+    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster
     {
       if (ctx->last_accept == 255)
       {
@@ -658,7 +663,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       ctx->state = 0;
       return i;
     }
-    st = &stbl[ctx->state];
+    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here
     if (st->accepting)
     {
       if (st->final)
