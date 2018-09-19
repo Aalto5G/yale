@@ -94,6 +94,8 @@ requestHdrs = num_terminals + 3
 requestWithHeaders = num_terminals + 4
 httpFoldField = num_terminals + 5
 httpFoldFieldEnd = num_terminals + 6
+hostFoldField = num_terminals + 7
+hostFoldFieldEnd = num_terminals + 8
 
 nonterminals = [
   headerField,
@@ -103,21 +105,47 @@ nonterminals = [
   requestWithHeaders,
   httpFoldField,
   httpFoldFieldEnd,
+  hostFoldField,
+  hostFoldFieldEnd,
 ]
 
 epsilon = -1
 eof = -2
 
-def isTerminal(x):
-  return x >= 0 and x < num_terminals
-
 S = requestWithHeaders
 
+class WrapCB(object):
+  def __init__(self, token, cbname):
+    assert isTerminal(token)
+    self.token = token
+    self.cbname = cbname
+
+def isTerminal(x):
+  if type(x) == WrapCB:
+    return True
+  return x >= 0 and x < num_terminals
+
+def unwrap(x):
+  if type(x) == list:
+    return list(unwrap(y) for y in x)
+  if type(x) == WrapCB:
+    return x.token
+  if type(x) == int:
+    return x
+  assert False
+
+
+
 rules = [
+  (hostFoldField, [WrapCB(httpfield, "print"), hostFoldFieldEnd]),
+  (hostFoldFieldEnd, []),
+  (hostFoldFieldEnd, [WrapCB(foldstart, "print"),
+                      WrapCB(httpfield, "print"),
+                      hostFoldFieldEnd]),
   (httpFoldField, [httpfield, httpFoldFieldEnd]),
   (httpFoldFieldEnd, []),
   (httpFoldFieldEnd, [foldstart, httpfield, httpFoldFieldEnd]),
-  (headerField, [hosttoken, colon, optspace, httpFoldField]),
+  (headerField, [hosttoken, colon, optspace, hostFoldField]),
   (headerField, [httptoken, colon, optspace, httpFoldField]),
   (version, [httpname, slash, digit, period, digit]),
   (requestLine, [httptoken, onespace, uri, onespace, version, crlf]),
@@ -128,74 +156,121 @@ rules = [
 
 Fi = {}
 for nonterminal in nonterminals:
-  Fi[nonterminal] = set()
+  Fi[nonterminal] = {}#set()
+
+def firstset_update(a,b):
+  for k,v in b.items():
+    if k in a:
+      a[k].update(v)
+    else:
+      a[k] = set([])
+      a[k].update(v)
+
+def firstset_singleton(x):
+  if type(x) == WrapCB:
+    return {x.token: set([x.cbname])}
+  if type(x) == int:
+    return {x: set()}
+  assert False
 
 def firstset_func(rhs):
   global Fi
   if len(rhs) == 0:
-    return set([epsilon])
+    return {epsilon: set()}
+    #return set([epsilon])
   first=rhs[0]
   if isTerminal(first):
-    return set([first])
+    return firstset_singleton(first)
+    #return {first: set()}
+    #return set([first])
   if epsilon not in Fi[first]:
     return Fi[first]
   else:
-    return Fi[first].difference(set([epsilon])).union(firstset_func(rhs[1:]))
-    
+    #result = Fi[first][:]
+    result = dict(Fi[first])
+    del result[epsilon]
+    firstset_update(result, firstset_func(rhs[1:]))
+    #result.update(firstset_func(rhs[1:])) # FIXME
+    return result
+    #return Fi[first].difference(set([epsilon])).union(firstset_func(rhs[1:]))
+
+def firstset_issubset(a,b):
+  for k in a.keys():
+    if k not in b:
+      return False
+  for k,v in a.items():
+    if not v.issubset(b[k]):
+      return False
+  return True
 
 changed = True
 while changed:
   changed = False
   for rule in rules:
     nonterminal = rule[0]
-    rhs = rule[1]
+    origrhs = rule[1]
+    rhs = unwrap(origrhs)
     trhs = tuple(rhs)
-    firstset = firstset_func(rhs)
-    Fi.setdefault(trhs, set([]))
-    if firstset.issubset(Fi[trhs]):
+    firstset = firstset_func(origrhs)
+    Fi.setdefault(trhs, {})
+    #if firstset.issubset(Fi[trhs]):
+    if firstset_issubset(firstset, Fi[trhs]):
       continue
-    Fi[trhs].update(firstset)
+    firstset_update(Fi[trhs], firstset)
+    #Fi[trhs].update(firstset)
     changed = True
   for rule in rules:
     nonterminal = rule[0]
-    rhs = rule[1]
+    rhs = unwrap(rule[1])
     trhs = tuple(rhs)
-    if Fi[trhs].issubset(Fi[nonterminal]):
+    #if Fi[trhs].issubset(Fi[nonterminal]):
+    if firstset_issubset(Fi[trhs], Fi[nonterminal]):
       continue
-    Fi[nonterminal].update(Fi[trhs])
+    firstset_update(Fi[nonterminal], Fi[trhs])
+    #Fi[nonterminal].update(Fi[trhs])
     changed = True
 
 Fo = {}
 for nonterminal in nonterminals:
-  Fo[nonterminal] = set()
-Fo[S] = set([eof])
+  Fo[nonterminal] = {}#set()
+#Fo[S] = set([eof])
+Fo[S] = {eof: set()}
 
 changed = True
 while changed:
   changed = False
   for rule in rules:
     nonterminal = rule[0]
-    rhs = rule[1]
+    origrhs = rule[1]
+    rhs = unwrap(origrhs)
     for idx in range(len(rhs)):
+      origrhsmid = origrhs[idx]
       rhsmid = rhs[idx]
       if isTerminal(rhsmid):
         continue
+      origrhsleft = origrhs[:idx]
       rhsleft = rhs[:idx]
+      origrhsright = origrhs[idx+1:]
       rhsright = rhs[idx+1:]
-      firstrhsright = firstset_func(rhsright)
+      firstrhsright = firstset_func(origrhsright)
       for terminal in terminals:
         if terminal in firstrhsright:
           if terminal not in Fo[rhsmid]:
             changed = True
-            Fo[rhsmid].add(terminal)
+            firstset_update(Fo[rhsmid], {terminal: firstrhsright[terminal]})
+            #Fo[rhsmid].add(terminal)
       if epsilon in firstrhsright:
-        if not Fo[nonterminal].issubset(Fo[rhsmid]):
+        #if not Fo[nonterminal].issubset(Fo[rhsmid]):
+        if not firstset_issubset(Fo[nonterminal],Fo[rhsmid]):
           changed = True
-          Fo[rhsmid].update(Fo[nonterminal])
+          #Fo[rhsmid].update(Fo[nonterminal])
+          firstset_update(Fo[rhsmid], Fo[nonterminal])
       if len(rhsright) == 0:
-        if not Fo[nonterminal].issubset(Fo[rhsmid]):
+        #if not Fo[nonterminal].issubset(Fo[rhsmid]):
+        if not firstset_issubset(Fo[nonterminal],Fo[rhsmid]):
           changed = True
-          Fo[rhsmid].update(Fo[nonterminal])
+          #Fo[rhsmid].update(Fo[nonterminal])
+          firstset_update(Fo[rhsmid], Fo[nonterminal])
 
 T = {}
 for A in nonterminals:
@@ -206,15 +281,21 @@ for A in nonterminals:
 for idx in range(len(rules)):
   rule = rules[idx]
   A = rule[0]
-  w = rule[1]
+  w = unwrap(rule[1])
   tw = tuple(w)
   for a in terminals:
     fi = Fi[tw]
     fo = Fo[A]
     if a in fi:
-      T[A][a].add(idx)
+      if len(fi[a]) == 0:
+        T[A][a].add((idx, None))
+      for cb in fi[a]:
+        T[A][a].add((idx, cb))
     if epsilon in fi and a in fo:
-      T[A][a].add(idx)
+      if len(fo[a]) == 0:
+        T[A][a].add((idx, None))
+      for cb in fo[a]:
+        T[A][a].add((idx, cb))
 
 Tt = {}
 for A in nonterminals:
@@ -254,13 +335,14 @@ def get_max_sz_dfs(Tt, rules, terminals, S, eof=-1, maxrecurse=16384):
     A = last
     for a in terminals:
       if Tt[A][a] != None:
-        rule = rules[Tt[A][a]]
-        rhs = rule[1]
+        rule = rules[Tt[A][a][0]]
+        rhs = unwrap(rule[1])
         newtuple = current[:-1] + tuple(reversed(rhs))
         if newtuple not in visiteds:
           visitqueue.append(newtuple)
   return maxvisited
 
+#print Tt
 max_stack_size = get_max_sz_dfs(Tt, rules, terminals, S)
 if max_stack_size > 255:
   assert False
@@ -284,11 +366,11 @@ def parse(req):
       stack.pop()
       continue
     #print "Getting action %d %d" % (stack[-1], sym,)
-    action = Tt[stack[-1]][sym]
+    action = Tt[stack[-1]][sym][0]
     if action == None:
       raise Exception("parse error")
     rule = rules[action]
-    rhs = rule[1]
+    rhs = unwrap(rule[1])
     stack.pop()
     for val in reversed(rhs):
       stack.append(val)
@@ -364,14 +446,44 @@ for X in nonterminals:
   list_of_reidx_sets.add(frozenset([x for x in terminals if T[X][x]]))
 
 regex.dump_headers(re_by_idx, list_of_reidx_sets)
+print """
+static inline void myPutchar(char ch)
+{
+  if (ch >= 0x20 && ch <= 0x7E)
+  {
+    putchar(ch);
+  }
+  else
+  {
+    printf("\\\\x%.2x", (unsigned)(uint8_t)ch);
+  }
+}
+static void print(const char *buf, size_t siz, void *btn)
+{
+  const char *ubuf = buf;
+  size_t i;
+  putchar('<');
+  for (i = 0; i < siz; i++)
+  {
+    myPutchar(ubuf[i]);
+  }
+  putchar('>');
+  putchar('\\n');
+}
+"""
 regex.dump_all(re_by_idx, list_of_reidx_sets, priorities)
 
 print "const uint8_t num_terminals;"
 
 print """
+struct ruleentry {
+  uint8_t rhs;
+  void (*cb)(const char *, size_t, void*);
+};
+
 struct parserctx {
   uint8_t stacksz;
-  uint8_t stack[%d];
+  struct ruleentry stack[%d]; // WAS: uint8_t stack[...];
   struct rectx rctx;
   uint8_t saved_token;
 };
@@ -380,7 +492,8 @@ static inline void parserctx_init(struct parserctx *pctx)
 {
   pctx->saved_token = 255;
   pctx->stacksz = 1;
-  pctx->stack[0] = %d;
+  pctx->stack[0].rhs = %d;
+  pctx->stack[0].cb = NULL;
   init_statemachine(&pctx->rctx);
 }
 """ % (max_stack_size, S, )
@@ -389,15 +502,17 @@ print """
 struct rule {
   uint8_t lhs;
   uint8_t rhssz;
-  const uint8_t *rhs;
+  //const uint8_t *rhs;
+  const struct ruleentry *rhs;
 };
 """
 print """
 struct parserstatetblentry {
   const struct state *re;
   const uint8_t rhs[%d];
+  const void (*cb[%d])(const char *, size_t, void*);
 };
-""" % (len(terminals),)
+""" % (len(terminals),len(terminals),)
 
 print """
 struct reentry {
@@ -429,7 +544,14 @@ for X in sorted(nonterminals):
     if Tt[X][x] == None:
       print 255,",",
     else:
-      print Tt[X][x],",",
+      print Tt[X][x][0],",",
+  print "},"
+  print ".cb = {",
+  for x in sorted(terminals):
+    if Tt[X][x] == None or Tt[X][x][1] == None:
+      print "NULL,",
+    else:
+      print Tt[X][x][1],",",
   print "},"
   print "},"
 
@@ -437,18 +559,23 @@ print "};"
 
 for n in range(len(rules)):
   lhs,rhs = rules[n]
-  print "const uint8_t rule_%d[] = {" % (n,)
+  print "const struct ruleentry rule_%d[] = {" % (n,)
   for rhsitem in reversed(rhs):
-    print rhsitem, ",",
+    print "{",
+    if type(rhsitem) == WrapCB:
+      print ".rhs =", rhsitem.token, ",", ".cb = ", rhsitem.cbname,
+    else:
+      print ".rhs =", rhsitem, ",", ".cb = NULL",
+    print "}",",",
   print
   print "};"
-  print "const uint8_t rule_%d_len = sizeof(rule_%d)/sizeof(uint8_t);" % (n,n,)
+  print "const uint8_t rule_%d_len = sizeof(rule_%d)/sizeof(struct ruleentry);" % (n,n,)
 print "const struct rule rules[] = {"
 for n in range(len(rules)):
   lhs,rhs = rules[n]
   print "{"
   print "  .lhs =", lhs, ","
-  print "  .rhssz = sizeof(rule_%d)/sizeof(uint8_t)," % (n,)
+  print "  .rhssz = sizeof(rule_%d)/sizeof(struct ruleentry)," % (n,)
   print "  .rhs = rule_%d," % (n,)
   print "},"
 print "};"
@@ -457,7 +584,9 @@ print """
 
 static inline ssize_t
 get_saved_token(struct parserctx *pctx, const struct state *restates,
-                char *blkoff, size_t szoff, uint8_t *state)
+                char *blkoff, size_t szoff, uint8_t *state,
+                void (*const*cbs)(const char *, size_t, void*),
+                void (*cb1)(const char *, size_t, void*))
 {
   if (pctx->saved_token != 255)
   {
@@ -465,7 +594,7 @@ get_saved_token(struct parserctx *pctx, const struct state *restates,
     pctx->saved_token = 255;
     return 0;
   }
-  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state);
+  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, cbs, cb1, NULL);
 }
 
 #undef EXTRA_SANITY
@@ -501,12 +630,14 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
         return -EBADMSG;
       }
     }
-    curstate = pctx->stack[pctx->stacksz - 1];
+    curstate = pctx->stack[pctx->stacksz - 1].rhs;
     if (curstate < num_terminals)
     {
       uint8_t state;
       const struct state *restates = reentries[curstate].re;
-      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state);
+      const void (*cb1)(const char *, size_t, void*);
+      cb1 = pctx->stack[pctx->stacksz - 1].cb;
+      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1);
       if (ret == -EAGAIN)
       {
         off = sz;
@@ -515,6 +646,8 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
       else if (ret < 0)
       {
         fprintf(stderr, "Parser error: tokenizer error, curstate=%d\\n", curstate);
+        fprintf(stderr, "blk[off] = '%c'\\n", blk[off]);
+        abort();
         exit(1);
       }
       else
@@ -529,7 +662,8 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
       }
       if (curstate != state)
       {
-        fprintf(stderr, "Parser error: state mismatch\\n");
+        fprintf(stderr, "Parser error: state mismatch %d %d\\n",
+                        (int)curstate, (int)state);
         exit(1);
       }
       //printf("Got expected token %d\\n", (int)state);
@@ -543,7 +677,9 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
       size_t i;
       const struct rule *rule;
       const struct state *restates = parserstatetblentries[curstateoff].re;
-      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state);
+      const void (*const*cbs)(const char *, size_t, void*);
+      cbs = parserstatetblentries[curstateoff].cb;
+      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, NULL);
       if (ret == -EAGAIN)
       {
         off = sz;
@@ -574,7 +710,7 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
         abort();
       }
 #endif
-      if (pctx->stacksz + rule->rhssz > sizeof(pctx->stack)/sizeof(uint8_t))
+      if (pctx->stacksz + rule->rhssz > sizeof(pctx->stack)/sizeof(struct ruleentry))
       {
         abort();
       }
@@ -683,6 +819,7 @@ int main(int argc, char **argv)
   char http[] =
     "GET /foo/bar/baz/barf/quux.html HTTP/1.1\\r\\n"
     "Host: www.google.fi\\r\\n"
+    "\twww.google2.fi\\r\\n"
     "User-Agent: Mozilla/5.0 (Linux; Android 7.0; SM-G930VC Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/58.0.3029.83 Mobile Safari/537.36\\r\\n"
     "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1\\r\\n"
     "Accept-Language: en-us,en;q=0.5\\r\\n"
@@ -694,7 +831,7 @@ int main(int argc, char **argv)
     "Cookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;\\r\\n"
     "\\r\\n";
 
-  for (i = 0; i < 1000 * 1000; i++)
+  for (i = 0; i < /*1000 * 1000*/ 1; i++)
   {
     parserctx_init(&pctx);
     consumed = parse_block(&pctx, http, sizeof(http)-1);

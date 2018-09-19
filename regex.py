@@ -598,7 +598,7 @@ is_fastpath(const struct state *st, unsigned char uch)
 }
 
 static ssize_t
-feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state)
+feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void (*const*cbs)(const char *, size_t, void*), void (*cb1)(const char *, size_t, void*), void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st;
@@ -723,6 +723,14 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       st = &stbl[ctx->state];
       *state = st->acceptid;
       ctx->state = 0;
+      if (cbs && st->accepting && cbs[st->acceptid] != NULL)
+      {
+        cbs[st->acceptid](buf, i, baton);
+      }
+      if (cb1 && st->accepting)
+      {
+        cb1(buf, i, baton);
+      }
       return i;
     }
     st = &stbl[ctx->state]; // strangely, ctx->state seems faster here
@@ -733,6 +741,14 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         *state = st->acceptid;
         ctx->state = 0;
         ctx->last_accept = 255;
+        if (cbs && st->accepting && cbs[st->acceptid] != NULL)
+        {
+          cbs[st->acceptid](buf, i + 1, baton);
+        }
+        if (cb1 && st->accepting)
+        {
+          cb1(buf, i + 1, baton);
+        }
         return i + 1;
       }
       else
@@ -755,6 +771,14 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         }
       }
     }
+  }
+  if (cbs && st->accepting && cbs[st->acceptid] != NULL)
+  {
+    cbs[st->acceptid](buf, sz, baton);
+  }
+  if (cb1 && st->accepting)
+  {
+    cb1(buf, sz, baton);
   }
   *state = 255;
   return -EAGAIN; // Not yet
