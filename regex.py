@@ -601,7 +601,7 @@ static ssize_t
 feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void (*const*cbs)(const char *, size_t, void*), void (*cb1)(const char *, size_t, void*), void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
-  const struct state *st;
+  const struct state *st = NULL;
   size_t i;
   uint8_t newstate;
   if (ctx->state == 255)
@@ -772,11 +772,11 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       }
     }
   }
-  if (cbs && st->accepting && cbs[st->acceptid] != NULL)
+  if (st && cbs && st->accepting && cbs[st->acceptid] != NULL)
   {
     cbs[st->acceptid](buf, sz, baton);
   }
-  if (cb1 && st->accepting)
+  if (st && cb1 && st->accepting)
   {
     cb1(buf, sz, baton);
   }
