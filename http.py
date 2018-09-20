@@ -119,10 +119,16 @@ class WrapCB(object):
     assert isTerminal(token)
     self.token = token
     self.cbname = cbname
+class Action(object):
+  def __init__(self, cbname):
+    self.token = 255
+    self.cbname = cbname
 
 def isTerminal(x):
   if type(x) == WrapCB:
     return True
+  if type(x) == Action:
+    return False
   return x >= 0 and x < num_terminals
 
 def unwrap(x):
@@ -130,16 +136,38 @@ def unwrap(x):
     return list(unwrap(y) for y in x)
   if type(x) == WrapCB:
     return x.token
+  if type(x) == Action:
+    return x # XXX or x.token?
   if type(x) == int:
     return x
   assert False
 
+def unactionize(x):
+  if type(x) == list:
+    return list(unactionize(y) for y in x if type(y) != Action)
+  if type(x) == WrapCB:
+    return x
+  if type(x) == Action:
+    return x
+  if type(x) == int:
+    return x
+  assert False
+
+def unwrap_unactionize(x):
+  return unwrap(unactionize(x))
+  #if type(x) == list:
+  #  return list(unwrap_unactionize(y) for y in x if type(y) != Action)
+  #if type(x) == WrapCB:
+  #  return x.token
+  #if type(x) == int:
+  #  return x
+  #assert False
 
 
 rules = [
   (hostFoldField, [WrapCB(httpfield, "print"), hostFoldFieldEnd]),
   (hostFoldFieldEnd, []),
-  (hostFoldFieldEnd, [WrapCB(foldstart, "print"),
+  (hostFoldFieldEnd, [foldstart, Action("printsp"),
                       WrapCB(httpfield, "print"),
                       hostFoldFieldEnd]),
   (httpFoldField, [httpfield, httpFoldFieldEnd]),
@@ -208,8 +236,8 @@ while changed:
   changed = False
   for rule in rules:
     nonterminal = rule[0]
-    origrhs = rule[1]
-    rhs = unwrap(origrhs)
+    origrhs = unactionize(rule[1])
+    rhs = unwrap_unactionize(origrhs)
     trhs = tuple(rhs)
     firstset = firstset_func(origrhs)
     Fi.setdefault(trhs, {})
@@ -221,7 +249,7 @@ while changed:
     changed = True
   for rule in rules:
     nonterminal = rule[0]
-    rhs = unwrap(rule[1])
+    rhs = unwrap_unactionize(rule[1])
     trhs = tuple(rhs)
     #if Fi[trhs].issubset(Fi[nonterminal]):
     if firstset_issubset(Fi[trhs], Fi[nonterminal]):
@@ -241,8 +269,9 @@ while changed:
   changed = False
   for rule in rules:
     nonterminal = rule[0]
-    origrhs = rule[1]
-    rhs = unwrap(origrhs)
+    origrhs = unactionize(rule[1])
+    #rhs = unwrap(origrhs)
+    rhs = unwrap_unactionize(origrhs)
     for idx in range(len(rhs)):
       origrhsmid = origrhs[idx]
       rhsmid = rhs[idx]
@@ -281,7 +310,7 @@ for A in nonterminals:
 for idx in range(len(rules)):
   rule = rules[idx]
   A = rule[0]
-  w = unwrap(rule[1])
+  w = unwrap_unactionize(rule[1])
   tw = tuple(w)
   for a in terminals:
     fi = Fi[tw]
@@ -306,7 +335,7 @@ for A in nonterminals:
 for A in nonterminals:
   for a in terminals:
     if len(T[A][a]) > 1:
-      raise Exception("Conflict %d %d" % (A,a,))
+      raise Exception("Conflict %d %d %s" % (A,a,T[A][a]))
     elif len(T[A][a]) == 1:
       Tt[A][a] = set(T[A][a]).pop()
       #print "Non-conflict %d %d: %s" % (A,a,Tt[A][a])
@@ -326,7 +355,7 @@ def get_max_sz_dfs(Tt, rules, terminals, S, eof=-1, maxrecurse=16384):
     if len(current) > maxvisited:
       maxvisited = len(current)
     last = current[-1]
-    if last in terminals:
+    if last in terminals or type(last) == Action:
       if current[:-1] not in visiteds:
         visitqueue.append(current[:-1])
       continue
@@ -472,6 +501,15 @@ static void print(const char *buf, size_t siz, void *btn)
   putchar('\\n');
 #endif
 }
+static void printsp(const char *buf, size_t siz, void *btn)
+{
+#ifdef DO_PRINT
+  putchar('<');
+  putchar(' ');
+  putchar('>');
+  putchar('\\n');
+#endif
+}
 """
 regex.dump_all(re_by_idx, list_of_reidx_sets, priorities)
 
@@ -564,7 +602,9 @@ for n in range(len(rules)):
   print "const struct ruleentry rule_%d[] = {" % (n,)
   for rhsitem in reversed(rhs):
     print "{",
-    if type(rhsitem) == WrapCB:
+    if type(rhsitem) == Action:
+      print ".rhs = 255, .cb = ", rhsitem.cbname,
+    elif type(rhsitem) == WrapCB:
       print ".rhs =", rhsitem.token, ",", ".cb = ", rhsitem.cbname,
     else:
       print ".rhs =", rhsitem, ",", ".cb = NULL",
@@ -596,7 +636,7 @@ get_saved_token(struct parserctx *pctx, const struct state *restates,
     pctx->saved_token = 255;
     return 0;
   }
-  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, cbs, cb1, NULL);
+  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, cbs, cb1, NULL); // FIXME baton
 }
 
 #undef EXTRA_SANITY
@@ -633,7 +673,14 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
       }
     }
     curstate = pctx->stack[pctx->stacksz - 1].rhs;
-    if (curstate < num_terminals)
+    if (curstate == 255)
+    {
+      const void (*cb1)(const char *, size_t, void*);
+      cb1 = pctx->stack[pctx->stacksz - 1].cb;
+      cb1(NULL, 0, NULL); // FIXME baton
+      pctx->stacksz--;
+    }
+    else if (curstate < num_terminals)
     {
       uint8_t state;
       const struct state *restates = reentries[curstate].re;
