@@ -83,7 +83,7 @@ class ParserGen(object):
     return WrapCB(self, token, cbname)
   def add_token(self, re, priority=0):
     assert not self.tokens_finalized
-    assert len(self.priorities) <= 255
+    assert len(self.priorities) < 255
     result = len(self.priorities)
     self.re_by_idx.append(re)
     self.priorities.append(priority)
@@ -94,7 +94,7 @@ class ParserGen(object):
     self.num_terminals = len(self.priorities)
   def add_nonterminal(self):
     assert self.tokens_finalized
-    assert len(self.priorities) + len(self.nonterminals) <= 255
+    assert len(self.priorities) + len(self.nonterminals) < 255
     result = len(self.priorities) + len(self.nonterminals)
     self.nonterminals.append(result)
     return result
