@@ -12,7 +12,7 @@ static inline void myPutchar(char ch)
   }
 }
 
-#undef DO_PRINT
+#define DO_PRINT
 
 void print(const char *buf, size_t siz, void *btn)
 {
@@ -46,7 +46,7 @@ int main(int argc, char **argv)
   char http[] =
     "GET /foo/bar/baz/barf/quux.html HTTP/1.1\r\n"
     "Host: www.google.fi\r\n"
-    //"\twww.google2.fi\r\n"
+    "\twww.google2.fi\r\n"
     "User-Agent: Mozilla/5.0 (Linux; Android 7.0; SM-G930VC Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/58.0.3029.83 Mobile Safari/537.36\r\n"
     "Accept: text/xml,application/xml,application/xhtml+xml,text/html;q=0.9,text/plain;q=0.8,image/png,image/jpeg,image/gif;q=0.2,*/*;q=0.1\r\n"
     "Accept-Language: en-us,en;q=0.5\r\n"
@@ -58,7 +58,7 @@ int main(int argc, char **argv)
     "Cookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;\r\n"
     "\r\n";
 
-  for (i = 0; i < 1000 * 1000 /* 1 */; i++)
+  for (i = 0; i < /* 1000 * 1000 */ 1 ; i++)
   {
     http_parserctx_init(&pctx);
     consumed = http_parse_block(&pctx, http, sizeof(http)-1, NULL);

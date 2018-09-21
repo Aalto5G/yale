@@ -2,7 +2,7 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yyutils.c httpmain.c httpcommon.c
+SRC := yaletest.c yyutils.c httpmain.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest httpmain
+all: yaletest httpmain httpmainprint
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -32,8 +32,11 @@ $(OBJGEN): %.o: %.c %.h %.d Makefile
 
 -include *.d
 
-httpmain: httpmain.o httpparser.o httpcommon.o Makefile
-	$(CC) $(CFLAGS) -o httpmain httpmain.o httpparser.o httpcommon.o
+httpmain: httpmain.o httpparser.o Makefile
+	$(CC) $(CFLAGS) -o httpmain httpmain.o httpparser.o
+
+httpmainprint: httpmainprint.o httpparser.o Makefile
+	$(CC) $(CFLAGS) -o httpmainprint httpmainprint.o httpparser.o
 
 httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile

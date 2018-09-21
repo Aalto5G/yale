@@ -1,5 +1,6 @@
 *.o
 *.d
+*.pyc
 /yale.lex.c
 /yale.lex.h
 /yale.tab.c
@@ -8,3 +9,5 @@
 /YALE.TAB.INTERMEDIATE
 /intermediatestore/
 /yaletest
+/httpmain
+/httpmainprint
