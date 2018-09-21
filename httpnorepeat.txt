@@ -31,3 +31,4 @@ requestHdrs = | headerField crlf requestHdrs;
 requestWithHeaders = requestLine requestHdrs crlf ;
 
 directive main = requestWithHeaders;
+directive parsername = http;

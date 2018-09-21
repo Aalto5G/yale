@@ -59,6 +59,7 @@ int yaleyywrap(yyscan_t scanner)
 %token FEED
 %token REINIT_FEED
 
+%token PARSERNAME
 %token EQUALS
 %token SEMICOLON
 %token STRING_LITERAL
@@ -124,6 +125,7 @@ maybe_minus:
 directive_continued:
 MAIN EQUALS FREEFORM_TOKEN SEMICOLON
 | ENTRY EQUALS FREEFORM_TOKEN SEMICOLON
+| PARSERNAME EQUALS FREEFORM_TOKEN SEMICOLON
 ;
 
 elements:
