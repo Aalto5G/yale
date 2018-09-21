@@ -32,13 +32,13 @@ httpFoldFieldEnd   = p.add_nonterminal()
 hostFoldField      = p.add_nonterminal()
 hostFoldFieldEnd   = p.add_nonterminal()
 
-S = p.start_state(requestWithHeaders)
+p.start_state(requestWithHeaders)
 
 p.set_rules([
-  (hostFoldField, [parser.WrapCB(p, httpfield, "print"), hostFoldFieldEnd]),
+  (hostFoldField, [p.wrapCB(httpfield, "print"), hostFoldFieldEnd]),
   (hostFoldFieldEnd, []),
-  (hostFoldFieldEnd, [foldstart, parser.Action("printsp"),
-                      parser.WrapCB(p, httpfield, "print"),
+  (hostFoldFieldEnd, [foldstart, p.action("printsp"),
+                      p.wrapCB(httpfield, "print"),
                       hostFoldFieldEnd]),
   (httpFoldField, [httpfield, httpFoldFieldEnd]),
   (httpFoldFieldEnd, []),

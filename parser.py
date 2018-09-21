@@ -77,6 +77,10 @@ class ParserGen(object):
     self.tokens_finalized = False
     self.epsilon = -1
     self.eof = -2
+  def action(self, cbname):
+    return Action(cbname)
+  def wrapCB(self, token, cbname):
+    return WrapCB(self, token, cbname)
   def add_token(self, re, priority=0):
     assert not self.tokens_finalized
     assert len(self.priorities) <= 255
