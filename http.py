@@ -18,8 +18,6 @@ uri       = p.add_token("[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+")
 foldstart = p.add_token("\r\n[ \t]+")
 
 p.finalize_tokens()
-epsilon = p.epsilon
-eof = p.eof
 
 headerField        = p.add_nonterminal()
 version            = p.add_nonterminal()
