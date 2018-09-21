@@ -7,11 +7,11 @@ import sys
 p = parser.ParserGen("http")
 
 hosttoken = p.add_token("[Hh][Oo][Ss][Tt]", priority=1)
-crlf      = p.add_token("\r\n")
+crlf      = p.add_token("\r?\n")
 onespace  = p.add_token(" ")
 httpname  = p.add_token("HTTP")
 slash     = p.add_token("/")
-digit     = p.add_token("[0-9]")
+digit     = p.add_token("[0-9]+")
 colon     = p.add_token(":")
 optspace  = p.add_token("[ \t]*")
 httptoken = p.add_token("[-!#$%&'*+.^_`|~0-9A-Za-z]+")
