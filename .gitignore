@@ -5,6 +5,8 @@
 /yale.lex.h
 /yale.tab.c
 /yale.tab.h
+/httpparser.c
+/httpparser.h
 /YALE.LEX.INTERMEDIATE
 /YALE.TAB.INTERMEDIATE
 /intermediatestore/
