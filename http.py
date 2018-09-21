@@ -488,6 +488,7 @@ list_of_reidx_sets.update([frozenset([x]) for x in range(num_terminals)])
 for X in nonterminals:
   list_of_reidx_sets.add(frozenset([x for x in terminals if T[X][x]]))
 
+print "#include \"yalecommon.h\""
 regex.dump_headers(parsername, re_by_idx, list_of_reidx_sets)
 print """
 static inline void myPutchar(char ch)
@@ -532,25 +533,6 @@ print "const void(*%s_callbacks[])(const char*, size_t, void*) = {" % parsername
 for cb in callbacks_by_value:
   print cb,","
 print "};"
-
-print """
-struct ruleentry {
-  uint8_t rhs;
-  uint8_t cb;
-};
-"""
-print """
-struct rule {
-  uint8_t lhs;
-  uint8_t rhssz;
-  const struct ruleentry *rhs;
-};
-"""
-print """
-struct reentry {
-  const struct state *re;
-};
-"""
 
 print """
 struct %s_parserctx {

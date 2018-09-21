@@ -546,33 +546,8 @@ def dump_headers(parsername, re_by_idx, list_of_reidx_sets):
     assert False
   print \
   """\
-#include <stdint.h>
-#include <stddef.h>
-#include <unistd.h>
-#include <errno.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-
-#define likely(x)       __builtin_expect((x),1)
-#define unlikely(x)     __builtin_expect((x),0)
-
 #define """+parsername.upper()+"""_BACKTRACKLEN ("""+str(maxbt)+""")
 #define """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1 (("""+parsername.upper()+"""_BACKTRACKLEN) + 1)
-
-#undef SMALL_CODE
-
-struct state {
-  uint8_t accepting;
-  uint8_t acceptid;
-  uint8_t final;
-  uint64_t fastpathbitmask[4];
-#ifdef SMALL_CODE
-  const uint8_t *transitions;
-#else
-  uint8_t transitions[256];
-#endif
-};
 
 struct """+parsername+"""_rectx {
   uint8_t state; // 0 is initial state
