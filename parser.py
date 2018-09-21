@@ -531,10 +531,11 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
       }
       else if (ret < 0)
       {
-        fprintf(stderr, "Parser error: tokenizer error, curstate=%d\\n", curstate);
-        fprintf(stderr, "blk[off] = '%c'\\n", blk[off]);
-        abort();
-        exit(1);
+        //fprintf(stderr, "Parser error: tokenizer error, curstate=%d\\n", curstate);
+        //fprintf(stderr, "blk[off] = '%c'\\n", blk[off]);
+        //abort();
+        //exit(1);
+        return -EINVAL;
       }
       else
       {
@@ -548,9 +549,10 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
       }
       if (curstate != state)
       {
-        fprintf(stderr, "Parser error: state mismatch %d %d\\n",
-                        (int)curstate, (int)state);
-        exit(1);
+        //fprintf(stderr, "Parser error: state mismatch %d %d\\n",
+        //                (int)curstate, (int)state);
+        //exit(1);
+        return -EINVAL;
       }
       //printf("Got expected token %d\\n", (int)state);
       pctx->stacksz--;
@@ -573,8 +575,9 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
       }
       else if (ret < 0 || state == 255)
       {
-        fprintf(stderr, "Parser error: tokenizer error, curstate=%d, token=%d\\n", (int)curstate, (int)state);
-        exit(1);
+        //fprintf(stderr, "Parser error: tokenizer error, curstate=%d, token=%d\\n", (int)curstate, (int)state);
+        //exit(1);
+        return -EINVAL;
       }
       else
       {
