@@ -13,7 +13,7 @@ colon     = p.add_token(":")
 optspace  = p.add_token("[ \t]*")
 httptoken = p.add_token("[-!#$%&'*+.^_`|~0-9A-Za-z]+")
 httpfield = p.add_token("[\t\x20-\x7E\x80-\xFF]*")
-period    = p.add_token(".") # FIXME is period interpreted as "any character?"
+period    = p.add_token("[.]")
 uri       = p.add_token("[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+")
 foldstart = p.add_token("\r\n[ \t]+")
 
