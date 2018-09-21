@@ -20,7 +20,7 @@ fieldName = httptoken ;
 fieldValue = httpfield ;
 headerField =
   obsFoldLineStart fieldValue
-| hosttoken colon optspace fieldValue<print>
+| hosttoken colon optspace fieldValue<cb=print>
 | httptoken colon optspace fieldValue
   ;
 version = httpname slash digit period digit ;

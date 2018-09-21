@@ -19,7 +19,7 @@ fieldValue = *( fieldContent | obsFold ) ;
 fieldContent = fieldVchar [ 1*( onespace | onehtab ) fieldVchar ] ;
 fieldVchar = vchar | obstext ;
 headerField =
-  fieldName<val=="Host:"> colon optspace fieldValue<print> optspace
+  fieldName<val=="Host:"> colon optspace fieldValue<cb=print> optspace
   fieldName<val==.> colon optspace fieldValue optspace
   ;
 version = httpname slash digit period digit ;

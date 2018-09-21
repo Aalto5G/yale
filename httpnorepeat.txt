@@ -1,21 +1,29 @@
 token<prio=1> hosttoken = "[Hh][Oo][Ss][Tt]" ;
-token crlf = "\r\n" ;
+token crlf = "\r?\n" ;
 token onespace = " " ;
 token httpname = "HTTP" ;
 token slash = "/" ;
-token digit = "[0-9]" ;
+token digit = "[0-9]+" ;
 token colon = ":" ;
 token optspace = "[ \t]*" ;
 token httptoken = "[-!#$%&'*+.^_`|~0-9A-Za-z]+" ;
 token httpfield = "[\t\x20-\x7E\x80-\xFF]*" ;
-token period = "." ;
+token period = "[.]" ;
 token uri = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+" ;
-token foldstart = "[ \t]+" ;
+token foldstart = "\r?\n[ \t]+" ;
+
+hostFoldField = httpfield<cb=print> hostFoldFieldEnd ;
+hostFoldFieldEnd =
+| foldstart action<cb=printsp> httpfield<cb=print> hostFoldFieldEnd ;
+
+httpFoldField = httpfield httpFoldFieldEnd ;
+httpFoldFieldEnd =
+| foldstart httpfield httpFoldFieldEnd ;
+
 
 headerField =
-  foldstart httpfield
-| hosttoken colon optspace httpfield<print>
-| httptoken colon optspace httpfield
+  hosttoken colon optspace hostFoldField
+| httptoken colon optspace httpFoldField
   ;
 version = httpname slash digit period digit ;
 requestLine = httptoken onespace uri onespace version crlf ;

@@ -16,12 +16,12 @@ uint16versaccept tlsdata
 ;
 
 tlsdata = 
-uint16be $1 bytes<feed: sslhandshake>
+uint16be $1 bytes<feed=sslhandshake>
 ;
 
 sni = 
-uint8zero uint16be $2 bytes<print>
-| uint8any uint16be $2 bytes<discard>
+uint8zero uint16be $2 bytes<cb=print>
+| uint8any uint16be $2 bytes
 ;
 
 maybe_sniext2 = 
@@ -31,7 +31,7 @@ maybe_sniext2 =
 sniext2 = sni maybe_sniext2
 ;
 
-sniext = uint16be $1 bytes<reinit_feed: sniext2>
+sniext = uint16be $1 bytes<reinit_feed=sniext2>
 ;
 
 extensions = 
@@ -39,27 +39,27 @@ extensions =
 ;
 
 extension = 
-uint16zero uint16be $2 bytes<reinit_feed: sniext>
-| uint16any uint16be $2 bytes<discard>
+uint16zero uint16be $2 bytes<reinit_feed=sniext>
+| uint16any uint16be $2 bytes
 ;
 
 sslhandshakedata2 = 
 32 bytes
 uint8
-$2 bytes<discard> 
+$2 bytes
 uint16be
-$4 bytes<discard>
+$4 bytes
 uint8
-$6 bytes<discard>
+$6 bytes
 uint16
-$8 bytes<reinit_feed: extensions>
+$8 bytes<reinit_feed=extensions>
 ;
 
 sslhandshakedata = 
 uint16versaccept sslhandshakedata2 ;
 
 sslhandshake = 
-uint8one uint24be $2 bytes<feed: sslhandshakedata>
+uint8one uint24be $2 bytes<feed=sslhandshakedata>
 ;
 
 directive entry = sslhandshake ;

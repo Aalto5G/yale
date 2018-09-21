@@ -58,12 +58,11 @@ directive return DIRECTIVE;
 main      return MAIN;
 entry     return ENTRY;
 bytes     return BYTES;
-print     return PRINT;
-discard   return DISCARD;
 feed      return FEED;
 reinit_feed return REINIT_FEED;
 val       return VAL;
 prio      return PRIO;
+cb        return CB;
 
 uint8     return UINT8;
 uint16be  return UINT16BE;
@@ -88,7 +87,6 @@ uint64le  return UINT64LE;
 \<        return LT;
 \>        return GT;
 \.        return PERIOD;
-:         return COLON;
 -         return MINUS;
 
 

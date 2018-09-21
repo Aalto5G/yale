@@ -56,8 +56,6 @@ int yaleyywrap(yyscan_t scanner)
 %token ENTRY
 
 %token BYTES
-%token PRINT
-%token DISCARD
 %token FEED
 %token REINIT_FEED
 
@@ -75,8 +73,8 @@ int yaleyywrap(yyscan_t scanner)
 %token GT
 %token PIPE
 %token DOLLAR_LITERAL
-%token COLON
 %token MINUS
+%token CB
 
 %token UINT8
 %token UINT16BE
@@ -202,7 +200,7 @@ maybe_token_ltgt:
 
 token_ltgtexp:
 VAL EQUALSEQUALS valstr_literal
-| PRINT
+| CB EQUALS FREEFORM_TOKEN
 ;
 
 uint_ltgtexp:
@@ -227,10 +225,9 @@ maybe_bytes_ltgt:
 ;
 
 bytes_ltgtexp:
-DISCARD
-| FEED COLON FREEFORM_TOKEN
-| REINIT_FEED COLON FREEFORM_TOKEN
-| PRINT
+  FEED EQUALS FREEFORM_TOKEN
+| REINIT_FEED EQUALS FREEFORM_TOKEN
+| CB EQUALS FREEFORM_TOKEN
 ;
 
 uint_token_raw:
