@@ -17,6 +17,8 @@ import regex
 re_by_idx = []
 priorities = []
 
+parsername = "http"
+
 hosttoken = 0
 hosttoken_re = "[Hh][Oo][Ss][Tt]"
 re_by_idx.append(hosttoken_re)
@@ -486,7 +488,7 @@ list_of_reidx_sets.update([frozenset([x]) for x in range(num_terminals)])
 for X in nonterminals:
   list_of_reidx_sets.add(frozenset([x for x in terminals if T[X][x]]))
 
-regex.dump_headers(re_by_idx, list_of_reidx_sets)
+regex.dump_headers(parsername, re_by_idx, list_of_reidx_sets)
 print """
 static inline void myPutchar(char ch)
 {
@@ -523,10 +525,10 @@ static void printsp(const char *buf, size_t siz, void *btn)
 #endif
 }
 """
-regex.dump_all(re_by_idx, list_of_reidx_sets, priorities)
+regex.dump_all(parsername, re_by_idx, list_of_reidx_sets, priorities)
 
-print "const uint8_t num_terminals;"
-print "const void(*callbacks[])(const char*, size_t, void*) = {"
+print "const uint8_t %s_num_terminals;" % parsername
+print "const void(*%s_callbacks[])(const char*, size_t, void*) = {" % parsername
 for cb in callbacks_by_value:
   print cb,","
 print "};"
@@ -536,65 +538,65 @@ struct ruleentry {
   uint8_t rhs;
   uint8_t cb;
 };
-
-struct parserctx {
-  uint8_t stacksz;
-  struct ruleentry stack[%d]; // WAS: uint8_t stack[...];
-  struct rectx rctx;
-  uint8_t saved_token;
-};
-
-static inline void parserctx_init(struct parserctx *pctx)
-{
-  pctx->saved_token = 255;
-  pctx->stacksz = 1;
-  pctx->stack[0].rhs = %d;
-  pctx->stack[0].cb = 255;
-  init_statemachine(&pctx->rctx);
-}
-""" % (max_stack_size, S, )
-
+"""
 print """
 struct rule {
   uint8_t lhs;
   uint8_t rhssz;
-  //const uint8_t *rhs;
   const struct ruleentry *rhs;
 };
 """
-print """
-struct parserstatetblentry {
-  const struct state *re;
-  const uint8_t rhs[%d];
-  const uint8_t cb[%d];
-};
-""" % (len(terminals),len(terminals),)
-
 print """
 struct reentry {
   const struct state *re;
 };
 """
 
-print "const uint8_t num_terminals = %d;" % (len(terminals),)
-print "const uint8_t start_state = %d;" % (S,)
+print """
+struct %s_parserctx {
+  uint8_t stacksz;
+  struct ruleentry stack[%d]; // WAS: uint8_t stack[...];
+  struct %s_rectx rctx;
+  uint8_t saved_token;
+};
 
-print "const struct reentry reentries[] = {"
+static inline void %s_parserctx_init(struct %s_parserctx *pctx)
+{
+  pctx->saved_token = 255;
+  pctx->stacksz = 1;
+  pctx->stack[0].rhs = %d;
+  pctx->stack[0].cb = 255;
+  %s_init_statemachine(&pctx->rctx);
+}
+""" % (parsername, max_stack_size, parsername, parsername, parsername, S, parsername,)
+
+print """
+struct %s_parserstatetblentry {
+  const struct state *re;
+  const uint8_t rhs[%d];
+  const uint8_t cb[%d];
+};
+""" % (parsername, len(terminals), len(terminals),)
+
+print "const uint8_t %s_num_terminals = %d;" % (parsername, len(terminals),)
+print "const uint8_t %s_start_state = %d;" % (parsername, S,)
+
+print "const struct reentry %s_reentries[] = {" % (parsername,)
 
 for x in sorted(terminals):
   print "{"
   name = str(x)
-  print ".re = states_" + name + ","
+  print ".re = " + parsername + "_states_" + name + ","
   print "},"
 
 print "};"
 
-print "const struct parserstatetblentry parserstatetblentries[] = {"
+print "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {" % (parsername, parsername,)
 
 for X in sorted(nonterminals):
   print "{"
   name = '_'.join(str(x) for x in sorted([x for x in terminals if T[X][x]]))
-  print ".re = states_" + name + ","
+  print ".re = "+parsername+"_states_" + name + ","
   print ".rhs = {",
   for x in sorted(terminals):
     if Tt[X][x] == None:
@@ -615,7 +617,7 @@ print "};"
 
 for n in range(len(rules)):
   lhs,rhs = rules[n]
-  print "const struct ruleentry rule_%d[] = {" % (n,)
+  print "const struct ruleentry %s_rule_%d[] = {" % (parsername, n,)
   for rhsitem in reversed(rhs):
     print "{",
     if type(rhsitem) == Action:
@@ -627,21 +629,21 @@ for n in range(len(rules)):
     print "}",",",
   print
   print "};"
-  print "const uint8_t rule_%d_len = sizeof(rule_%d)/sizeof(struct ruleentry);" % (n,n,)
-print "const struct rule rules[] = {"
+  print "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);" % (parsername,n,parsername,n,)
+print "const struct rule %s_rules[] = {" % (parsername,)
 for n in range(len(rules)):
   lhs,rhs = rules[n]
   print "{"
   print "  .lhs =", lhs, ","
-  print "  .rhssz = sizeof(rule_%d)/sizeof(struct ruleentry)," % (n,)
-  print "  .rhs = rule_%d," % (n,)
+  print "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry)," % (parsername, n,)
+  print "  .rhs = %s_rule_%d," % (parsername,n,)
   print "},"
 print "};"
 
 print """
 
 static inline ssize_t
-get_saved_token(struct parserctx *pctx, const struct state *restates,
+"""+parsername+"""_get_saved_token(struct """+parsername+"""_parserctx *pctx, const struct state *restates,
                 char *blkoff, size_t szoff, uint8_t *state,
                 const uint8_t *cbs, uint8_t cb1)
 {
@@ -651,13 +653,13 @@ get_saved_token(struct parserctx *pctx, const struct state *restates,
     pctx->saved_token = 255;
     return 0;
   }
-  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, callbacks, cbs, cb1, NULL); // FIXME baton
+  return """+parsername+"""_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, """+parsername+"""_callbacks, cbs, cb1, NULL); // FIXME baton
 }
 
 #undef EXTRA_SANITY
 
 static __attribute__((unused)) ssize_t
-parse_block(struct parserctx *pctx, char *blk, size_t sz)
+"""+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx, char *blk, size_t sz)
 {
   size_t off = 0;
   ssize_t ret;
@@ -691,17 +693,17 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
     if (curstate == 255)
     {
       const void (*cb1f)(const char *, size_t, void*);
-      cb1f = callbacks[pctx->stack[pctx->stacksz - 1].cb];
+      cb1f = """+parsername+"""_callbacks[pctx->stack[pctx->stacksz - 1].cb];
       cb1f(NULL, 0, NULL); // FIXME baton
       pctx->stacksz--;
     }
-    else if (curstate < num_terminals)
+    else if (curstate < """+parsername+"""_num_terminals)
     {
       uint8_t state;
-      const struct state *restates = reentries[curstate].re;
+      const struct state *restates = """+parsername+"""_reentries[curstate].re;
       uint8_t cb1;
       cb1 = pctx->stack[pctx->stacksz - 1].cb;
-      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1);
+      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1);
       if (ret == -EAGAIN)
       {
         off = sz;
@@ -736,14 +738,14 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
     else
     {
       uint8_t state;
-      uint8_t curstateoff = curstate - num_terminals;
+      uint8_t curstateoff = curstate - """+parsername+"""_num_terminals;
       uint8_t ruleid;
       size_t i;
       const struct rule *rule;
-      const struct state *restates = parserstatetblentries[curstateoff].re;
+      const struct state *restates = """+parsername+"""_parserstatetblentries[curstateoff].re;
       const uint8_t *cbs;
-      cbs = parserstatetblentries[curstateoff].cb;
-      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);
+      cbs = """+parsername+"""_parserstatetblentries[curstateoff].cb;
+      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);
       if (ret == -EAGAIN)
       {
         off = sz;
@@ -765,8 +767,8 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
 #endif
       }
       //printf("Got token %d, curstate=%d\\n", (int)state, (int)curstate);
-      ruleid = parserstatetblentries[curstateoff].rhs[state];
-      rule = &rules[ruleid];
+      ruleid = """+parsername+"""_parserstatetblentries[curstateoff].rhs[state];
+      rule = &"""+parsername+"""_rules[ruleid];
       pctx->stacksz--;
 #if 0
       if (rule->lhs != curstate)
@@ -817,69 +819,69 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
 }
 """
 
+#print """
+#int main(int argc, char **argv)
+#{
+#  char *input = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" // 500
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" 
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
+#                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHI "; // 1000
+#
+#  ssize_t consumed;
+#  uint8_t state = 255;
+#  struct rectx ctx = {};
+#  size_t i;
+#  struct """+parsername+"""_parserctx pctx = {};
+#  char *http = "GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n";
+#  char *httpa = "GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\na";
+#
+#
+#  for (i = 0; i < /* 1000* */ 1000 * 0; i++)
+#  {
+#    init_statemachine(&ctx);
+#    consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
+#    if (consumed != 999 || state != 8)
+#    {
+#      abort();
+#    }
+#    //printf("Consumed %zd state %d\\n", consumed, (int)state);
+#  }
+#
+#  """+parsername+"""_parserctx_init(&pctx);
+#  consumed = """+parsername+"""_parse_block(&pctx, http, strlen(http));
+#  printf("Consumed %zd stack %d\\n", consumed, (int)pctx.stacksz);
+#
+#  """+parsername+"""_parserctx_init(&pctx);
+#  consumed = """+parsername+"""_parse_block(&pctx, httpa, strlen(httpa));
+#  printf("Consumed %zd stack %d\\n", consumed, (int)pctx.stacksz);
+#
+#  return 0;
+#}
+#"""
+
 print """
 int main(int argc, char **argv)
 {
-  char *input = "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" // 500
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ" 
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJ"
-                "ABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHIJABCDEFGHI "; // 1000
-
-  ssize_t consumed;
-  uint8_t state = 255;
-  struct rectx ctx = {};
-  size_t i;
-  struct parserctx pctx = {};
-  char *http = "GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\n";
-  char *httpa = "GET / HTTP/1.1\\r\\nHost: localhost\\r\\n\\r\\na";
-
-
-  for (i = 0; i < /* 1000* */ 1000 * 0; i++)
-  {
-    init_statemachine(&ctx);
-    consumed = feed_statemachine(&ctx, states_8, input, strlen(input), &state);
-    if (consumed != 999 || state != 8)
-    {
-      abort();
-    }
-    //printf("Consumed %zd state %d\\n", consumed, (int)state);
-  }
-
-  parserctx_init(&pctx);
-  consumed = parse_block(&pctx, http, strlen(http));
-  printf("Consumed %zd stack %d\\n", consumed, (int)pctx.stacksz);
-
-  parserctx_init(&pctx);
-  consumed = parse_block(&pctx, httpa, strlen(httpa));
-  printf("Consumed %zd stack %d\\n", consumed, (int)pctx.stacksz);
-
-  return 0;
-}
-"""[:0]
-
-print """
-int main(int argc, char **argv)
-{
   ssize_t consumed;
   uint8_t state = 255;
   size_t i;
-  struct parserctx pctx = {};
+  struct """+parsername+"""_parserctx pctx = {};
   char http[] =
     "GET /foo/bar/baz/barf/quux.html HTTP/1.1\\r\\n"
     "Host: www.google.fi\\r\\n"
@@ -897,8 +899,8 @@ int main(int argc, char **argv)
 
   for (i = 0; i < 1000 * 1000 /* 1 */; i++)
   {
-    parserctx_init(&pctx);
-    consumed = parse_block(&pctx, http, sizeof(http)-1);
+    """+parsername+"""_parserctx_init(&pctx);
+    consumed = """+parsername+"""_parse_block(&pctx, http, sizeof(http)-1);
     if (consumed != sizeof(http)-1)
     {
       abort();

@@ -534,7 +534,7 @@ num_terminals = 13
 #if maximal_backtrack(dfahost) > 255:
 #  assert False
 
-def dump_headers(re_by_idx, list_of_reidx_sets):
+def dump_headers(parsername, re_by_idx, list_of_reidx_sets):
   maxbt = 0
   for reidx_set in list_of_reidx_sets:
     re_set = set([re_by_idx[idx] for idx in reidx_set])
@@ -557,8 +557,8 @@ def dump_headers(re_by_idx, list_of_reidx_sets):
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
-#define BACKTRACKLEN (%d)
-#define BACKTRACKLEN_PLUS_1 ((BACKTRACKLEN) + 1)
+#define """+parsername.upper()+"""_BACKTRACKLEN ("""+str(maxbt)+""")
+#define """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1 (("""+parsername.upper()+"""_BACKTRACKLEN) + 1)
 
 #undef SMALL_CODE
 
@@ -574,16 +574,16 @@ struct state {
 #endif
 };
 
-struct rectx {
+struct """+parsername+"""_rectx {
   uint8_t state; // 0 is initial state
   uint8_t last_accept; // 255 means never accepted
   uint8_t backtrackstart;
   uint8_t backtrackend;
-  uint8_t backtrack[BACKTRACKLEN_PLUS_1];
+  uint8_t backtrack["""+parsername.upper()+"""_BACKTRACKLEN_PLUS_1];
 };
 
 static void
-init_statemachine(struct rectx *ctx)
+"""+parsername+"""_init_statemachine(struct """+parsername+"""_rectx *ctx)
 {
   ctx->state = 0;
   ctx->last_accept = 255;
@@ -592,13 +592,13 @@ init_statemachine(struct rectx *ctx)
 }
 
 static inline int
-is_fastpath(const struct state *st, unsigned char uch)
+"""+parsername+"""_is_fastpath(const struct state *st, unsigned char uch)
 {
-  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%%64)));
+  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));
 }
 
 static ssize_t
-feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, const void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, const void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st = NULL;
@@ -609,7 +609,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
     *state = 255;
     return -EINVAL;
   }
-  //printf("Called: %%s\\n", buf);
+  //printf("Called: %s\\n", buf);
   if (unlikely(ctx->backtrackstart != ctx->backtrackend))
   {
     while (ctx->backtrackstart != ctx->backtrackend)
@@ -631,7 +631,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         return 0;
       }
       ctx->backtrackstart++;
-      if (ctx->backtrackstart >= BACKTRACKLEN_PLUS_1)
+      if (ctx->backtrackstart >= """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1)
       {
         ctx->backtrackstart = 0;
       }
@@ -655,47 +655,47 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
   for (i = 0; i < sz; i++)
   {
     st = &stbl[ctx->state];
-    if (is_fastpath(st, ubuf[i]))
+    if ("""+parsername+"""_is_fastpath(st, ubuf[i]))
     {
       ctx->last_accept = ctx->state;
       while (i + 8 < sz) // FIXME test this thoroughly, all branches!
       {
-        if (!is_fastpath(st, ubuf[i+1]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+1]))
         {
           i += 0;
           break;
         }
-        if (!is_fastpath(st, ubuf[i+2]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+2]))
         {
           i += 1;
           break;
         }
-        if (!is_fastpath(st, ubuf[i+3]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+3]))
         {
           i += 2;
           break;
         }
-        if (!is_fastpath(st, ubuf[i+4]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+4]))
         {
           i += 3;
           break;
         }
-        if (!is_fastpath(st, ubuf[i+5]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+5]))
         {
           i += 4;
           break;
         }
-        if (!is_fastpath(st, ubuf[i+6]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+6]))
         {
           i += 5;
           break;
         }
-        if (!is_fastpath(st, ubuf[i+7]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+7]))
         {
           i += 6;
           break;
         }
-        if (!is_fastpath(st, ubuf[i+8]))
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+8]))
         {
           i += 7;
           break;
@@ -709,7 +709,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
     {
       ctx->state = newstate;
     }
-    //printf("New state: %%d\\n", ctx->state);
+    //printf("New state: %d\\n", ctx->state);
     if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster
     {
       if (ctx->last_accept == 255)
@@ -761,7 +761,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       if (ctx->last_accept != 255)
       {
         ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?
-        if (ctx->backtrackstart >= BACKTRACKLEN_PLUS_1)
+        if (ctx->backtrackstart >= """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1)
         {
           ctx->backtrackstart = 0;
         }
@@ -783,7 +783,7 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
   *state = 255;
   return -EAGAIN; // Not yet
 }
-""" % (maxbt,)
+"""
   return
 
 def get_transitions(state):
@@ -801,10 +801,10 @@ def get_transitions(state):
       #print 255,",",
   return tuple(transitions)
 
-def dump_all(re_by_idx, list_of_reidx_sets, priorities):
+def dump_all(parsername,re_by_idx, list_of_reidx_sets, priorities):
   dict_transitions = {}
   print "#ifdef SMALL_CODE"
-  print "const uint8_t transitiontbl[][256] = {"
+  print "const uint8_t %s_transitiontbl[][256] = {" % (parsername,)
   cur_dictid = 0
   for reidx_set in list_of_reidx_sets:
     sorted_reidx_set = list(sorted(reidx_set))
@@ -835,7 +835,7 @@ def dump_all(re_by_idx, list_of_reidx_sets, priorities):
     print >> sys.stderr, "DFA %s has %d entries" % (name, len(dfatbl))
     if len(dfatbl) > 255:
       assert False # 255 is reserved for invalid non-accepting state
-    print "const struct state states_%s[] = {" % (name,)
+    print "const struct state %s_states_%s[] = {" % (parsername,name,)
     for stateid in range(len(dfatbl)):
       state = dfatbl[stateid]
       print "{",
@@ -862,7 +862,7 @@ def dump_all(re_by_idx, list_of_reidx_sets, priorities):
       print "},"
       transitions = get_transitions(state)
       print "#ifdef SMALL_CODE"
-      print ".transitions = transitiontbl[", dict_transitions[transitions],"],"
+      print ".transitions = "+parsername+"_transitiontbl[", dict_transitions[transitions],"],"
       print "#else"
       print ".transitions = ",
       print "{",
