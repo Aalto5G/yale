@@ -364,7 +364,7 @@ static inline void %s_parserctx_init(struct %s_parserctx *pctx)
   %s_init_statemachine(&pctx->rctx);
 }
 
-ssize_t %s_parse_block(struct %s_parserctx *pctx, char *blk, size_t sz);
+ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, void *baton);
 """ % (parsername, max_stack_size, parsername, parsername, parsername, self.S, parsername, parsername, parsername)
     #
   def print_parser(self, sio):
@@ -461,8 +461,8 @@ struct %s_parserstatetblentry {
     print >>sio, """
 static inline ssize_t
 """+parsername+"""_get_saved_token(struct """+parsername+"""_parserctx *pctx, const struct state *restates,
-                char *blkoff, size_t szoff, uint8_t *state,
-                const uint8_t *cbs, uint8_t cb1)
+                const char *blkoff, size_t szoff, uint8_t *state,
+                const uint8_t *cbs, uint8_t cb1, void *baton)
 {
   if (pctx->saved_token != 255)
   {
@@ -470,12 +470,12 @@ static inline ssize_t
     pctx->saved_token = 255;
     return 0;
   }
-  return """+parsername+"""_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, """+parsername+"""_callbacks, cbs, cb1, NULL); // FIXME baton
+  return """+parsername+"""_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, """+parsername+"""_callbacks, cbs, cb1, baton);
 }
 
 #undef EXTRA_SANITY
 
-ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx, char *blk, size_t sz)
+ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx, const char *blk, size_t sz, void *baton)
 {
   size_t off = 0;
   ssize_t ret;
@@ -510,7 +510,7 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
     {
       void (*cb1f)(const char *, size_t, void*);
       cb1f = """+parsername+"""_callbacks[pctx->stack[pctx->stacksz - 1].cb];
-      cb1f(NULL, 0, NULL); // FIXME baton
+      cb1f(NULL, 0, baton);
       pctx->stacksz--;
     }
     else if (curstate < """+parsername+"""_num_terminals)
@@ -519,7 +519,7 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
       const struct state *restates = """+parsername+"""_reentries[curstate].re;
       uint8_t cb1;
       cb1 = pctx->stack[pctx->stacksz - 1].cb;
-      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1);
+      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1, baton);
       if (ret == -EAGAIN)
       {
         off = sz;
@@ -561,7 +561,7 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
       const struct state *restates = """+parsername+"""_parserstatetblentries[curstateoff].re;
       const uint8_t *cbs;
       cbs = """+parsername+"""_parserstatetblentries[curstateoff].cb;
-      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);
+      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255, baton);
       if (ret == -EAGAIN)
       {
         off = sz;
