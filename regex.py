@@ -451,65 +451,6 @@ def state_is_final(state):
     return False
   return True
 
-re_by_idx = []
-priorities = []
-
-hosttoken = 0
-hosttoken_re = "[Hh][Oo][Ss][Tt]"
-re_by_idx.append(hosttoken_re)
-priorities.append(1)
-crlf = 1
-crlf_re = "\r\n"
-re_by_idx.append(crlf_re)
-priorities.append(0)
-onespace = 2
-onespace_re = " "
-re_by_idx.append(onespace_re)
-priorities.append(0)
-httpname = 3
-httpname_re = "HTTP"
-re_by_idx.append(httpname_re)
-priorities.append(0)
-slash = 4
-slash_re = "/"
-re_by_idx.append(slash_re)
-priorities.append(0)
-digit = 5
-digit_re = "[0-9]"
-re_by_idx.append(digit_re)
-priorities.append(0)
-colon = 6
-colon_re = ":"
-re_by_idx.append(colon_re)
-priorities.append(0)
-optspace = 7
-optspace_re = "[ \t]*"
-re_by_idx.append(optspace_re)
-priorities.append(0)
-httptoken = 8
-httptoken_re = "[-!#$%&'*+.^_`|~0-9A-Za-z]+"
-re_by_idx.append(httptoken_re)
-priorities.append(0)
-httpfield = 9
-httpfield_re = "[\t\x20-\x7E\x80-\xFF]*"
-re_by_idx.append(httpfield_re)
-priorities.append(0)
-period = 10
-period_re = "."
-re_by_idx.append(period_re)
-priorities.append(0)
-uri = 11
-uri_re = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+"
-re_by_idx.append(uri_re)
-priorities.append(0)
-foldstart = 12
-foldstart_re = "[ \t]+"
-re_by_idx.append(foldstart_re)
-priorities.append(0)
-
-
-num_terminals = 13
-
 #print fsmviz(re_compile(foldstart).nfa(),False)
 #print "------------------"
 #print fsmviz(nfa2dfa(re_compile(foldstart).nfa()),True)
@@ -534,7 +475,7 @@ num_terminals = 13
 #if maximal_backtrack(dfahost) > 255:
 #  assert False
 
-def dump_headers(parsername, re_by_idx, list_of_reidx_sets):
+def dump_headers(sio, parsername, re_by_idx, list_of_reidx_sets):
   maxbt = 0
   for reidx_set in list_of_reidx_sets:
     re_set = set([re_by_idx[idx] for idx in reidx_set])
@@ -544,7 +485,7 @@ def dump_headers(parsername, re_by_idx, list_of_reidx_sets):
       maxbt = curbt
   if maxbt > 250: # A bit of safety margin below 255
     assert False
-  print \
+  print >>sio, \
   """\
 #define """+parsername.upper()+"""_BACKTRACKLEN ("""+str(maxbt)+""")
 #define """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1 (("""+parsername.upper()+"""_BACKTRACKLEN) + 1)
@@ -557,7 +498,7 @@ struct """+parsername+"""_rectx {
   uint8_t backtrack["""+parsername.upper()+"""_BACKTRACKLEN_PLUS_1];
 };
 
-static void
+static inline void
 """+parsername+"""_init_statemachine(struct """+parsername+"""_rectx *ctx)
 {
   ctx->state = 0;
@@ -566,14 +507,36 @@ static void
   ctx->backtrackend = 0;
 }
 
+ssize_t
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton);
+"""
+  return
+
+def get_transitions(state):
+  transitions = []
+  for n in range(256):
+    ch = chr(n)
+    if ch in state.d:
+      transitions.append(state.d[ch].id)
+      #print state.d[ch].id,",",
+    elif state.default:
+      transitions.append(state.default.id)
+      #print state.default.id,",",
+    else:
+      transitions.append(255)
+      #print 255,",",
+  return tuple(transitions)
+
+def dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities):
+  print >>sio, """
 static inline int
 """+parsername+"""_is_fastpath(const struct state *st, unsigned char uch)
 {
   return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));
 }
 
-static ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, const void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
+ssize_t
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st = NULL;
@@ -759,27 +722,9 @@ static ssize_t
   return -EAGAIN; // Not yet
 }
 """
-  return
-
-def get_transitions(state):
-  transitions = []
-  for n in range(256):
-    ch = chr(n)
-    if ch in state.d:
-      transitions.append(state.d[ch].id)
-      #print state.d[ch].id,",",
-    elif state.default:
-      transitions.append(state.default.id)
-      #print state.default.id,",",
-    else:
-      transitions.append(255)
-      #print 255,",",
-  return tuple(transitions)
-
-def dump_all(parsername,re_by_idx, list_of_reidx_sets, priorities):
   dict_transitions = {}
-  print "#ifdef SMALL_CODE"
-  print "const uint8_t %s_transitiontbl[][256] = {" % (parsername,)
+  print >>sio, "#ifdef SMALL_CODE"
+  print >>sio, "const uint8_t %s_transitiontbl[][256] = {" % (parsername,)
   cur_dictid = 0
   for reidx_set in list_of_reidx_sets:
     sorted_reidx_set = list(sorted(reidx_set))
@@ -794,12 +739,12 @@ def dump_all(parsername,re_by_idx, list_of_reidx_sets, priorities):
         continue
       dict_transitions[transitions] = cur_dictid
       cur_dictid += 1
-      print "{"
+      print >>sio, "{"
       for t in transitions:
-        print t,",",
-      print "},"
-  print "};"
-  print "#endif"
+        print >>sio, t,",",
+      print >>sio, "},"
+  print >>sio, "};"
+  print >>sio, "#endif"
   for reidx_set in list_of_reidx_sets:
     sorted_reidx_set = list(sorted(reidx_set))
     name = '_'.join(str(x) for x in sorted_reidx_set)
@@ -810,19 +755,19 @@ def dump_all(parsername,re_by_idx, list_of_reidx_sets, priorities):
     print >> sys.stderr, "DFA %s has %d entries" % (name, len(dfatbl))
     if len(dfatbl) > 255:
       assert False # 255 is reserved for invalid non-accepting state
-    print "const struct state %s_states_%s[] = {" % (parsername,name,)
+    print >>sio, "const struct state %s_states_%s[] = {" % (parsername,name,)
     for stateid in range(len(dfatbl)):
       state = dfatbl[stateid]
-      print "{",
-      print ".accepting =",
-      print state.accepting and "1," or "0,",
-      print ".acceptid =",
+      print >>sio, "{",
+      print >>sio, ".accepting =",
+      print >>sio, state.accepting and "1," or "0,",
+      print >>sio, ".acceptid =",
       if state.accepting:
-        print sorted_reidx_set[state.acceptid],",",
+        print >>sio, sorted_reidx_set[state.acceptid],",",
       else:
-        print 0,",",
-      print ".final =", (state_is_final(state) and 1 or 0), ","
-      print ".fastpathbitmask = {",
+        print >>sio, 0,",",
+      print >>sio, ".final =", (state_is_final(state) and 1 or 0), ","
+      print >>sio, ".fastpathbitmask = {",
       if state.accepting and not state_is_final(state):
         for iid in range(4):
           curval = 0
@@ -833,20 +778,20 @@ def dump_all(parsername,re_by_idx, list_of_reidx_sets, priorities):
               curval |= (1<<jid)
             elif state.default and state.default.id == stateid:
               curval |= (1<<jid)
-          print "0x%x," % (curval,),
-      print "},"
+          print >>sio, "0x%x," % (curval,),
+      print >>sio, "},"
       transitions = get_transitions(state)
-      print "#ifdef SMALL_CODE"
-      print ".transitions = "+parsername+"_transitiontbl[", dict_transitions[transitions],"],"
-      print "#else"
-      print ".transitions = ",
-      print "{",
+      print >>sio, "#ifdef SMALL_CODE"
+      print >>sio, ".transitions = "+parsername+"_transitiontbl[", dict_transitions[transitions],"],"
+      print >>sio, "#else"
+      print >>sio, ".transitions = ",
+      print >>sio, "{",
       for t in transitions:
-        print t,",",
-      print "},"
-      print "#endif"
-      print "},"
-    print "};"
+        print >>sio, t,",",
+      print >>sio, "},"
+      print >>sio, "#endif"
+      print >>sio, "},"
+    print >>sio, "};"
   return
 
 def dump_state(state):

@@ -1,15 +1,15 @@
 .PHONY: all clean distclean
 
-CFLAGS = -O2 -Wall -Wextra -Werror -Wno-unused-parameter
+CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yyutils.c
+SRC := yaletest.c yyutils.c httpmain.c httpcommon.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN)
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest
+all: yaletest httpmain
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -32,8 +32,22 @@ $(OBJGEN): %.o: %.c %.h %.d Makefile
 
 -include *.d
 
+httpmain: httpmain.o httpparser.o httpcommon.o Makefile
+	$(CC) $(CFLAGS) -o httpmain httpmain.o httpparser.o httpcommon.o
+
+httpmain.d: httpparser.h Makefile
+httpmain.o: httpparser.h Makefile
+httpparser.d: httpparser.h Makefile
+httpparser.o: httpparser.h Makefile
+
+httpparser.h: http.py parser.py regex.py Makefile
+	python http.py h
+
+httpparser.c: http.py parser.py regex.py Makefile
+	python http.py c
+
 yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o Makefile
-	cc -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
+	$(CC) $(CFLAGS) -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
 YALE.LEX.INTERMEDIATE: yale.l Makefile
 	mkdir -p intermediatestore
 	flex --outfile=intermediatestore/yale.lex.c --header-file=intermediatestore/yale.lex.h yale.l
@@ -65,6 +79,8 @@ clean:
 	rm -f yale.lex.h
 	rm -f yale.tab.c
 	rm -f yale.tab.h
+	rm -f httpparser.c
+	rm -f httpparser.h
 
 distclean: clean
 	rm -f yaletest

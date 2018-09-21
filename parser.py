@@ -331,7 +331,7 @@ class ParserGen(object):
       list_of_reidx_sets.add(frozenset([x for x in self.terminals if T[X][x]]))
     self.list_of_reidx_sets = list_of_reidx_sets
   #
-  def print_parser(self):
+  def print_headers(self, sio):
     parsername = self.parsername
     re_by_idx = self.re_by_idx
     list_of_reidx_sets = self.list_of_reidx_sets
@@ -344,56 +344,10 @@ class ParserGen(object):
     T = self.T
     Tt = self.Tt
     rules = self.rules
-    print "#include \"yalecommon.h\""
-    regex.dump_headers(parsername, re_by_idx, list_of_reidx_sets)
-    print """
-static inline void myPutchar(char ch)
-{
-  if (ch >= 0x20 && ch <= 0x7E)
-  {
-    putchar(ch);
-  }
-  else
-  {
-    printf("\\\\x%.2x", (unsigned)(uint8_t)ch);
-  }
-}
-
-#undef DO_PRINT
-
-static void print(const char *buf, size_t siz, void *btn)
-{
-#ifdef DO_PRINT
-  const char *ubuf = buf;
-  size_t i;
-  putchar('<');
-  for (i = 0; i < siz; i++)
-  {
-    myPutchar(ubuf[i]);
-  }
-  putchar('>');
-  putchar('\\n');
-#endif
-}
-static void printsp(const char *buf, size_t siz, void *btn)
-{
-#ifdef DO_PRINT
-  putchar('<');
-  putchar(' ');
-  putchar('>');
-  putchar('\\n');
-#endif
-}
-"""
-    regex.dump_all(parsername, re_by_idx, list_of_reidx_sets, priorities)
+    print >>sio, "#include \"yalecommon.h\""
+    regex.dump_headers(sio, parsername, re_by_idx, list_of_reidx_sets)
     #
-    print "const uint8_t %s_num_terminals;" % parsername
-    print "const void(*%s_callbacks[])(const char*, size_t, void*) = {" % parsername
-    for cb in callbacks_by_value:
-      print cb,","
-    print "};"
-    #
-    print """
+    print >>sio, """
 struct %s_parserctx {
   uint8_t stacksz;
   struct ruleentry stack[%d]; // WAS: uint8_t stack[...];
@@ -409,9 +363,32 @@ static inline void %s_parserctx_init(struct %s_parserctx *pctx)
   pctx->stack[0].cb = 255;
   %s_init_statemachine(&pctx->rctx);
 }
-""" % (parsername, max_stack_size, parsername, parsername, parsername, self.S, parsername,)
-    
-    print """
+
+ssize_t %s_parse_block(struct %s_parserctx *pctx, char *blk, size_t sz);
+""" % (parsername, max_stack_size, parsername, parsername, parsername, self.S, parsername, parsername, parsername)
+    #
+  def print_parser(self, sio):
+    parsername = self.parsername
+    re_by_idx = self.re_by_idx
+    list_of_reidx_sets = self.list_of_reidx_sets
+    priorities = self.priorities
+    callbacks_by_name = self.callbacks_by_name
+    callbacks_by_value = self.callbacks_by_value
+    max_stack_size = self.max_stack_size
+    terminals = self.terminals
+    nonterminals = self.nonterminals
+    T = self.T
+    Tt = self.Tt
+    rules = self.rules
+    regex.dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities)
+    #
+    print >>sio, "const uint8_t %s_num_terminals;" % parsername
+    print >>sio, "void(*%s_callbacks[])(const char*, size_t, void*) = {" % parsername
+    for cb in callbacks_by_value:
+      print >>sio, cb,","
+    print >>sio, "};"
+    #
+    print >>sio, """
 struct %s_parserstatetblentry {
   const struct state *re;
   const uint8_t rhs[%d];
@@ -419,69 +396,69 @@ struct %s_parserstatetblentry {
 };
 """ % (parsername, len(terminals), len(terminals),)
     #
-    print "const uint8_t %s_num_terminals = %d;" % (parsername, len(terminals),)
-    print "const uint8_t %s_start_state = %d;" % (parsername, self.S,)
+    print >>sio, "const uint8_t %s_num_terminals = %d;" % (parsername, len(terminals),)
+    print >>sio, "const uint8_t %s_start_state = %d;" % (parsername, self.S,)
     #
-    print "const struct reentry %s_reentries[] = {" % (parsername,)
+    print >>sio, "const struct reentry %s_reentries[] = {" % (parsername,)
     #
     for x in sorted(terminals):
-      print "{"
+      print >>sio, "{"
       name = str(x)
-      print ".re = " + parsername + "_states_" + name + ","
-      print "},"
+      print >>sio, ".re = " + parsername + "_states_" + name + ","
+      print >>sio, "},"
     #
-    print "};"
+    print >>sio, "};"
     #
-    print "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {" % (parsername, parsername,)
+    print >>sio, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {" % (parsername, parsername,)
     #
     for X in sorted(nonterminals):
-      print "{"
+      print >>sio, "{"
       name = '_'.join(str(x) for x in sorted([x for x in terminals if T[X][x]]))
-      print ".re = "+parsername+"_states_" + name + ","
-      print ".rhs = {",
+      print >>sio, ".re = "+parsername+"_states_" + name + ","
+      print >>sio, ".rhs = {",
       for x in sorted(terminals):
         if Tt[X][x] == None:
-          print 255,",",
+          print >>sio, 255,",",
         else:
-          print Tt[X][x][0],",",
-      print "},"
-      print ".cb = {",
+          print >>sio, Tt[X][x][0],",",
+      print >>sio, "},"
+      print >>sio, ".cb = {",
       for x in sorted(terminals):
         if Tt[X][x] == None or Tt[X][x][1] == None:
-          print "255,",
+          print >>sio, "255,",
         else:
-          print callbacks_by_name[Tt[X][x][1]],",",
-      print "},"
-      print "},"
+          print >>sio, callbacks_by_name[Tt[X][x][1]],",",
+      print >>sio, "},"
+      print >>sio, "},"
     #
-    print "};"
+    print >>sio, "};"
     #
     for n in range(len(rules)):
       lhs,rhs = rules[n]
-      print "const struct ruleentry %s_rule_%d[] = {" % (parsername, n,)
+      print >>sio, "const struct ruleentry %s_rule_%d[] = {" % (parsername, n,)
       for rhsitem in reversed(rhs):
-        print "{",
+        print >>sio, "{",
         if type(rhsitem) == Action:
-          print ".rhs = 255, .cb = ", callbacks_by_name[rhsitem.cbname],
+          print >>sio, ".rhs = 255, .cb = ", callbacks_by_name[rhsitem.cbname],
         elif type(rhsitem) == WrapCB:
-          print ".rhs =", rhsitem.token, ",", ".cb = ", callbacks_by_name[rhsitem.cbname],
+          print >>sio, ".rhs =", rhsitem.token, ",", ".cb = ", callbacks_by_name[rhsitem.cbname],
         else:
-          print ".rhs =", rhsitem, ",", ".cb = 255",
-        print "}",",",
-      print
-      print "};"
-      print "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);" % (parsername,n,parsername,n,)
-    print "const struct rule %s_rules[] = {" % (parsername,)
+          print >>sio, ".rhs =", rhsitem, ",", ".cb = 255",
+        print >>sio, "}",",",
+      print >>sio
+      print >>sio, "};"
+      print >>sio, "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);" % (parsername,n,parsername,n,)
+    print >>sio, "const struct rule %s_rules[] = {" % (parsername,)
     for n in range(len(rules)):
       lhs,rhs = rules[n]
-      print "{"
-      print "  .lhs =", lhs, ","
-      print "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry)," % (parsername, n,)
-      print "  .rhs = %s_rule_%d," % (parsername,n,)
-      print "},"
-    print "};"
+      print >>sio, "{"
+      print >>sio, "  .lhs =", lhs, ","
+      print >>sio, "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry)," % (parsername, n,)
+      print >>sio, "  .rhs = %s_rule_%d," % (parsername,n,)
+      print >>sio, "},"
+    print >>sio, "};"
     #
-    print """
+    print >>sio, """
 static inline ssize_t
 """+parsername+"""_get_saved_token(struct """+parsername+"""_parserctx *pctx, const struct state *restates,
                 char *blkoff, size_t szoff, uint8_t *state,
@@ -498,8 +475,7 @@ static inline ssize_t
 
 #undef EXTRA_SANITY
 
-static __attribute__((unused)) ssize_t
-"""+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx, char *blk, size_t sz)
+ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx, char *blk, size_t sz)
 {
   size_t off = 0;
   ssize_t ret;
@@ -532,7 +508,7 @@ static __attribute__((unused)) ssize_t
     curstate = pctx->stack[pctx->stacksz - 1].rhs;
     if (curstate == 255)
     {
-      const void (*cb1f)(const char *, size_t, void*);
+      void (*cb1f)(const char *, size_t, void*);
       cb1f = """+parsername+"""_callbacks[pctx->stack[pctx->stacksz - 1].cb];
       cb1f(NULL, 0, NULL); // FIXME baton
       pctx->stacksz--;
