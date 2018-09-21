@@ -1,6 +1,8 @@
 *.o
 *.d
 *.pyc
+perf.data
+perf.data.old
 /yale.lex.c
 /yale.lex.h
 /yale.tab.c
