@@ -598,7 +598,7 @@ is_fastpath(const struct state *st, unsigned char uch)
 }
 
 static ssize_t
-feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void (*const*cbs)(const char *, size_t, void*), void (*cb1)(const char *, size_t, void*), void *baton)
+feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, const void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st = NULL;
@@ -723,13 +723,13 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       st = &stbl[ctx->state];
       *state = st->acceptid;
       ctx->state = 0;
-      if (cbs && st->accepting && cbs[st->acceptid] != NULL)
+      if (cbs && st->accepting && cbs[st->acceptid] != 255)
       {
-        cbs[st->acceptid](buf, i, baton);
+        cbtbl[cbs[st->acceptid]](buf, i, baton);
       }
-      if (cb1 && st->accepting)
+      if (cb1 != 255 && st->accepting)
       {
-        cb1(buf, i, baton);
+        cbtbl[cb1](buf, i, baton);
       }
       return i;
     }
@@ -741,13 +741,13 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
         *state = st->acceptid;
         ctx->state = 0;
         ctx->last_accept = 255;
-        if (cbs && st->accepting && cbs[st->acceptid] != NULL)
+        if (cbs && st->accepting && cbs[st->acceptid] != 255)
         {
-          cbs[st->acceptid](buf, i + 1, baton);
+          cbtbl[cbs[st->acceptid]](buf, i + 1, baton);
         }
-        if (cb1 && st->accepting)
+        if (cb1 != 255 && st->accepting)
         {
-          cb1(buf, i + 1, baton);
+          cbtbl[cb1](buf, i + 1, baton);
         }
         return i + 1;
       }
@@ -772,13 +772,13 @@ feed_statemachine(struct rectx *ctx, const struct state *stbl, const void *buf, 
       }
     }
   }
-  if (st && cbs && st->accepting && cbs[st->acceptid] != NULL)
+  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)
   {
-    cbs[st->acceptid](buf, sz, baton);
+    cbtbl[cbs[st->acceptid]](buf, sz, baton);
   }
-  if (st && cb1 && st->accepting)
+  if (st && cb1 != 255 && st->accepting)
   {
-    cb1(buf, sz, baton);
+    cbtbl[cb1](buf, sz, baton);
   }
   *state = 255;
   return -EAGAIN; // Not yet

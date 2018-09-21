@@ -376,6 +376,18 @@ max_stack_size = get_max_sz_dfs(Tt, rules, terminals, S)
 if max_stack_size > 255:
   assert False
 
+callbacks_by_name = dict()
+callbacks_by_value = []
+for lhs,rhs in rules:
+  for rhsitem in rhs:
+    if type(rhsitem) == Action or type(rhsitem) == WrapCB:
+      if rhsitem.cbname not in callbacks_by_name:
+        callbacks_by_name[rhsitem.cbname] = len(callbacks_by_value)
+        callbacks_by_value.append(rhsitem.cbname)
+
+assert len(callbacks_by_value) <= 255 # 255 reserved for NULL
+
+
 def parse(req):
   revreq = list(reversed(req))
   stack = [eof, S]
@@ -514,11 +526,15 @@ static void printsp(const char *buf, size_t siz, void *btn)
 regex.dump_all(re_by_idx, list_of_reidx_sets, priorities)
 
 print "const uint8_t num_terminals;"
+print "const void(*callbacks[])(const char*, size_t, void*) = {"
+for cb in callbacks_by_value:
+  print cb,","
+print "};"
 
 print """
 struct ruleentry {
   uint8_t rhs;
-  void (*cb)(const char *, size_t, void*);
+  uint8_t cb;
 };
 
 struct parserctx {
@@ -533,7 +549,7 @@ static inline void parserctx_init(struct parserctx *pctx)
   pctx->saved_token = 255;
   pctx->stacksz = 1;
   pctx->stack[0].rhs = %d;
-  pctx->stack[0].cb = NULL;
+  pctx->stack[0].cb = 255;
   init_statemachine(&pctx->rctx);
 }
 """ % (max_stack_size, S, )
@@ -550,7 +566,7 @@ print """
 struct parserstatetblentry {
   const struct state *re;
   const uint8_t rhs[%d];
-  const void (*cb[%d])(const char *, size_t, void*);
+  const uint8_t cb[%d];
 };
 """ % (len(terminals),len(terminals),)
 
@@ -589,9 +605,9 @@ for X in sorted(nonterminals):
   print ".cb = {",
   for x in sorted(terminals):
     if Tt[X][x] == None or Tt[X][x][1] == None:
-      print "NULL,",
+      print "255,",
     else:
-      print Tt[X][x][1],",",
+      print callbacks_by_name[Tt[X][x][1]],",",
   print "},"
   print "},"
 
@@ -603,11 +619,11 @@ for n in range(len(rules)):
   for rhsitem in reversed(rhs):
     print "{",
     if type(rhsitem) == Action:
-      print ".rhs = 255, .cb = ", rhsitem.cbname,
+      print ".rhs = 255, .cb = ", callbacks_by_name[rhsitem.cbname],
     elif type(rhsitem) == WrapCB:
-      print ".rhs =", rhsitem.token, ",", ".cb = ", rhsitem.cbname,
+      print ".rhs =", rhsitem.token, ",", ".cb = ", callbacks_by_name[rhsitem.cbname],
     else:
-      print ".rhs =", rhsitem, ",", ".cb = NULL",
+      print ".rhs =", rhsitem, ",", ".cb = 255",
     print "}",",",
   print
   print "};"
@@ -627,8 +643,7 @@ print """
 static inline ssize_t
 get_saved_token(struct parserctx *pctx, const struct state *restates,
                 char *blkoff, size_t szoff, uint8_t *state,
-                void (*const*cbs)(const char *, size_t, void*),
-                void (*cb1)(const char *, size_t, void*))
+                const uint8_t *cbs, uint8_t cb1)
 {
   if (pctx->saved_token != 255)
   {
@@ -636,7 +651,7 @@ get_saved_token(struct parserctx *pctx, const struct state *restates,
     pctx->saved_token = 255;
     return 0;
   }
-  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, cbs, cb1, NULL); // FIXME baton
+  return feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, callbacks, cbs, cb1, NULL); // FIXME baton
 }
 
 #undef EXTRA_SANITY
@@ -675,16 +690,16 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
     curstate = pctx->stack[pctx->stacksz - 1].rhs;
     if (curstate == 255)
     {
-      const void (*cb1)(const char *, size_t, void*);
-      cb1 = pctx->stack[pctx->stacksz - 1].cb;
-      cb1(NULL, 0, NULL); // FIXME baton
+      const void (*cb1f)(const char *, size_t, void*);
+      cb1f = callbacks[pctx->stack[pctx->stacksz - 1].cb];
+      cb1f(NULL, 0, NULL); // FIXME baton
       pctx->stacksz--;
     }
     else if (curstate < num_terminals)
     {
       uint8_t state;
       const struct state *restates = reentries[curstate].re;
-      const void (*cb1)(const char *, size_t, void*);
+      uint8_t cb1;
       cb1 = pctx->stack[pctx->stacksz - 1].cb;
       ret = get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1);
       if (ret == -EAGAIN)
@@ -726,9 +741,9 @@ parse_block(struct parserctx *pctx, char *blk, size_t sz)
       size_t i;
       const struct rule *rule;
       const struct state *restates = parserstatetblentries[curstateoff].re;
-      const void (*const*cbs)(const char *, size_t, void*);
+      const uint8_t *cbs;
       cbs = parserstatetblentries[curstateoff].cb;
-      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, NULL);
+      ret = get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);
       if (ret == -EAGAIN)
       {
         off = sz;
