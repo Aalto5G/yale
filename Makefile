@@ -2,7 +2,7 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yyutils.c httpmain.c
+SRC := yaletest.c yyutils.c httpmain.c httpmainprint.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
