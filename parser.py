@@ -334,6 +334,7 @@ class ParserGen(object):
     for X in self.nonterminals:
       list_of_reidx_sets.add(frozenset([x for x in self.terminals if T[X][x]]))
     self.list_of_reidx_sets = list_of_reidx_sets
+    self.rec = regex.REContainer(self.parsername, self.re_by_idx, self.list_of_reidx_sets, self.priorities)
   #
   def print_headers(self, sio):
     parsername = self.parsername
@@ -345,11 +346,13 @@ class ParserGen(object):
     max_stack_size = self.max_stack_size
     terminals = self.terminals
     nonterminals = self.nonterminals
+    rec = self.rec
     T = self.T
     Tt = self.Tt
     rules = self.rules
     print >>sio, "#include \"yalecommon.h\""
-    regex.dump_headers(sio, parsername, re_by_idx, list_of_reidx_sets)
+    #regex.dump_headers(sio, parsername, re_by_idx, list_of_reidx_sets)
+    rec.dump_headers(sio)
     #
     print >>sio, """
 struct %s_parserctx {
@@ -381,10 +384,12 @@ ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, vo
     max_stack_size = self.max_stack_size
     terminals = self.terminals
     nonterminals = self.nonterminals
+    rec = self.rec
     T = self.T
     Tt = self.Tt
     rules = self.rules
-    regex.dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities)
+    #regex.dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities)
+    rec.dump_all(sio)
     #
     print >>sio, "const uint8_t %s_num_terminals;" % parsername
     print >>sio, "void(*%s_callbacks[])(const char*, size_t, void*) = {" % parsername

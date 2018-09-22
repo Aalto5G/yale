@@ -7,6 +7,325 @@ import sys
 import cStringIO
 import time
 
+class REContainer(object):
+  def __init__(self, parsername, re_by_idx, list_of_reidx_sets, priorities):
+    maxbt = 0
+    dfa_by_reidx_set = {}
+    for reidx_set in list_of_reidx_sets:
+      sorted_reidx_set = list(sorted(reidx_set))
+      re_set = list([re_by_idx[idx] for idx in sorted_reidx_set])
+      dfa = nfa2dfa(re_compilemulti(*re_set).nfa())
+      set_accepting(dfa, priorities)
+      curbt = maximal_backtrack(dfa)
+      dfa_by_reidx_set[reidx_set] = dfa
+      if curbt > maxbt:
+        maxbt = curbt
+    if maxbt > 250: # A bit of safety margin below 255
+      assert False
+    self.maxbt = maxbt
+    self.parsername = parsername
+    self.dfa_by_reidx_set = dfa_by_reidx_set
+    self.list_of_reidx_sets = list_of_reidx_sets
+  def dump_headers(self, sio):
+    maxbt = self.maxbt
+    parsername = self.parsername
+    print >>sio, \
+    """\
+#define """+parsername.upper()+"""_BACKTRACKLEN ("""+str(maxbt)+""")
+#define """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1 (("""+parsername.upper()+"""_BACKTRACKLEN) + 1)
+
+struct """+parsername+"""_rectx {
+  uint8_t state; // 0 is initial state
+  uint8_t last_accept; // 255 means never accepted
+  uint8_t backtrackstart;
+  uint8_t backtrackend;
+  uint8_t backtrack["""+parsername.upper()+"""_BACKTRACKLEN_PLUS_1];
+};
+
+static inline void
+"""+parsername+"""_init_statemachine(struct """+parsername+"""_rectx *ctx)
+{
+  ctx->state = 0;
+  ctx->last_accept = 255;
+  ctx->backtrackstart = 0;
+  ctx->backtrackend = 0;
+}
+
+ssize_t
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton);
+"""
+    return
+  def dump_all(self, sio):
+    parsername = self.parsername
+    list_of_reidx_sets = self.list_of_reidx_sets
+    print >>sio, """
+static inline int
+"""+parsername+"""_is_fastpath(const struct state *st, unsigned char uch)
+{
+  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));
+}
+
+ssize_t
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
+{
+  const unsigned char *ubuf = (unsigned char*)buf;
+  const struct state *st = NULL;
+  size_t i;
+  uint8_t newstate;
+  if (ctx->state == 255)
+  {
+    *state = 255;
+    return -EINVAL;
+  }
+  //printf("Called: %s\\n", buf);
+  if (unlikely(ctx->backtrackstart != ctx->backtrackend))
+  {
+    while (ctx->backtrackstart != ctx->backtrackend)
+    {
+      st = &stbl[ctx->state];
+      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];
+      if (unlikely(ctx->state == 255))
+      {
+        if (ctx->last_accept == 255)
+        {
+          *state = 255;
+          return -EINVAL;
+        }
+        ctx->state = ctx->last_accept;
+        ctx->last_accept = 255;
+        st = &stbl[ctx->state];
+        *state = st->acceptid;
+        ctx->state = 0;
+        return 0;
+      }
+      ctx->backtrackstart++;
+      if (ctx->backtrackstart >= """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1)
+      {
+        ctx->backtrackstart = 0;
+      }
+      st = &stbl[ctx->state];
+      if (st->accepting)
+      {
+        if (st->final)
+        {
+          *state = st->acceptid;
+          ctx->state = 0;
+          ctx->last_accept = 255;
+          return 0;
+        }
+        else
+        {
+          ctx->last_accept = ctx->state; // FIXME correct?
+        }
+      }
+    }
+  }
+  for (i = 0; i < sz; i++)
+  {
+    st = &stbl[ctx->state];
+    if ("""+parsername+"""_is_fastpath(st, ubuf[i]))
+    {
+      ctx->last_accept = ctx->state;
+      while (i + 8 < sz) // FIXME test this thoroughly, all branches!
+      {
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+1]))
+        {
+          i += 0;
+          break;
+        }
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+2]))
+        {
+          i += 1;
+          break;
+        }
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+3]))
+        {
+          i += 2;
+          break;
+        }
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+4]))
+        {
+          i += 3;
+          break;
+        }
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+5]))
+        {
+          i += 4;
+          break;
+        }
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+6]))
+        {
+          i += 5;
+          break;
+        }
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+7]))
+        {
+          i += 6;
+          break;
+        }
+        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+8]))
+        {
+          i += 7;
+          break;
+        }
+        i += 8;
+      }
+      continue;
+    }
+    newstate = st->transitions[ubuf[i]];
+    if (newstate != ctx->state) // Improves perf a lot
+    {
+      ctx->state = newstate;
+    }
+    //printf("New state: %d\\n", ctx->state);
+    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster
+    {
+      if (ctx->last_accept == 255)
+      {
+        *state = 255;
+        //printf("Error\\n");
+        return -EINVAL;
+      }
+      ctx->state = ctx->last_accept;
+      ctx->last_accept = 255;
+      st = &stbl[ctx->state];
+      *state = st->acceptid;
+      ctx->state = 0;
+      if (cbs && st->accepting && cbs[st->acceptid] != 255)
+      {
+        cbtbl[cbs[st->acceptid]](buf, i, baton);
+      }
+      if (cb1 != 255 && st->accepting)
+      {
+        cbtbl[cb1](buf, i, baton);
+      }
+      return i;
+    }
+    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here
+    if (st->accepting)
+    {
+      if (st->final)
+      {
+        *state = st->acceptid;
+        ctx->state = 0;
+        ctx->last_accept = 255;
+        if (cbs && st->accepting && cbs[st->acceptid] != 255)
+        {
+          cbtbl[cbs[st->acceptid]](buf, i + 1, baton);
+        }
+        if (cb1 != 255 && st->accepting)
+        {
+          cbtbl[cb1](buf, i + 1, baton);
+        }
+        return i + 1;
+      }
+      else
+      {
+        ctx->last_accept = ctx->state; // FIXME correct?
+      }
+    }
+    else
+    {
+      if (ctx->last_accept != 255)
+      {
+        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?
+        if (ctx->backtrackstart >= """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1)
+        {
+          ctx->backtrackstart = 0;
+        }
+        if (ctx->backtrackstart == ctx->backtrackend)
+        {
+          abort();
+        }
+      }
+    }
+  }
+  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)
+  {
+    cbtbl[cbs[st->acceptid]](buf, sz, baton);
+  }
+  if (st && cb1 != 255 && st->accepting)
+  {
+    cbtbl[cb1](buf, sz, baton);
+  }
+  *state = 255;
+  return -EAGAIN; // Not yet
+}
+"""
+    dict_transitions = {}
+    print >>sio, "#ifdef SMALL_CODE"
+    print >>sio, "const uint8_t %s_transitiontbl[][256] = {" % (parsername,)
+    cur_dictid = 0
+    for reidx_set in list_of_reidx_sets:
+      sorted_reidx_set = list(sorted(reidx_set))
+      #re_list = list([re_by_idx[idx] for idx in sorted_reidx_set])
+      #dfa = nfa2dfa(re_compilemulti(*re_list).nfa())
+      dfa = self.dfa_by_reidx_set[reidx_set]
+      #set_accepting(dfa, priorities)
+      dfatbl = set_ids(dfa)
+      for stateid in range(len(dfatbl)):
+        state = dfatbl[stateid]
+        transitions = get_transitions(state)
+        if transitions in dict_transitions:
+          continue
+        dict_transitions[transitions] = cur_dictid
+        cur_dictid += 1
+        print >>sio, "{"
+        for t in transitions:
+          print >>sio, t,",",
+        print >>sio, "},"
+    print >>sio, "};"
+    print >>sio, "#endif"
+    for reidx_set in list_of_reidx_sets:
+      sorted_reidx_set = list(sorted(reidx_set))
+      name = '_'.join(str(x) for x in sorted_reidx_set)
+      #re_list = list([re_by_idx[idx] for idx in sorted_reidx_set])
+      #dfa = nfa2dfa(re_compilemulti(*re_list).nfa())
+      dfa = self.dfa_by_reidx_set[reidx_set]
+      #set_accepting(dfa, priorities)
+      dfatbl = set_ids(dfa)
+      print >> sys.stderr, "DFA %s has %d entries" % (name, len(dfatbl))
+      if len(dfatbl) > 255:
+        assert False # 255 is reserved for invalid non-accepting state
+      print >>sio, "const struct state %s_states_%s[] = {" % (parsername,name,)
+      for stateid in range(len(dfatbl)):
+        state = dfatbl[stateid]
+        print >>sio, "{",
+        print >>sio, ".accepting =",
+        print >>sio, state.accepting and "1," or "0,",
+        print >>sio, ".acceptid =",
+        if state.accepting:
+          print >>sio, sorted_reidx_set[state.acceptid],",",
+        else:
+          print >>sio, 0,",",
+        print >>sio, ".final =", (state_is_final(state) and 1 or 0), ","
+        print >>sio, ".fastpathbitmask = {",
+        if state.accepting and not state_is_final(state):
+          for iid in range(4):
+            curval = 0
+            for jid in range(64):
+              uch = 64*iid + jid
+              ch = chr(uch)
+              if ch in state.d and state.d[ch].id == stateid:
+                curval |= (1<<jid)
+              elif state.default and state.default.id == stateid:
+                curval |= (1<<jid)
+            print >>sio, "0x%x," % (curval,),
+        print >>sio, "},"
+        transitions = get_transitions(state)
+        print >>sio, "#ifdef SMALL_CODE"
+        print >>sio, ".transitions = "+parsername+"_transitiontbl[", dict_transitions[transitions],"],"
+        print >>sio, "#else"
+        print >>sio, ".transitions = ",
+        print >>sio, "{",
+        for t in transitions:
+          print >>sio, t,",",
+        print >>sio, "},"
+        print >>sio, "#endif"
+        print >>sio, "},"
+      print >>sio, "};"
+    return
+
 
 class dfanode(object):
   def __init__(self,accepting=False,tainted=False,acceptidset=frozenset([])):
@@ -506,43 +825,6 @@ def state_is_final(state):
 #if maximal_backtrack(dfahost) > 255:
 #  assert False
 
-def dump_headers(sio, parsername, re_by_idx, list_of_reidx_sets):
-  maxbt = 0
-  for reidx_set in list_of_reidx_sets:
-    re_set = set([re_by_idx[idx] for idx in reidx_set])
-    dfa = nfa2dfa(re_compilemulti(*re_set).nfa())
-    curbt = maximal_backtrack(dfa)
-    if curbt > maxbt:
-      maxbt = curbt
-  if maxbt > 250: # A bit of safety margin below 255
-    assert False
-  print >>sio, \
-  """\
-#define """+parsername.upper()+"""_BACKTRACKLEN ("""+str(maxbt)+""")
-#define """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1 (("""+parsername.upper()+"""_BACKTRACKLEN) + 1)
-
-struct """+parsername+"""_rectx {
-  uint8_t state; // 0 is initial state
-  uint8_t last_accept; // 255 means never accepted
-  uint8_t backtrackstart;
-  uint8_t backtrackend;
-  uint8_t backtrack["""+parsername.upper()+"""_BACKTRACKLEN_PLUS_1];
-};
-
-static inline void
-"""+parsername+"""_init_statemachine(struct """+parsername+"""_rectx *ctx)
-{
-  ctx->state = 0;
-  ctx->last_accept = 255;
-  ctx->backtrackstart = 0;
-  ctx->backtrackend = 0;
-}
-
-ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton);
-"""
-  return
-
 def get_transitions(state):
   transitions = []
   for n in range(256):
@@ -558,272 +840,7 @@ def get_transitions(state):
       #print 255,",",
   return tuple(transitions)
 
-def dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities):
-  print >>sio, """
-static inline int
-"""+parsername+"""_is_fastpath(const struct state *st, unsigned char uch)
-{
-  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));
-}
-
-ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
-{
-  const unsigned char *ubuf = (unsigned char*)buf;
-  const struct state *st = NULL;
-  size_t i;
-  uint8_t newstate;
-  if (ctx->state == 255)
-  {
-    *state = 255;
-    return -EINVAL;
-  }
-  //printf("Called: %s\\n", buf);
-  if (unlikely(ctx->backtrackstart != ctx->backtrackend))
-  {
-    while (ctx->backtrackstart != ctx->backtrackend)
-    {
-      st = &stbl[ctx->state];
-      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];
-      if (unlikely(ctx->state == 255))
-      {
-        if (ctx->last_accept == 255)
-        {
-          *state = 255;
-          return -EINVAL;
-        }
-        ctx->state = ctx->last_accept;
-        ctx->last_accept = 255;
-        st = &stbl[ctx->state];
-        *state = st->acceptid;
-        ctx->state = 0;
-        return 0;
-      }
-      ctx->backtrackstart++;
-      if (ctx->backtrackstart >= """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1)
-      {
-        ctx->backtrackstart = 0;
-      }
-      st = &stbl[ctx->state];
-      if (st->accepting)
-      {
-        if (st->final)
-        {
-          *state = st->acceptid;
-          ctx->state = 0;
-          ctx->last_accept = 255;
-          return 0;
-        }
-        else
-        {
-          ctx->last_accept = ctx->state; // FIXME correct?
-        }
-      }
-    }
-  }
-  for (i = 0; i < sz; i++)
-  {
-    st = &stbl[ctx->state];
-    if ("""+parsername+"""_is_fastpath(st, ubuf[i]))
-    {
-      ctx->last_accept = ctx->state;
-      while (i + 8 < sz) // FIXME test this thoroughly, all branches!
-      {
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+1]))
-        {
-          i += 0;
-          break;
-        }
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+2]))
-        {
-          i += 1;
-          break;
-        }
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+3]))
-        {
-          i += 2;
-          break;
-        }
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+4]))
-        {
-          i += 3;
-          break;
-        }
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+5]))
-        {
-          i += 4;
-          break;
-        }
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+6]))
-        {
-          i += 5;
-          break;
-        }
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+7]))
-        {
-          i += 6;
-          break;
-        }
-        if (!"""+parsername+"""_is_fastpath(st, ubuf[i+8]))
-        {
-          i += 7;
-          break;
-        }
-        i += 8;
-      }
-      continue;
-    }
-    newstate = st->transitions[ubuf[i]];
-    if (newstate != ctx->state) // Improves perf a lot
-    {
-      ctx->state = newstate;
-    }
-    //printf("New state: %d\\n", ctx->state);
-    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster
-    {
-      if (ctx->last_accept == 255)
-      {
-        *state = 255;
-        //printf("Error\\n");
-        return -EINVAL;
-      }
-      ctx->state = ctx->last_accept;
-      ctx->last_accept = 255;
-      st = &stbl[ctx->state];
-      *state = st->acceptid;
-      ctx->state = 0;
-      if (cbs && st->accepting && cbs[st->acceptid] != 255)
-      {
-        cbtbl[cbs[st->acceptid]](buf, i, baton);
-      }
-      if (cb1 != 255 && st->accepting)
-      {
-        cbtbl[cb1](buf, i, baton);
-      }
-      return i;
-    }
-    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here
-    if (st->accepting)
-    {
-      if (st->final)
-      {
-        *state = st->acceptid;
-        ctx->state = 0;
-        ctx->last_accept = 255;
-        if (cbs && st->accepting && cbs[st->acceptid] != 255)
-        {
-          cbtbl[cbs[st->acceptid]](buf, i + 1, baton);
-        }
-        if (cb1 != 255 && st->accepting)
-        {
-          cbtbl[cb1](buf, i + 1, baton);
-        }
-        return i + 1;
-      }
-      else
-      {
-        ctx->last_accept = ctx->state; // FIXME correct?
-      }
-    }
-    else
-    {
-      if (ctx->last_accept != 255)
-      {
-        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?
-        if (ctx->backtrackstart >= """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1)
-        {
-          ctx->backtrackstart = 0;
-        }
-        if (ctx->backtrackstart == ctx->backtrackend)
-        {
-          abort();
-        }
-      }
-    }
-  }
-  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)
-  {
-    cbtbl[cbs[st->acceptid]](buf, sz, baton);
-  }
-  if (st && cb1 != 255 && st->accepting)
-  {
-    cbtbl[cb1](buf, sz, baton);
-  }
-  *state = 255;
-  return -EAGAIN; // Not yet
-}
-"""
-  dict_transitions = {}
-  print >>sio, "#ifdef SMALL_CODE"
-  print >>sio, "const uint8_t %s_transitiontbl[][256] = {" % (parsername,)
-  cur_dictid = 0
-  for reidx_set in list_of_reidx_sets:
-    sorted_reidx_set = list(sorted(reidx_set))
-    re_list = list([re_by_idx[idx] for idx in sorted_reidx_set])
-    dfa = nfa2dfa(re_compilemulti(*re_list).nfa())
-    set_accepting(dfa, priorities)
-    dfatbl = set_ids(dfa)
-    for stateid in range(len(dfatbl)):
-      state = dfatbl[stateid]
-      transitions = get_transitions(state)
-      if transitions in dict_transitions:
-        continue
-      dict_transitions[transitions] = cur_dictid
-      cur_dictid += 1
-      print >>sio, "{"
-      for t in transitions:
-        print >>sio, t,",",
-      print >>sio, "},"
-  print >>sio, "};"
-  print >>sio, "#endif"
-  for reidx_set in list_of_reidx_sets:
-    sorted_reidx_set = list(sorted(reidx_set))
-    name = '_'.join(str(x) for x in sorted_reidx_set)
-    re_list = list([re_by_idx[idx] for idx in sorted_reidx_set])
-    dfa = nfa2dfa(re_compilemulti(*re_list).nfa())
-    set_accepting(dfa, priorities)
-    dfatbl = set_ids(dfa)
-    print >> sys.stderr, "DFA %s has %d entries" % (name, len(dfatbl))
-    if len(dfatbl) > 255:
-      assert False # 255 is reserved for invalid non-accepting state
-    print >>sio, "const struct state %s_states_%s[] = {" % (parsername,name,)
-    for stateid in range(len(dfatbl)):
-      state = dfatbl[stateid]
-      print >>sio, "{",
-      print >>sio, ".accepting =",
-      print >>sio, state.accepting and "1," or "0,",
-      print >>sio, ".acceptid =",
-      if state.accepting:
-        print >>sio, sorted_reidx_set[state.acceptid],",",
-      else:
-        print >>sio, 0,",",
-      print >>sio, ".final =", (state_is_final(state) and 1 or 0), ","
-      print >>sio, ".fastpathbitmask = {",
-      if state.accepting and not state_is_final(state):
-        for iid in range(4):
-          curval = 0
-          for jid in range(64):
-            uch = 64*iid + jid
-            ch = chr(uch)
-            if ch in state.d and state.d[ch].id == stateid:
-              curval |= (1<<jid)
-            elif state.default and state.default.id == stateid:
-              curval |= (1<<jid)
-          print >>sio, "0x%x," % (curval,),
-      print >>sio, "},"
-      transitions = get_transitions(state)
-      print >>sio, "#ifdef SMALL_CODE"
-      print >>sio, ".transitions = "+parsername+"_transitiontbl[", dict_transitions[transitions],"],"
-      print >>sio, "#else"
-      print >>sio, ".transitions = ",
-      print >>sio, "{",
-      for t in transitions:
-        print >>sio, t,",",
-      print >>sio, "},"
-      print >>sio, "#endif"
-      print >>sio, "},"
-    print >>sio, "};"
-  return
+#def dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities):
 
 def dump_state(state):
   dfatbl = set_ids(state)
