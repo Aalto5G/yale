@@ -1,4 +1,5 @@
 #include "httpparser.h"
+#include <sys/time.h>
 
 #undef DO_PRINT
 
@@ -45,6 +46,8 @@ int main(int argc, char **argv)
   ssize_t consumed;
   size_t i;
   struct http_parserctx pctx = {};
+  struct timeval tv1 = {}, tv2 = {};
+  double us;
   char http[] =
     "GET /foo/bar/baz/barf/quux.html HTTP/1.1\r\n"
     "Host: www.google.fi\r\n"
@@ -60,7 +63,8 @@ int main(int argc, char **argv)
     "Cookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;\r\n"
     "\r\n";
 
-  for (i = 0; i < 1000 * 1000 /* 1 */; i++)
+  gettimeofday(&tv1, NULL);
+  for (i = 0; i < 10 * 1000 * 1000 /* 1 */; i++)
   {
     http_parserctx_init(&pctx);
     consumed = http_parse_block(&pctx, http, sizeof(http)-1);
@@ -69,6 +73,10 @@ int main(int argc, char **argv)
       abort();
     }
   }
+  gettimeofday(&tv2, NULL);
+  us = (tv2.tv_sec - tv1.tv_sec)/1e1 + (tv2.tv_usec - tv1.tv_usec)/1e7;
+  printf("%g us\n", us);
+  printf("%g Gbps\n", (sizeof(http)-1)*8/us/1e3);
 
   return 0;
 }
