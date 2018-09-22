@@ -63,7 +63,7 @@ int main(int argc, char **argv)
   for (i = 0; i < /* 1000 * 1000 */ 1 ; i++)
   {
     http_parserctx_init(&pctx);
-    consumed = http_parse_block(&pctx, http, sizeof(http)-1, NULL);
+    consumed = http_parse_block(&pctx, http, sizeof(http)-1);
     if (consumed != sizeof(http)-1)
     {
       abort();

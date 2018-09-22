@@ -38,6 +38,8 @@ class REContainer(object):
 #define """+parsername.upper()+"""_BACKTRACKLEN ("""+str(maxbt)+""")
 #define """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1 (("""+parsername.upper()+"""_BACKTRACKLEN) + 1)
 
+struct """+parsername+"""_parserctx;
+
 struct """+parsername+"""_rectx {
   uint8_t state; // 0 is initial state
   uint8_t last_accept; // 255 means never accepted
@@ -56,7 +58,7 @@ static inline void
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton);
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const uint8_t *cbs, uint8_t cb1);//, void *baton);
 """, file=sio)
     return
   def dump_all(self, sio):
@@ -70,12 +72,13 @@ static inline int
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton)
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const uint8_t *cbs, uint8_t cb1)//, void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st = NULL;
   size_t i;
   uint8_t newstate;
+  struct """+parsername+"""_parserctx *pctx = CONTAINER_OF(ctx, struct """+parsername+"""_parserctx, rctx);
   if (ctx->state == 255)
   {
     *state = 255;
@@ -197,11 +200,11 @@ ssize_t
       ctx->state = 0;
       if (cbs && st->accepting && cbs[st->acceptid] != 255)
       {
-        cbtbl[cbs[st->acceptid]](buf, i, baton);
+        cbtbl[cbs[st->acceptid]](buf, i, pctx);
       }
       if (cb1 != 255 && st->accepting)
       {
-        cbtbl[cb1](buf, i, baton);
+        cbtbl[cb1](buf, i, pctx);
       }
       return i;
     }
@@ -215,11 +218,11 @@ ssize_t
         ctx->last_accept = 255;
         if (cbs && st->accepting && cbs[st->acceptid] != 255)
         {
-          cbtbl[cbs[st->acceptid]](buf, i + 1, baton);
+          cbtbl[cbs[st->acceptid]](buf, i + 1, pctx);
         }
         if (cb1 != 255 && st->accepting)
         {
-          cbtbl[cb1](buf, i + 1, baton);
+          cbtbl[cb1](buf, i + 1, pctx);
         }
         return i + 1;
       }
@@ -246,11 +249,11 @@ ssize_t
   }
   if (st && cbs && st->accepting && cbs[st->acceptid] != 255)
   {
-    cbtbl[cbs[st->acceptid]](buf, sz, baton);
+    cbtbl[cbs[st->acceptid]](buf, sz, pctx);
   }
   if (st && cb1 != 255 && st->accepting)
   {
-    cbtbl[cb1](buf, sz, baton);
+    cbtbl[cb1](buf, sz, pctx);
   }
   *state = 255;
   return -EAGAIN; // Not yet
