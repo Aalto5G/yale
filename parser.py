@@ -402,7 +402,7 @@ ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, vo
     print("""
 struct %s_parserstatetblentry {
   const struct state *re;
-  const uint8_t rhs[%d];
+  //const uint8_t rhs[%d];
   const uint8_t cb[%d];
 };
 """ % (parsername, len(terminals), len(terminals),), file=sio)
@@ -435,13 +435,13 @@ struct %s_parserstatetblentry {
       print("{", file=sio)
       name = '_'.join(str(x) for x in sorted([x for x in terminals if T[X][x]]))
       print(".re = "+parsername+"_states_" + name + ",", file=sio)
-      print(".rhs = {", file=sio, end=" ")
-      for x in sorted(terminals):
-        if Tt[X][x] == None:
-          print(255,",", file=sio, end=" ")
-        else:
-          print(Tt[X][x][0],",", file=sio, end=" ")
-      print("},", file=sio)
+      #print(".rhs = {", file=sio, end=" ")
+      #for x in sorted(terminals):
+      #  if Tt[X][x] == None:
+      #    print(255,",", file=sio, end=" ")
+      #  else:
+      #    print(Tt[X][x][0],",", file=sio, end=" ")
+      #print("},", file=sio)
       print(".cb = {", file=sio, end=" ")
       for x in sorted(terminals):
         if Tt[X][x] == None or Tt[X][x][1] == None:
@@ -613,7 +613,30 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
 #endif
       }
       //printf("Got token %d, curstate=%d\\n", (int)state, (int)curstate);
-      ruleid = """+parsername+"""_parserstatetblentries[curstateoff].rhs[state];
+""", file=sio)
+    #
+    print(6*" ","switch (curstate)", file=sio)
+    print(6*" ","{", file=sio)
+    for X in sorted(nonterminals):
+      print(6*" ","case %d:" % (X,), file=sio)
+      print(8*" ","switch (state)", file=sio)
+      print(8*" ","{", file=sio)
+      for x in sorted(terminals):
+        if Tt[X][x] != None:
+          print(8*" ","case %d:" % (x,), file=sio)
+          print(10*" ","ruleid=%d;" % (Tt[X][x][0],), file=sio)
+          print(10*" ","break;", file=sio)
+      print(8*" ","default:", file=sio)
+      print(10*" ","ruleid=255;", file=sio)
+      print(10*" ","break;", file=sio)
+      print(8*" ","}", file=sio)
+      print(8*" ","break;", file=sio)
+    print(6*" ","default:", file=sio)
+    print(8*" ","abort();", file=sio)
+    print(6*" ","}", file=sio)
+    #
+    print("""
+      //ruleid = """+parsername+"""_parserstatetblentries[curstateoff].rhs[state];
       rule = &"""+parsername+"""_rules[ruleid];
       pctx->stacksz--;
 #if 0
