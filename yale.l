@@ -42,6 +42,8 @@ static inline void csadd(struct CSnippet *cs, char ch)
 %x COMMENTS
 %x CCOMMENTS
 %x C
+%x PERCENTCCOMMENTS
+%x PERCENTC
 %%
 
 %{
@@ -159,6 +161,7 @@ uint64le  return UINT64LE;
 }
 
 "{"              { BEGIN(C); openBraceCount++; cSnippet.capacity = 0; cSnippet.len = 0; cSnippet.data = NULL; }
+"%{"             { BEGIN(PERCENTC); cSnippet.capacity = 0; cSnippet.len = 0; cSnippet.data = NULL; }
 <C>"{"           { csadd(&cSnippet, yytext[0]); openBraceCount++; }
 <C>"/*"          BEGIN(CCOMMENTS);
 <C>\/\/.*        /* ignore single-line comments */;
@@ -183,6 +186,23 @@ uint64le  return UINT64LE;
                  }
 <C>.             { csadd(&cSnippet, yytext[0]); }
 <C>"\n"          { csadd(&cSnippet, yytext[0]); ++yylineno; yycolumn=1; }
+<PERCENTC>"/*"          BEGIN(PERCENTCCOMMENTS);
+<PERCENTC>\/\/.*        /* ignore single-line comments */;
+<PERCENTCCOMMENTS>"*/"  BEGIN(PERCENTC);
+<PERCENTCCOMMENTS>"/*"  return ERROR_TOK;
+<PERCENTCCOMMENTS><<EOF>> return ERROR_TOK;
+<PERCENTCCOMMENTS>.     ;
+<PERCENTCCOMMENTS>"\n"  { ++yylineno; yycolumn=1; }
+<PERCENTC>%\}           {
+                     BEGIN(INITIAL);
+                     yylval->s = cSnippet.data;
+                     cSnippet.data = NULL;
+                     cSnippet.capacity = 0;
+                     cSnippet.len = 0;
+                     return PERCENTC_LITERAL;
+                 }
+<PERCENTC>.             { csadd(&cSnippet, yytext[0]); }
+<PERCENTC>"\n"          { csadd(&cSnippet, yytext[0]); ++yylineno; yycolumn=1; }
 
 \n                                { ++yylineno; yycolumn=1; }
 [ \t]+                            /* ignore whitespaces */;

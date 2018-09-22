@@ -46,8 +46,10 @@ int yaleyywrap(yyscan_t scanner)
 
 %destructor { free ($$); } STRING_LITERAL
 %destructor { free ($$); } C_LITERAL
+%destructor { free ($$); } PERCENTC_LITERAL
 
 %token C_LITERAL
+%token PERCENTC_LITERAL
 
 %token TOKEN
 %token PRIO
@@ -98,6 +100,7 @@ int yaleyywrap(yyscan_t scanner)
 %type<i> INT_LITERAL
 %type<s> STRING_LITERAL
 %type<s> C_LITERAL
+%type<s> PERCENTC_LITERAL
 
 %%
 
@@ -112,6 +115,11 @@ yalerule:
 }
 | FREEFORM_TOKEN EQUALS elements SEMICOLON
 | DIRECTIVE directive_continued
+| PERCENTC_LITERAL
+{
+  printf("%s\n", $1);
+  free($1);
+};
 ;
 
 maybe_prio:
