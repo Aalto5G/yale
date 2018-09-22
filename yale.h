@@ -167,6 +167,45 @@ static inline void check_python(struct yale *yale)
   }
 }
 
+static inline void dump_string(const char *str)
+{
+  size_t len = strlen(str);
+  size_t i;
+  putchar('"');
+  for (i = 0; i < len; i++)
+  {
+    if (str[i] == '"' || str[i] == '\\')
+    {
+      printf("\\");
+      putchar(str[i]);
+      continue;
+    }
+    if (str[i] == '\n')
+    {
+      printf("\\n");
+      continue;
+    }
+    if (str[i] == '\t')
+    {
+      printf("\\t");
+      continue;
+    }
+    if (str[i] == '\r')
+    {
+      printf("\\r");
+      continue;
+    }
+    if (isalpha(str[i]) || isdigit(str[i]) || ispunct(str[i]) || str[i] == ' ')
+    {
+      putchar(str[i]);
+      continue;
+    }
+    printf("\\x");
+    printf("%.2x", (unsigned char)str[i]);
+  }
+  putchar('"');
+}
+
 static inline void dump_python(struct yale *yale)
 {
   uint8_t i;
@@ -184,7 +223,9 @@ static inline void dump_python(struct yale *yale)
   {
     struct token *tk = &yale->tokens[i];
     char *tkname = yale->ns[tk->nsitem].name;
-    printf("d[\"%s\"] = p.add_token(\"\")\n", tkname); // FIXME re
+    printf("d[\"%s\"] = p.add_token(", tkname);
+    dump_string(tk->re);
+    printf(", priority=%d)\n", tk->priority);
   }
   printf("p.finalize_tokens()\n\n");
   for (i = 0; i < yale->nscnt; i++)

@@ -73,6 +73,29 @@ char *yy_escape_string(char *orig)
     {
       buf[j++] = orig[i++];
     }
+    else if (orig[i+1] == 'x')
+    {
+      char hexbuf[3] = {0};
+      hexbuf[0] = orig[i+2];
+      hexbuf[1] = orig[i+3];
+      buf[j++] = strtol(hexbuf, NULL, 16);
+      i += 4;
+    }
+    else if (orig[i+1] == 't')
+    {
+      buf[j++] = '\t';
+      i += 2;
+    }
+    else if (orig[i+1] == 'r')
+    {
+      buf[j++] = '\r';
+      i += 2;
+    }
+    else if (orig[i+1] == 'n')
+    {
+      buf[j++] = '\n';
+      i += 2;
+    }
     else
     {
       buf[j++] = orig[i+1];
