@@ -75,6 +75,8 @@ int main(int argc, char **argv)
   printf("SSL parsed\n");
   yale_free(&yale);
 
+  printf("\n\n\n");
+  check_python(&yalepaper);
   dump_python(&yalepaper);
   yale_free(&yalepaper);
   return 0;

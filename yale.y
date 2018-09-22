@@ -226,7 +226,34 @@ maybe_minus:
 directive_continued:
 MAIN EQUALS FREEFORM_TOKEN SEMICOLON
 {
-  free($3);
+  uint8_t i;
+  for (i = 0; i < yale->nscnt; i++)
+  {
+    if (strcmp(yale->ns[i].name, $3) == 0)
+    {
+      yale->ns[i].is_lhs = 1;
+      if (yale->ns[i].is_token)
+      {
+        printf("M.1\n");
+        YYABORT;
+      } 
+      free($3);
+      break;
+    }
+  }
+  if (i == yale->nscnt)
+  {
+    if (i == 255)
+    {
+      printf("M.2\n");
+      YYABORT;
+    }
+    yale->ns[i].is_lhs = 1;
+    yale->ns[i].name = $3;
+    yale->nscnt++;
+  }
+  yale->startns = i;
+  yale->startns_present = 1;
 }
 | ENTRY EQUALS FREEFORM_TOKEN SEMICOLON
 {
@@ -234,7 +261,7 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
 }
 | PARSERNAME EQUALS FREEFORM_TOKEN SEMICOLON
 {
-  free($3);
+  yale->parsername = $3;
 }
 ;
 
