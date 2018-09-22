@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import print_function
 import regex
 
 def firstset_update(a,b):
@@ -350,11 +352,11 @@ class ParserGen(object):
     T = self.T
     Tt = self.Tt
     rules = self.rules
-    print >>sio, "#include \"yalecommon.h\""
+    print("#include \"yalecommon.h\"", file=sio)
     #regex.dump_headers(sio, parsername, re_by_idx, list_of_reidx_sets)
     rec.dump_headers(sio)
     #
-    print >>sio, """
+    print("""
 struct %s_parserctx {
   uint8_t stacksz;
   struct ruleentry stack[%d]; // WAS: uint8_t stack[...];
@@ -372,7 +374,7 @@ static inline void %s_parserctx_init(struct %s_parserctx *pctx)
 }
 
 ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, void *baton);
-""" % (parsername, max_stack_size, parsername, parsername, parsername, self.S, parsername, parsername, parsername)
+""" % (parsername, max_stack_size, parsername, parsername, parsername, self.S, parsername, parsername, parsername), file=sio)
     #
   def print_parser(self, sio):
     parsername = self.parsername
@@ -391,34 +393,34 @@ ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, vo
     #regex.dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities)
     rec.dump_all(sio)
     #
-    print >>sio, "const uint8_t %s_num_terminals;" % parsername
-    print >>sio, "void(*%s_callbacks[])(const char*, size_t, void*) = {" % parsername
+    print("const uint8_t %s_num_terminals;" % parsername, file=sio)
+    print("void(*%s_callbacks[])(const char*, size_t, void*) = {" % parsername, file=sio)
     for cb in callbacks_by_value:
-      print >>sio, cb,","
-    print >>sio, "};"
+      print(cb,",", file=sio)
+    print("};", file=sio)
     #
-    print >>sio, """
+    print("""
 struct %s_parserstatetblentry {
   const struct state *re;
   const uint8_t rhs[%d];
   const uint8_t cb[%d];
 };
-""" % (parsername, len(terminals), len(terminals),)
+""" % (parsername, len(terminals), len(terminals),), file=sio)
     #
-    print >>sio, "const uint8_t %s_num_terminals = %d;" % (parsername, len(terminals),)
-    print >>sio, "const uint8_t %s_start_state = %d;" % (parsername, self.S,)
+    print("const uint8_t %s_num_terminals = %d;" % (parsername, len(terminals),), file=sio)
+    print("const uint8_t %s_start_state = %d;" % (parsername, self.S,), file=sio)
     #
-    print >>sio, "const struct reentry %s_reentries[] = {" % (parsername,)
+    print("const struct reentry %s_reentries[] = {" % (parsername,), file=sio)
     #
     for x in sorted(terminals):
-      print >>sio, "{"
+      print("{", file=sio)
       name = str(x)
-      print >>sio, ".re = " + parsername + "_states_" + name + ","
-      print >>sio, "},"
+      print(".re = " + parsername + "_states_" + name + ",", file=sio)
+      print("},", file=sio)
     #
-    print >>sio, "};"
+    print("};", file=sio)
     #
-    print >>sio, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {" % (parsername, parsername,)
+    print("const struct %s_parserstatetblentry %s_parserstatetblentries[] = {" % (parsername, parsername,), file=sio)
     #
     for X in sorted(nonterminals):
       sorted_reidx_set = sorted([x for x in terminals if T[X][x]])
@@ -430,34 +432,34 @@ struct %s_parserstatetblentry {
         if Tt[X][x] == None or Tt[X][x][1] == None:
           continue
         regex.check_cb(dfa, x)
-      print >>sio, "{"
+      print("{", file=sio)
       name = '_'.join(str(x) for x in sorted([x for x in terminals if T[X][x]]))
-      print >>sio, ".re = "+parsername+"_states_" + name + ","
-      print >>sio, ".rhs = {",
+      print(".re = "+parsername+"_states_" + name + ",", file=sio)
+      print(".rhs = {", file=sio, end=" ")
       for x in sorted(terminals):
         if Tt[X][x] == None:
-          print >>sio, 255,",",
+          print(255,",", file=sio, end=" ")
         else:
-          print >>sio, Tt[X][x][0],",",
-      print >>sio, "},"
-      print >>sio, ".cb = {",
+          print(Tt[X][x][0],",", file=sio, end=" ")
+      print("},", file=sio)
+      print(".cb = {", file=sio, end=" ")
       for x in sorted(terminals):
         if Tt[X][x] == None or Tt[X][x][1] == None:
-          print >>sio, "255,",
+          print("255,", file=sio, end=" ")
         else:
-          print >>sio, callbacks_by_name[Tt[X][x][1]],",",
-      print >>sio, "},"
-      print >>sio, "},"
+          print(callbacks_by_name[Tt[X][x][1]],",", file=sio, end=" ")
+      print("},", file=sio)
+      print("},", file=sio)
     #
-    print >>sio, "};"
+    print("};", file=sio)
     #
     for n in range(len(rules)):
       lhs,rhs = rules[n]
-      print >>sio, "const struct ruleentry %s_rule_%d[] = {" % (parsername, n,)
+      print("const struct ruleentry %s_rule_%d[] = {" % (parsername, n,), file=sio)
       for rhsitem in reversed(rhs):
-        print >>sio, "{",
+        print("{", file=sio, end=" ")
         if type(rhsitem) == Action:
-          print >>sio, ".rhs = 255, .cb = ", callbacks_by_name[rhsitem.cbname],
+          print(".rhs = 255, .cb = ", callbacks_by_name[rhsitem.cbname], file=sio, end=" ")
         elif type(rhsitem) == WrapCB:
           x = rhsitem.token
           sortex_reidx_set = sorted([x])
@@ -466,24 +468,24 @@ struct %s_parserstatetblentry {
           #regex.set_accepting(dfa, priorities)
           dfa = self.rec.dfa_by_reidx_set[frozenset(sorted_reidx_set)]
           regex.check_cb(dfa, x)
-          print >>sio, ".rhs =", rhsitem.token, ",", ".cb = ", callbacks_by_name[rhsitem.cbname],
+          print(".rhs =", rhsitem.token, ",", ".cb = ", callbacks_by_name[rhsitem.cbname], file=sio, end=" ")
         else:
-          print >>sio, ".rhs =", rhsitem, ",", ".cb = 255",
-        print >>sio, "}",",",
-      print >>sio
-      print >>sio, "};"
-      print >>sio, "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);" % (parsername,n,parsername,n,)
-    print >>sio, "const struct rule %s_rules[] = {" % (parsername,)
+          print(".rhs =", rhsitem, ",", ".cb = 255", file=sio, end=" ")
+        print("}",",", file=sio, end=" ")
+      print(file=sio)
+      print("};", file=sio)
+      print("const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);" % (parsername,n,parsername,n,), file=sio)
+    print("const struct rule %s_rules[] = {" % (parsername,), file=sio)
     for n in range(len(rules)):
       lhs,rhs = rules[n]
-      print >>sio, "{"
-      print >>sio, "  .lhs =", lhs, ","
-      print >>sio, "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry)," % (parsername, n,)
-      print >>sio, "  .rhs = %s_rule_%d," % (parsername,n,)
-      print >>sio, "},"
-    print >>sio, "};"
+      print("{", file=sio)
+      print("  .lhs =", lhs, ",", file=sio)
+      print("  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry)," % (parsername, n,), file=sio)
+      print("  .rhs = %s_rule_%d," % (parsername,n,), file=sio)
+      print("},", file=sio)
+    print("};", file=sio)
     #
-    print >>sio, """
+    print("""
 static inline ssize_t
 """+parsername+"""_get_saved_token(struct """+parsername+"""_parserctx *pctx, const struct state *restates,
                 const char *blkoff, size_t szoff, uint8_t *state,
@@ -661,5 +663,5 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
 #endif
   return -EAGAIN;
 }
-"""
+""", file=sio)
     pass

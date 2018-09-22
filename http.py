@@ -1,3 +1,5 @@
+from __future__ import division
+from __future__ import print_function
 import regex
 import parser
 import sys
@@ -110,12 +112,12 @@ p.gen_parser()
 
 if sys.argv[1] == "h":
   with open('httpparser.h', 'w') as fd:
-    print >> fd, "#ifndef _HTTPPARSER_H_"
-    print >> fd, "#define _HTTPPARSER_H_"
+    print("#ifndef _HTTPPARSER_H_", file=fd)
+    print("#define _HTTPPARSER_H_", file=fd)
     p.print_headers(fd)
-    print >> fd, "#endif"
+    print("#endif", file=fd)
 elif sys.argv[1] == "c":
   with open('httpparser.c', 'w') as fd:
-    print >> fd, "#include \"httpcommon.h\""
-    print >> fd, "#include \"httpparser.h\""
+    print("#include \"httpcommon.h\"", file=fd)
+    print("#include \"httpparser.h\"", file=fd)
     p.print_parser(fd)

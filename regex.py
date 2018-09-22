@@ -1,10 +1,14 @@
 # -*- coding: iso-8859-15 -*-
 from __future__ import division
+from __future__ import print_function
 import collections
 import random
 import re
 import sys
-import cStringIO
+try:
+  from StringIO import StringIO
+except ImportError:
+  from io import StringIO
 import time
 
 class REContainer(object):
@@ -29,8 +33,8 @@ class REContainer(object):
   def dump_headers(self, sio):
     maxbt = self.maxbt
     parsername = self.parsername
-    print >>sio, \
-    """\
+    print(
+    """
 #define """+parsername.upper()+"""_BACKTRACKLEN ("""+str(maxbt)+""")
 #define """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1 (("""+parsername.upper()+"""_BACKTRACKLEN) + 1)
 
@@ -53,12 +57,12 @@ static inline void
 
 ssize_t
 """+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, void*), const uint8_t *cbs, uint8_t cb1, void *baton);
-"""
+""", file=sio)
     return
   def dump_all(self, sio):
     parsername = self.parsername
     list_of_reidx_sets = self.list_of_reidx_sets
-    print >>sio, """
+    print("""
 static inline int
 """+parsername+"""_is_fastpath(const struct state *st, unsigned char uch)
 {
@@ -251,10 +255,10 @@ ssize_t
   *state = 255;
   return -EAGAIN; // Not yet
 }
-"""
+""", file=sio)
     dict_transitions = {}
-    print >>sio, "#ifdef SMALL_CODE"
-    print >>sio, "const uint8_t %s_transitiontbl[][256] = {" % (parsername,)
+    print("#ifdef SMALL_CODE", file=sio)
+    print("const uint8_t %s_transitiontbl[][256] = {" % (parsername,), file=sio)
     cur_dictid = 0
     for reidx_set in list_of_reidx_sets:
       sorted_reidx_set = list(sorted(reidx_set))
@@ -270,12 +274,12 @@ ssize_t
           continue
         dict_transitions[transitions] = cur_dictid
         cur_dictid += 1
-        print >>sio, "{"
+        print("{", file=sio)
         for t in transitions:
-          print >>sio, t,",",
-        print >>sio, "},"
-    print >>sio, "};"
-    print >>sio, "#endif"
+          print(t,",", file=sio, end=" ")
+        print("},", file=sio)
+    print("};", file=sio)
+    print("#endif", file=sio)
     for reidx_set in list_of_reidx_sets:
       sorted_reidx_set = list(sorted(reidx_set))
       name = '_'.join(str(x) for x in sorted_reidx_set)
@@ -284,22 +288,22 @@ ssize_t
       dfa = self.dfa_by_reidx_set[reidx_set]
       #set_accepting(dfa, priorities)
       dfatbl = set_ids(dfa)
-      print >> sys.stderr, "DFA %s has %d entries" % (name, len(dfatbl))
+      print("DFA %s has %d entries" % (name, len(dfatbl)), file=sys.stderr)
       if len(dfatbl) > 255:
         assert False # 255 is reserved for invalid non-accepting state
-      print >>sio, "const struct state %s_states_%s[] = {" % (parsername,name,)
+      print("const struct state %s_states_%s[] = {" % (parsername,name,), file=sio)
       for stateid in range(len(dfatbl)):
         state = dfatbl[stateid]
-        print >>sio, "{",
-        print >>sio, ".accepting =",
-        print >>sio, state.accepting and "1," or "0,",
-        print >>sio, ".acceptid =",
+        print("{", file=sio, end=" ")
+        print(".accepting =", file=sio, end=" ")
+        print(state.accepting and "1," or "0,", file=sio, end=" ")
+        print(".acceptid =", file=sio, end=" ")
         if state.accepting:
-          print >>sio, sorted_reidx_set[state.acceptid],",",
+          print(sorted_reidx_set[state.acceptid],",", file=sio, end=" ")
         else:
-          print >>sio, 0,",",
-        print >>sio, ".final =", (state_is_final(state) and 1 or 0), ","
-        print >>sio, ".fastpathbitmask = {",
+          print(0,",", file=sio, end=" ")
+        print(".final =", (state_is_final(state) and 1 or 0), ",", file=sio)
+        print(".fastpathbitmask = {", file=sio, end=" ")
         if state.accepting and not state_is_final(state):
           for iid in range(4):
             curval = 0
@@ -310,20 +314,20 @@ ssize_t
                 curval |= (1<<jid)
               elif state.default and state.default.id == stateid:
                 curval |= (1<<jid)
-            print >>sio, "0x%x," % (curval,),
-        print >>sio, "},"
+            print("0x%x," % (curval,), file=sio, end=" ")
+        print("},", file=sio)
         transitions = get_transitions(state)
-        print >>sio, "#ifdef SMALL_CODE"
-        print >>sio, ".transitions = "+parsername+"_transitiontbl[", dict_transitions[transitions],"],"
-        print >>sio, "#else"
-        print >>sio, ".transitions = ",
-        print >>sio, "{",
+        print("#ifdef SMALL_CODE", file=sio)
+        print(".transitions = "+parsername+"_transitiontbl[", dict_transitions[transitions],"],", file=sio)
+        print("#else", file=sio)
+        print(".transitions = ", file=sio, end=" ")
+        print("{", file=sio, end=" ")
         for t in transitions:
-          print >>sio, t,",",
-        print >>sio, "},"
-        print >>sio, "#endif"
-        print >>sio, "},"
-      print >>sio, "};"
+          print(t,",", file=sio, end=" ")
+        print("},", file=sio)
+        print("#endif", file=sio)
+        print("},", file=sio)
+      print("};", file=sio)
     return
 
 
@@ -366,7 +370,7 @@ class nfanode(object):
 def fsmviz(begin,deterministic=False):
   d = {}
   q = collections.deque()
-  result = cStringIO.StringIO()
+  result = StringIO()
   result.write("digraph fsm {\n")
   set_ids(begin)
   def add_node(node2):
@@ -649,7 +653,7 @@ def test_re(expr,n):
     l = random.randrange(10)
     s = ''.join("abcdef"[random.randrange(6)] for dummy2 in range(l))
     if dfa.execute(s) != bool(compiled.match(s)):
-      print expr, s, dfa.execute(s), bool(compiled.match(s))
+      print(expr, s, dfa.execute(s), bool(compiled.match(s)))
 
 #for n in range(100):
 #  re_compile("(a|b)*|(a|f)c*(d|e)")
@@ -778,7 +782,8 @@ def set_ids(state):
     if queued in visited:
       continue
     visited.add(queued)
-    queued.id = next_id.next()
+    #queued.id = next_id.next()
+    queued.id = next(next_id)
     tbl.append(queued)
     for ch,node in queued.d.items():
       if type(node) == set:
@@ -845,30 +850,30 @@ def get_transitions(state):
 def dump_state(state):
   dfatbl = set_ids(state)
   
-  print "const struct state states[] = {"
+  print("const struct state states[] = {")
   for stateid in range(len(dfatbl)):
     state = dfatbl[stateid]
-    print "{",
-    print ".accepting =",
-    print state.accepting and "1," or "0,",
-    print ".acceptid =",
+    print("{", end=" ")
+    print(".accepting =", end=" ")
+    print(state.accepting and "1," or "0,", end=" ")
+    print(".acceptid =", end=" ")
     if state.accepting:
-      print state.acceptid,",",
+      print(state.acceptid,",",end=" ")
     else:
-      print 0,",",
-    print ".transitions =",
-    print "{",
+      print(0,",",end=" ")
+    print(".transitions =", end=" ")
+    print("{", end=" ")
     for n in range(256):
       ch = chr(n)
       if ch in state.d:
-        print state.d[ch].id,",",
+        print(state.d[ch].id,",",end=" ")
       elif state.default:
-        print state.default.id,",",
+        print(state.default.id,",",end=" ")
       else:
-        print 255,",",
-    print "},",
-    print "},"
-  print "};"
+        print(255,",",end=" ")
+    print("},",end=" ")
+    print("},")
+  print("};")
 
 ##print fsmviz(dfahost,True)
 #raise SystemExit()
