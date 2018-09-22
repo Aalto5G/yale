@@ -1,7 +1,5 @@
 import regex
 import parser
-import cStringIO as StringIO
-import shutil
 import sys
 
 p = parser.ParserGen("http")
@@ -111,19 +109,13 @@ p.gen_parser()
 #p.parse(myreqtrivial)
 
 if sys.argv[1] == "h":
-  sioh = StringIO.StringIO()
-  print >> sioh, "#ifndef _HTTPPARSER_H_"
-  print >> sioh, "#define _HTTPPARSER_H_"
-  p.print_headers(sioh)
-  print >> sioh, "#endif"
   with open('httpparser.h', 'w') as fd:
-    sioh.seek(0)
-    shutil.copyfileobj(sioh, fd)
+    print >> fd, "#ifndef _HTTPPARSER_H_"
+    print >> fd, "#define _HTTPPARSER_H_"
+    p.print_headers(fd)
+    print >> fd, "#endif"
 elif sys.argv[1] == "c":
-  sioc = StringIO.StringIO()
-  print >> sioc, "#include \"httpcommon.h\""
-  print >> sioc, "#include \"httpparser.h\""
-  p.print_parser(sioc)
   with open('httpparser.c', 'w') as fd:
-    sioc.seek(0)
-    shutil.copyfileobj(sioc, fd)
+    print >> fd, "#include \"httpcommon.h\""
+    print >> fd, "#include \"httpparser.h\""
+    p.print_parser(fd)
