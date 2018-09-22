@@ -369,6 +369,37 @@ def state_backtrack(state):
           return -1
   return max_backtrack
 
+def dfa_assert_recursive(state, assertion):
+  tovisit = [state]
+  visited = set([])
+  max_backtrack = 0
+  while tovisit:
+    queued = tovisit.pop()
+    if queued in visited:
+      continue
+    visited.add(queued)
+    assert assertion(state)
+    for ch,node in queued.d.items():
+      if node not in visited:
+        tovisit.append(node)
+    if queued.default != None:
+      if queued.default not in visited:
+        tovisit.append(queued.default)
+
+def check_cb_first(state, acceptid, state2):
+  if state2.accepting and state2.acceptid == acceptid:
+    dfa_assert_recursive(state2,
+      lambda s3: s3.accepting and s3.acceptid == acceptid)
+  else:
+    dfa_assert_recursive(state2,
+      lambda s3: not s3.accepting or s3.acceptid != acceptid)
+
+def check_cb(state, acceptid):
+  for ch,node in state.d.items():
+    check_cb_first(state, acceptid, node)
+  if state.default != None:
+    check_cb_first(state, acceptid, state.default)
+
 def maximal_backtrack(state):
   tovisit = [state]
   visited = set([])

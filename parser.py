@@ -416,6 +416,14 @@ struct %s_parserstatetblentry {
     print >>sio, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {" % (parsername, parsername,)
     #
     for X in sorted(nonterminals):
+      sorted_reidx_set = sorted([x for x in terminals if T[X][x]])
+      re_list = list([self.re_by_idx[idx] for idx in sorted_reidx_set])
+      dfa = regex.nfa2dfa(regex.re_compilemulti(*re_list).nfa())
+      regex.set_accepting(dfa, priorities)
+      for x in sorted(terminals):
+        if Tt[X][x] == None or Tt[X][x][1] == None:
+          continue
+        regex.check_cb(dfa, x)
       print >>sio, "{"
       name = '_'.join(str(x) for x in sorted([x for x in terminals if T[X][x]]))
       print >>sio, ".re = "+parsername+"_states_" + name + ","
@@ -445,6 +453,12 @@ struct %s_parserstatetblentry {
         if type(rhsitem) == Action:
           print >>sio, ".rhs = 255, .cb = ", callbacks_by_name[rhsitem.cbname],
         elif type(rhsitem) == WrapCB:
+          x = rhsitem.token
+          sortex_reidx_set = sorted([x])
+          re_list = list([self.re_by_idx[idx] for idx in sorted_reidx_set])
+          dfa = regex.nfa2dfa(regex.re_compilemulti(*re_list).nfa())
+          regex.set_accepting(dfa, priorities)
+          regex.check_cb(dfa, x)
           print >>sio, ".rhs =", rhsitem.token, ",", ".cb = ", callbacks_by_name[rhsitem.cbname],
         else:
           print >>sio, ".rhs =", rhsitem, ",", ".cb = 255",
