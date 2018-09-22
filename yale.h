@@ -139,15 +139,16 @@ static inline void dump_python(struct yale *yale)
 {
   uint8_t i;
   printf("import parser\n");
-  printf("import sys\n");
-  printf("p = parser.ParserGen(\"http\")\n"); // FIXME parser name
+  printf("import sys\n\n");
+  printf("d = {}\n");
+  printf("p = parser.ParserGen(\"http\")\n\n"); // FIXME parser name
   for (i = 0; i < yale->tokencnt; i++)
   {
     struct token *tk = &yale->tokens[i];
     char *tkname = yale->ns[tk->nsitem].name;
-    printf("%s = p.add_token(\"\")\n", tkname); // FIXME re
+    printf("d[\"%s\"] = p.add_token(\"\")\n", tkname); // FIXME re
   }
-  printf("p.finalize_tokens()\n");
+  printf("p.finalize_tokens()\n\n");
   for (i = 0; i < yale->nscnt; i++)
   {
     struct namespaceitem *nsit = &yale->ns[i];
@@ -165,18 +166,17 @@ static inline void dump_python(struct yale *yale)
       fprintf(stderr, "Error\n");
       exit(1);
     }
-    printf("%s = p.add_nonterminal()\n", nsit->name);
+    printf("d[\"%s\"] = p.add_nonterminal()\n", nsit->name);
   }
-  printf("p.start_state(requestWithHeaders)\n"); // FIXME start state
+  printf("\np.start_state(requestWithHeaders)\n"); // FIXME start state
   printf("p.set_rules([\n");
-  printf("p.gen_parser([\n");
   for (i = 0; i < yale->rulecnt; i++)
   {
     struct rule *rl = &yale->rules[i];
     uint8_t j;
     printf("  ");
     printf("(");
-    printf("%s, ", yale->ns[rl->lhs].name);
+    printf("d[\"%s\"], ", yale->ns[rl->lhs].name);
     printf("[");
     for (j = 0; j < rl->itemcnt; j++)
     {
@@ -187,11 +187,11 @@ static inline void dump_python(struct yale *yale)
       }
       else if (it->cb != 255)
       {
-        printf("p.wrapCB(%s, \"%s\"), ", yale->ns[it->value].name, yale->cbs[it->cb].name);
+        printf("p.wrapCB(d[\"%s\"], \"%s\"), ", yale->ns[it->value].name, yale->cbs[it->cb].name);
       }
       else
       {
-        printf("%s, ", yale->ns[it->value].name);
+        printf("d[\"%s\"], ", yale->ns[it->value].name);
       }
     }
     printf("]");
