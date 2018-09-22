@@ -91,6 +91,10 @@ clean:
 	rm -f yale.tab.h
 	rm -f httpparser.c
 	rm -f httpparser.h
+	rm -f http.py
 
 distclean: clean
 	rm -f yaletest
+	rm -f yaletopy
+	rm -f httpmain
+	rm -f httpmainprint
