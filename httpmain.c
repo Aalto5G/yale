@@ -1,5 +1,8 @@
 #include "httpparser.h"
 
+#undef DO_PRINT
+
+#ifdef DO_PRINT
 static inline void myPutchar(char ch)
 {
   if (ch >= 0x20 && ch <= 0x7E)
@@ -11,8 +14,7 @@ static inline void myPutchar(char ch)
     printf("\\x%.2x", (unsigned)(unsigned char)ch);
   }
 }
-
-#undef DO_PRINT
+#endif
 
 void print(const char *buf, size_t siz, void *btn)
 {
