@@ -215,6 +215,7 @@ static inline void dump_python(struct yale *yale)
   {
     upparsername[i] = toupper((unsigned char)upparsername[i]);
   }
+  printf("from __future__ import print_function\n");
   printf("import parser\n");
   printf("import sys\n\n");
   printf("d = {}\n");
