@@ -45,6 +45,7 @@ int yaleyywrap(yyscan_t scanner)
 }
 
 %destructor { free ($$); } STRING_LITERAL
+%destructor { free ($$); } FREEFORM_TOKEN
 %destructor { free ($$); } C_LITERAL
 %destructor { free ($$); } PERCENTC_LITERAL
 
@@ -52,6 +53,7 @@ int yaleyywrap(yyscan_t scanner)
 %token PERCENTC_LITERAL
 
 %token TOKEN
+%token ACTION
 %token PRIO
 %token DIRECTIVE
 %token MAIN
@@ -98,7 +100,12 @@ int yaleyywrap(yyscan_t scanner)
 %token ERROR_TOK
 
 %type<i> INT_LITERAL
+%type<i> maybe_prio
+%type<i> maybe_minus
+%type<i> token_ltgtexp
+%type<i> maybe_token_ltgt
 %type<s> STRING_LITERAL
+%type<s> FREEFORM_TOKEN
 %type<s> C_LITERAL
 %type<s> PERCENTC_LITERAL
 
@@ -111,9 +118,82 @@ yalerules:
 yalerule:
   TOKEN maybe_prio FREEFORM_TOKEN EQUALS STRING_LITERAL SEMICOLON
 {
-  free($5);
+  struct token *tk;
+  uint8_t i;
+  if (yale->tokencnt >= sizeof(yale->tokens)/sizeof(*yale->tokens))
+  {
+    printf("1\n");
+    YYABORT;
+  }
+  for (i = 0; i < yale->nscnt; i++)
+  {
+    if (strcmp(yale->ns[i].name, $3) == 0)
+    {
+      yale->ns[i].is_token = 1;
+      if (yale->ns[i].is_lhs)
+      {
+        printf("1.1\n");
+        YYABORT;
+      } 
+      free($3);
+      break;
+    }
+  }
+  if (i == yale->nscnt)
+  {
+    if (i == 255)
+    {
+      printf("1.2\n");
+      YYABORT;
+    }
+    yale->ns[i].name = $3;
+    yale->ns[i].is_token = 1;
+    yale->nscnt++;
+  }
+  tk = &yale->tokens[yale->tokencnt++];
+  tk->priority = $2;
+  tk->nsitem = i;
+  tk->re = $5;
 }
-| FREEFORM_TOKEN EQUALS elements SEMICOLON
+| FREEFORM_TOKEN EQUALS
+{
+  struct rule *rule;
+  uint8_t i;
+  if (yale->rulecnt >= sizeof(yale->rules)/sizeof(*yale->rules))
+  {
+    printf("3\n");
+    YYABORT;
+  }
+  rule = &yale->rules[yale->rulecnt++];
+
+  for (i = 0; i < yale->nscnt; i++)
+  {
+    if (strcmp(yale->ns[i].name, $1) == 0)
+    {
+      yale->ns[i].is_lhs = 1;
+      if (yale->ns[i].is_token)
+      {
+        printf("3.1 is_token %s %d\n", $1, i);
+        YYABORT;
+      } 
+      free($1);
+      break;
+    }
+  }
+  if (i == yale->nscnt)
+  {
+    if (i == 255)
+    {
+      printf("3.2\n");
+      YYABORT;
+    }
+    yale->ns[i].name = $1;
+    yale->ns[i].is_lhs = 1;
+    yale->nscnt++;
+  }
+  rule->lhs = i;
+}
+elements SEMICOLON
 | DIRECTIVE directive_continued
 | PERCENTC_LITERAL
 {
@@ -123,17 +203,39 @@ yalerule:
 ;
 
 maybe_prio:
+{
+  $$ = 0;
+}
 | LT PRIO EQUALS maybe_minus INT_LITERAL GT
+{
+  $$ = $4 * $5;
+}
 ;
 
 maybe_minus:
-| MINUS;
+{
+  $$ = +1;
+}
+| MINUS
+{
+  $$ = -1;
+}
+;
 
 
 directive_continued:
 MAIN EQUALS FREEFORM_TOKEN SEMICOLON
+{
+  free($3);
+}
 | ENTRY EQUALS FREEFORM_TOKEN SEMICOLON
+{
+  free($3);
+}
 | PARSERNAME EQUALS FREEFORM_TOKEN SEMICOLON
+{
+  free($3);
+}
 ;
 
 elements:
@@ -142,7 +244,19 @@ alternation
 
 alternation:
 | concatenation
-| alternation PIPE concatenation
+| alternation PIPE
+{
+  struct rule *rule;
+  if (yale->rulecnt >= sizeof(yale->rules)/sizeof(*yale->rules))
+  {
+    printf("6\n");
+    YYABORT;
+  }
+  rule = &yale->rules[yale->rulecnt];
+  rule->lhs = yale->rules[yale->rulecnt-1].lhs;
+  yale->rulecnt++;
+}
+concatenation
 ;
 
 /*
@@ -188,7 +302,64 @@ maybe_repeat:
 ;
 
 element:
-FREEFORM_TOKEN maybe_token_ltgt
+ACTION maybe_token_ltgt
+{
+  struct rule *rule;
+  struct ruleitem *it;
+  rule = &yale->rules[yale->rulecnt - 1];
+  if (rule->itemcnt == 255)
+  {
+    printf("7\n");
+    YYABORT;
+  }
+  it = &rule->rhs[rule->itemcnt++];
+  it->is_action = 1;
+  it->value = 255;
+  it->cb = $2;
+}
+| FREEFORM_TOKEN maybe_token_ltgt
+{
+  struct rule *rule;
+  struct ruleitem *it;
+  uint8_t i;
+  rule = &yale->rules[yale->rulecnt - 1];
+  if (rule->itemcnt == 255)
+  {
+    printf("7\n");
+    YYABORT;
+  }
+  it = &rule->rhs[rule->itemcnt++];
+  for (i = 0; i < yale->nscnt; i++) // FIXME check all cnt uses
+  {
+    if (strcmp(yale->ns[i].name, $1) == 0)
+    {
+      break;
+    }
+  }
+  if (i != yale->nscnt)
+  {
+    it->value = i;
+    it->cb = $2;
+    if ($2 != 255 && yale->ns[i].is_lhs)
+    {
+      printf("7.1\n");
+      YYABORT;
+    }
+  }
+  else
+  {
+    if (i == 255)
+    {
+      printf("7.2\n");
+      YYABORT;
+    }
+    yale->ns[i].name = strdup($1);
+    it->value = i;
+    it->cb = $2;
+    yale->nscnt++;
+  }
+  free($1);
+}
 | uint_token
 | BYTES maybe_bytes_ltgt
 | group
@@ -205,12 +376,43 @@ maybe_uint_ltgt:
 ;
 
 maybe_token_ltgt:
+{
+  $$ = 255;
+}
 | LT token_ltgtexp GT
+{
+  $$ = $2;
+}
 ;
 
 token_ltgtexp:
 VAL EQUALSEQUALS valstr_literal
+{
+  $$ = 255;
+}
 | CB EQUALS FREEFORM_TOKEN
+{
+  uint8_t i;
+  for (i = 0; i < yale->cbcnt; i++)
+  {
+    if (strcmp(yale->cbs[i].name, $3) == 0)
+    {
+      free($3);
+      break;
+    }
+  }
+  if (i == yale->cbcnt)
+  {
+    if (i == 255)
+    {
+      printf("9\n");
+      YYABORT;
+    }
+    yale->cbs[i].name = $3;
+    yale->cbcnt++;
+  }
+  $$ = i;
+}
 ;
 
 uint_ltgtexp:
@@ -236,8 +438,17 @@ maybe_bytes_ltgt:
 
 bytes_ltgtexp:
   FEED EQUALS FREEFORM_TOKEN
+{
+  free($3);
+}
 | REINIT_FEED EQUALS FREEFORM_TOKEN
+{
+  free($3);
+}
 | CB EQUALS FREEFORM_TOKEN
+{
+  free($3);
+}
 ;
 
 uint_token_raw:

@@ -36,6 +36,7 @@ struct CSnippet cSnippet = {
 };
 %}
 
+action    return ACTION;
 token     return TOKEN;
 directive return DIRECTIVE;
 main      return MAIN;
@@ -74,7 +75,10 @@ uint64le  return UINT64LE;
 -         return MINUS;
 
 
-[A-Za-z_][A-Za-z0-9_]* return FREEFORM_TOKEN;
+[A-Za-z_][A-Za-z0-9_]* {
+  yylval->s = strdup(yytext);
+  return FREEFORM_TOKEN;
+}
 
 \"([^\\\"]|\\.)*\"  yylval->s=yy_escape_string(yytext); return STRING_LITERAL;
 
