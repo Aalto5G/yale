@@ -36,6 +36,7 @@ struct CSnippet cSnippet = {
 };
 %}
 
+stateinclude return STATEINCLUDE;
 action    return ACTION;
 token     return TOKEN;
 directive return DIRECTIVE;

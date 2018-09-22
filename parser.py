@@ -79,6 +79,9 @@ class ParserGen(object):
     self.tokens_finalized = False
     self.epsilon = -1
     self.eof = -2
+    self.state_include_str = ""
+  def state_include(self, state_include_str):
+    self.state_include_str += state_include_str
   def action(self, cbname):
     return Action(cbname)
   def wrapCB(self, token, cbname):
@@ -362,6 +365,7 @@ struct %s_parserctx {
   struct ruleentry stack[%d]; // WAS: uint8_t stack[...];
   struct %s_rectx rctx;
   uint8_t saved_token;
+  %s
 };
 
 static inline void %s_parserctx_init(struct %s_parserctx *pctx)
@@ -374,7 +378,7 @@ static inline void %s_parserctx_init(struct %s_parserctx *pctx)
 }
 
 ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//, void *baton);
-""" % (parsername, max_stack_size, parsername, parsername, parsername, self.S, parsername, parsername, parsername), file=sio)
+""" % (parsername, max_stack_size, parsername, self.state_include_str, parsername, parsername, self.S, parsername, parsername, parsername), file=sio)
     #
   def print_parser(self, sio):
     parsername = self.parsername

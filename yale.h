@@ -76,6 +76,7 @@ struct rule {
 
 struct yale {
   struct CSnippet cs;
+  struct CSnippet si;
   struct token tokens[255];
   struct namespaceitem ns[255];
   struct cb cbs[255];
@@ -117,6 +118,8 @@ static inline void yale_free(struct yale *yale)
   yale->nscnt = 0;
   free(yale->cs.data);
   yale->cs.data = NULL;
+  free(yale->si.data);
+  yale->si.data = NULL;
   memset(yale, 0, sizeof(*yale));
 }
 
@@ -279,6 +282,12 @@ static inline void dump_python(FILE *f, struct yale *yale)
     fprintf(f, "),\n");
   }
   fprintf(f, "])\n\n");
+  if (yale->si.data)
+  {
+    fprintf(f, "p.state_include(");
+    dump_string(f, yale->si.data);
+    fprintf(f, ")\n");
+  }
   fprintf(f, "p.gen_parser()\n");
   fprintf(f, "if sys.argv[1] == \"h\":\n");
   fprintf(f, "  with open('%sparser.h', 'w') as fd:\n", yale->parsername);
@@ -288,9 +297,12 @@ static inline void dump_python(FILE *f, struct yale *yale)
   fprintf(f, "    print(\"#endif\", file=fd)\n");
   fprintf(f, "elif sys.argv[1] == \"c\":\n");
   fprintf(f, "  with open('%sparser.c', 'w') as fd:\n", yale->parsername);
-  fprintf(f, "    print(");
-  dump_string(f, yale->cs.data);
-  fprintf(f, ", file=fd)\n");
+  if (yale->cs.data)
+  {
+    fprintf(f, "    print(");
+    dump_string(f, yale->cs.data);
+    fprintf(f, ", file=fd)\n");
+  }
   fprintf(f, "    print(\"#include \\\"%sparser.h\\\"\", file=fd)\n", yale->parsername);
   fprintf(f, "    p.print_parser(fd)\n");
   free(upparsername);

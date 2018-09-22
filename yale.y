@@ -51,6 +51,7 @@ int yaleyywrap(yyscan_t scanner)
 
 %token C_LITERAL
 %token PERCENTC_LITERAL
+%token STATEINCLUDE
 
 %token TOKEN
 %token ACTION
@@ -194,6 +195,11 @@ yalerule:
   rule->lhs = i;
 }
 elements SEMICOLON
+| STATEINCLUDE PERCENTC_LITERAL SEMICOLON
+{
+  csaddstr(&yale->si, $2);
+  free($2);
+}
 | DIRECTIVE directive_continued
 | PERCENTC_LITERAL
 {
