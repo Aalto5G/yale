@@ -2,7 +2,7 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yyutils.c httpmain.c httpmainprint.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest httpmain httpmainprint
+all: yaletest yaletopy httpmain httpmainprint
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -43,6 +43,9 @@ httpmain.o: httpparser.h Makefile
 httpparser.d: httpparser.h Makefile
 httpparser.o: httpparser.h Makefile
 
+http.py: yaletopy httppaper.txt
+	./yaletopy httppaper.txt http.py
+
 httpparser.h: http.py parser.py regex.py Makefile
 	python http.py h
 
@@ -51,6 +54,10 @@ httpparser.c: http.py parser.py regex.py Makefile
 
 yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o Makefile
 	$(CC) $(CFLAGS) -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
+
+yaletopy: yaletopy.o yale.lex.o yale.tab.o yyutils.o Makefile
+	$(CC) $(CFLAGS) -o yaletopy yaletopy.o yale.lex.o yale.tab.o yyutils.o
+
 YALE.LEX.INTERMEDIATE: yale.l Makefile
 	mkdir -p intermediatestore
 	flex --outfile=intermediatestore/yale.lex.c --header-file=intermediatestore/yale.lex.h yale.l

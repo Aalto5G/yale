@@ -1,0 +1,39 @@
+%{
+#include "httpcommon.h"
+%}
+
+token<prio=1> hosttk = "[Hh][Oo][Ss][Tt]" ;
+token crlf = "\r?\n" ;
+token onesp = " " ;
+token spvcrlf =
+  " HTTP/[0-9]+[.][0-9]+\r?\n" ;
+token colonsp = ":[ \t]*" ;
+token httptk =
+  "[-!#$%&'*+.^_`|~0-9A-Za-z]+" ;
+token httpfield =
+  "[\t\x20-\x7E\x80-\xFF]*" ;
+token uri =
+  "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+" ;
+token foldstart = "\r?\n[\t ]+" ;
+
+httpFieldPart = httpfield httpFieldPartEnd ;
+httpFieldPartEnd =
+| foldstart httpfield httpFieldPartEnd ;
+
+hostFieldPart =
+  httpfield<cb=print> hostFieldPartEnd ;
+hostFieldPartEnd =
+| foldstart action<cb=printsp>
+  httpfield<cb=print> hostFieldPartEnd ;
+
+headerField =
+  hosttk colonsp hostFieldPart
+| httptk colonsp httpFieldPart
+  ;
+reqLine =
+  httptk onesp uri spvcrlf ;
+reqHdrs = | headerField crlf reqHdrs ;
+reqWithHdrs = reqLine reqHdrs crlf ;
+
+directive main = reqWithHdrs;
+directive parsername = http;

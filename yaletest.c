@@ -77,7 +77,7 @@ int main(int argc, char **argv)
 
   printf("\n\n\n");
   check_python(&yalepaper);
-  dump_python(&yalepaper);
+  dump_python(stdout, &yalepaper);
   yale_free(&yalepaper);
   return 0;
 }

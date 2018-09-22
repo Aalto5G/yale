@@ -167,46 +167,46 @@ static inline void check_python(struct yale *yale)
   }
 }
 
-static inline void dump_string(const char *str)
+static inline void dump_string(FILE *f, const char *str)
 {
   size_t len = strlen(str);
   size_t i;
-  putchar('"');
+  putc('"', f);
   for (i = 0; i < len; i++)
   {
     if (str[i] == '"' || str[i] == '\\')
     {
-      printf("\\");
-      putchar(str[i]);
+      fprintf(f, "\\");
+      putc(str[i], f);
       continue;
     }
     if (str[i] == '\n')
     {
-      printf("\\n");
+      fprintf(f, "\\n");
       continue;
     }
     if (str[i] == '\t')
     {
-      printf("\\t");
+      fprintf(f, "\\t");
       continue;
     }
     if (str[i] == '\r')
     {
-      printf("\\r");
+      fprintf(f, "\\r");
       continue;
     }
     if (isalpha(str[i]) || isdigit(str[i]) || ispunct(str[i]) || str[i] == ' ')
     {
-      putchar(str[i]);
+      putc(str[i], f);
       continue;
     }
-    printf("\\x");
-    printf("%.2x", (unsigned char)str[i]);
+    fprintf(f, "\\x");
+    fprintf(f, "%.2x", (unsigned char)str[i]);
   }
-  putchar('"');
+  putc('"', f);
 }
 
-static inline void dump_python(struct yale *yale)
+static inline void dump_python(FILE *f, struct yale *yale)
 {
   uint8_t i;
   char *upparsername = strdup(yale->parsername);
@@ -215,20 +215,20 @@ static inline void dump_python(struct yale *yale)
   {
     upparsername[i] = toupper((unsigned char)upparsername[i]);
   }
-  printf("from __future__ import print_function\n");
-  printf("import parser\n");
-  printf("import sys\n\n");
-  printf("d = {}\n");
-  printf("p = parser.ParserGen(\"%s\")\n\n", yale->parsername);
+  fprintf(f, "from __future__ import print_function\n");
+  fprintf(f, "import parser\n");
+  fprintf(f, "import sys\n\n");
+  fprintf(f, "d = {}\n");
+  fprintf(f, "p = parser.ParserGen(\"%s\")\n\n", yale->parsername);
   for (i = 0; i < yale->tokencnt; i++)
   {
     struct token *tk = &yale->tokens[i];
     char *tkname = yale->ns[tk->nsitem].name;
-    printf("d[\"%s\"] = p.add_token(", tkname);
-    dump_string(tk->re);
-    printf(", priority=%d)\n", tk->priority);
+    fprintf(f, "d[\"%s\"] = p.add_token(", tkname);
+    dump_string(f, tk->re);
+    fprintf(f, ", priority=%d)\n", tk->priority);
   }
-  printf("p.finalize_tokens()\n\n");
+  fprintf(f, "p.finalize_tokens()\n\n");
   for (i = 0; i < yale->nscnt; i++)
   {
     struct namespaceitem *nsit = &yale->ns[i];
@@ -246,51 +246,53 @@ static inline void dump_python(struct yale *yale)
       fprintf(stderr, "Error\n");
       exit(1);
     }
-    printf("d[\"%s\"] = p.add_nonterminal()\n", nsit->name);
+    fprintf(f, "d[\"%s\"] = p.add_nonterminal()\n", nsit->name);
   }
-  printf("\np.start_state(d[\"%s\"])\n", yale->ns[yale->startns].name);
-  printf("\n");
-  printf("p.set_rules([\n");
+  fprintf(f, "\np.start_state(d[\"%s\"])\n", yale->ns[yale->startns].name);
+  fprintf(f, "\n");
+  fprintf(f, "p.set_rules([\n");
   for (i = 0; i < yale->rulecnt; i++)
   {
     struct rule *rl = &yale->rules[i];
     uint8_t j;
-    printf("  ");
-    printf("(");
-    printf("d[\"%s\"], ", yale->ns[rl->lhs].name);
-    printf("[");
+    fprintf(f, "  ");
+    fprintf(f, "(");
+    fprintf(f, "d[\"%s\"], ", yale->ns[rl->lhs].name);
+    fprintf(f, "[");
     for (j = 0; j < rl->itemcnt; j++)
     {
       struct ruleitem *it = &rl->rhs[j];
       if (it->is_action)
       {
-        printf("p.action(\"%s\"), ", yale->cbs[it->cb].name);
+        fprintf(f, "p.action(\"%s\"), ", yale->cbs[it->cb].name);
       }
       else if (it->cb != 255)
       {
-        printf("p.wrapCB(d[\"%s\"], \"%s\"), ", yale->ns[it->value].name, yale->cbs[it->cb].name);
+        fprintf(f, "p.wrapCB(d[\"%s\"], \"%s\"), ", yale->ns[it->value].name, yale->cbs[it->cb].name);
       }
       else
       {
-        printf("d[\"%s\"], ", yale->ns[it->value].name);
+        fprintf(f, "d[\"%s\"], ", yale->ns[it->value].name);
       }
     }
-    printf("]");
-    printf("),\n");
+    fprintf(f, "]");
+    fprintf(f, "),\n");
   }
-  printf("])\n\n");
-  printf("p.gen_parser()\n");
-  printf("if sys.argv[1] == \"h\":\n");
-  printf("  with open('%sparser.h', 'w') as fd:\n", yale->parsername);
-  printf("    print(\"#ifndef _%sPARSER_H_\", file=fd)\n", upparsername);
-  printf("    print(\"#define _%sPARSER_H_\", file=fd)\n", upparsername);
-  printf("    p.print_headers(fd)\n");
-  printf("    print(\"#endif\", file=fd)\n");
-  printf("elif sys.argv[1] == \"c\":\n");
-  printf("  with open('%sparser.c', 'w') as fd:\n", yale->parsername);
-  printf("    print(\"#include \\\"httpcommon.h\\\"\", file=fd)\n"); // FIXME
-  printf("    print(\"#include \\\"%sparser.h\\\"\", file=fd)\n", yale->parsername);
-  printf("    p.print_parser(fd)\n");
+  fprintf(f, "])\n\n");
+  fprintf(f, "p.gen_parser()\n");
+  fprintf(f, "if sys.argv[1] == \"h\":\n");
+  fprintf(f, "  with open('%sparser.h', 'w') as fd:\n", yale->parsername);
+  fprintf(f, "    print(\"#ifndef _%sPARSER_H_\", file=fd)\n", upparsername);
+  fprintf(f, "    print(\"#define _%sPARSER_H_\", file=fd)\n", upparsername);
+  fprintf(f, "    p.print_headers(fd)\n");
+  fprintf(f, "    print(\"#endif\", file=fd)\n");
+  fprintf(f, "elif sys.argv[1] == \"c\":\n");
+  fprintf(f, "  with open('%sparser.c', 'w') as fd:\n", yale->parsername);
+  fprintf(f, "    print(");
+  dump_string(f, yale->cs.data);
+  fprintf(f, ", file=fd)\n");
+  fprintf(f, "    print(\"#include \\\"%sparser.h\\\"\", file=fd)\n", yale->parsername);
+  fprintf(f, "    p.print_parser(fd)\n");
   free(upparsername);
 }
 
