@@ -19,10 +19,8 @@ int main(int argc, char **argv)
     fprintf(stderr, "Can't open input file\n");
     exit(1);
   }
-  printf("Parsing HTTP paper...\n");
   yaleyydoparse(f, &yale);
   fclose(f);
-  printf("HTTP paper parsed\n");
   if (check_actions(&yale) != 0)
   {
     printf("Fail action\n");
