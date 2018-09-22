@@ -17,25 +17,6 @@
   yylloc->first_column = yycolumn; yylloc->last_column = yycolumn+yyleng-1; \
   yycolumn += yyleng;
 
-struct CSnippet {
-  char *data;
-  size_t len;
-  size_t capacity;
-};
-
-static inline void csadd(struct CSnippet *cs, char ch)
-{
-  if (cs->len + 1 >= cs->capacity)
-  {
-    size_t new_capacity = cs->capacity * 2 + 2;
-    cs->data = realloc(cs->data, new_capacity);
-    cs->capacity = new_capacity;
-  }
-  cs->data[cs->len] = ch;
-  cs->data[cs->len + 1] = '\0';
-  cs->len++;
-}
-
 %}
 
 %option reentrant bison-bridge bison-locations

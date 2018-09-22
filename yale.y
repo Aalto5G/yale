@@ -117,7 +117,7 @@ yalerule:
 | DIRECTIVE directive_continued
 | PERCENTC_LITERAL
 {
-  printf("%s\n", $1);
+  csaddstr(&yale->cs, $1);
   free($1);
 };
 ;
