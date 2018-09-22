@@ -1,6 +1,6 @@
 import regex
 import parser
-import StringIO
+import cStringIO as StringIO
 import shutil
 import sys
 
@@ -9,21 +9,18 @@ p = parser.ParserGen("http")
 hosttoken = p.add_token("[Hh][Oo][Ss][Tt]", priority=1)
 crlf      = p.add_token("\r?\n")
 onespace  = p.add_token(" ")
-httpname  = p.add_token("HTTP")
-slash     = p.add_token("/")
-digit     = p.add_token("[0-9]+")
-colon     = p.add_token(":")
-optspace  = p.add_token("[ \t]*")
+#colon     = p.add_token(":")
+#optspace  = p.add_token("[ \t]*")
+colonosp  = p.add_token(":[ \t]*")
 httptoken = p.add_token("[-!#$%&'*+.^_`|~0-9A-Za-z]+")
 httpfield = p.add_token("[\t\x20-\x7E\x80-\xFF]*")
-period    = p.add_token("[.]")
+spvcrlf   = p.add_token(" HTTP/[0-9]+[.][0-9]+\r?\n")
 uri       = p.add_token("[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+")
 foldstart = p.add_token("\r?\n[ \t]+")
 
 p.finalize_tokens()
 
 headerField        = p.add_nonterminal()
-version            = p.add_nonterminal()
 requestLine        = p.add_nonterminal()
 requestHdrs        = p.add_nonterminal()
 requestWithHeaders = p.add_nonterminal()
@@ -43,10 +40,11 @@ p.set_rules([
   (httpFoldField, [httpfield, httpFoldFieldEnd]),
   (httpFoldFieldEnd, []),
   (httpFoldFieldEnd, [foldstart, httpfield, httpFoldFieldEnd]),
-  (headerField, [hosttoken, colon, optspace, hostFoldField]),
-  (headerField, [httptoken, colon, optspace, httpFoldField]),
-  (version, [httpname, slash, digit, period, digit]),
-  (requestLine, [httptoken, onespace, uri, onespace, version, crlf]),
+  #(headerField, [hosttoken, colon, optspace, hostFoldField]),
+  #(headerField, [httptoken, colon, optspace, httpFoldField]),
+  (headerField, [hosttoken, colonosp, hostFoldField]),
+  (headerField, [httptoken, colonosp, httpFoldField]),
+  (requestLine, [httptoken, onespace, uri, spvcrlf]),
   (requestHdrs, []),
   (requestHdrs, [headerField, crlf, requestHdrs]),
   (requestWithHeaders, [requestLine, requestHdrs, crlf]),
@@ -54,63 +52,63 @@ p.set_rules([
 p.gen_parser()
 
 
-myreq = [
-  httptoken, onespace, uri, onespace,
-    httpname, slash, digit, period, digit, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
-  hosttoken, colon, optspace, httpfield, crlf,
-  httptoken, colon, optspace, httpfield,# crlf,
-    foldstart, httpfield, #crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, #crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
-  crlf]
-p.parse(myreq)
-
-myreqshort = [
-  httptoken, onespace, uri, onespace,
-    httpname, slash, digit, period, digit, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
-  hosttoken, colon, optspace, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, #crlf,
-    foldstart, httpfield, #crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, #crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf]
-ok = False
-try:
-  p.parse(myreqshort)
-except:
-  ok = True
-assert ok
-
-myreqlong = [
-  httptoken, onespace, uri, onespace,
-    httpname, slash, digit, period, digit, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
-  hosttoken, colon, optspace, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, #crlf,
-    foldstart, httpfield, #crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, #crlf,
-    foldstart, httpfield, crlf,
-  httptoken, colon, optspace, httpfield, crlf,
-  crlf,
-  crlf]
-ok = False
-try:
-  p.parse(myreqlong)
-except:
-  ok = True
-assert ok
-
-myreqtrivial = [
-  httptoken, onespace, uri, onespace,
-    httpname, slash, digit, period, digit, crlf,
-  crlf]
-p.parse(myreqtrivial)
+#myreq = [
+#  httptoken, onespace, uri, onespace,
+#    httpname, slash, digit, period, digit, crlf,
+#  httptoken, colon, optspace, httpfield, crlf,
+#  hosttoken, colon, optspace, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield,# crlf,
+#    foldstart, httpfield, #crlf,
+#    foldstart, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, #crlf,
+#    foldstart, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, crlf,
+#  crlf]
+#p.parse(myreq)
+#
+#myreqshort = [
+#  httptoken, onespace, uri, onespace,
+#    httpname, slash, digit, period, digit, crlf,
+#  httptoken, colon, optspace, httpfield, crlf,
+#  hosttoken, colon, optspace, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, #crlf,
+#    foldstart, httpfield, #crlf,
+#    foldstart, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, #crlf,
+#    foldstart, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, crlf]
+#ok = False
+#try:
+#  p.parse(myreqshort)
+#except:
+#  ok = True
+#assert ok
+#
+#myreqlong = [
+#  httptoken, onespace, uri, onespace,
+#    httpname, slash, digit, period, digit, crlf,
+#  httptoken, colon, optspace, httpfield, crlf,
+#  hosttoken, colon, optspace, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, #crlf,
+#    foldstart, httpfield, #crlf,
+#    foldstart, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, #crlf,
+#    foldstart, httpfield, crlf,
+#  httptoken, colon, optspace, httpfield, crlf,
+#  crlf,
+#  crlf]
+#ok = False
+#try:
+#  p.parse(myreqlong)
+#except:
+#  ok = True
+#assert ok
+#
+#myreqtrivial = [
+#  httptoken, onespace, uri, onespace,
+#    httpname, slash, digit, period, digit, crlf,
+#  crlf]
+#p.parse(myreqtrivial)
 
 if sys.argv[1] == "h":
   sioh = StringIO.StringIO()
