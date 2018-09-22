@@ -502,7 +502,7 @@ class alternmulti(regexp):
     taintid = 0
     for re in self.res:
       end = nfanode(True, taintid = taintid)
-      taintid += 1
+      taintid += 1 # FIXME looks suspicious to have this in middle of two uses
       re.gennfa(begin, end, taintid=taintid)
     return begin
 
