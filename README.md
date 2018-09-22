@@ -15,9 +15,8 @@ state machine the lexer uses is dependent on the parser state.
 
 YaLe is currently implemented in Python. Either a recent version of Python 2 or
 a Python 3 works. This Python-based implementation may change in the future to
-be fully C-based. Currently, parsers need to be generated using Python language
-code to specify the grammar, but this will definitely change in the future to
-use a domain specific language for the input.
+be fully C-based. Currently, parsers are created with a domain specific
+language. The Python interface is not intended to be used directly.
 
 YaLe uses a deterministic state machine, parser state dependent, to implement
 maximal munch tokenizing. Backtracking is supported for cases where there may
