@@ -9,6 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifndef CONTAINER_OF
+#define CONTAINER_OF(ptr, type, member) \
+  ((type*)(((char*)ptr) - (((char*)&(((type*)0)->member)) - ((char*)0))))
+#endif
+
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
