@@ -171,6 +171,7 @@ struct dfa_node {
   uint8_t accepting:1;
   uint8_t final:1;
   struct bitset acceptidset;
+  uint64_t algo_tmp;
 };
 
 struct nfa_node {
@@ -219,6 +220,37 @@ uint8_t ffs_bitset(const struct bitset *bs)
   }
 }
 #endif
+
+uint8_t pick_rm_first(struct bitset *bs)
+{
+  size_t i;
+  int j;
+  int ffsres;
+  for (i = 0; i < 4; i++)
+  {
+    ffsres = ffsll(bs->bitset[i]);
+    if (ffsres)
+    {
+      j = ffsres - 1;
+      bs->bitset[i] &= ~(1ULL<<j);
+      return i*64 + j;
+    }
+  }
+}
+
+uint8_t has_bitset(struct bitset *bs, uint8_t bit)
+{
+  uint8_t wordoff = bit/64;
+  uint8_t bitoff = bit%64;
+  return !!(bs->bitset[wordoff] & (1ULL<<bitoff));
+}
+
+void set_bitset(struct bitset *bs, uint8_t bit)
+{
+  uint8_t wordoff = bit/64;
+  uint8_t bitoff = bit%64;
+  bs->bitset[wordoff] |= (1ULL<<bitoff);
+}
 
 void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
                     struct bitset *closurep, int *tainted,
@@ -412,6 +444,109 @@ struct bitset_hash {
   struct bitset_hash_item tbl[255];
   uint8_t tblsz;
 };
+
+// FIXME this algorithm requires thorough review
+ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
+{
+  struct bitset tovisit = {};
+  struct bitset visited = {};
+  size_t max_backtrack = 0;
+  size_t i;
+  ds[state].algo_tmp = 0;
+  set_bitset(&tovisit, state);
+  while (!bitset_empty(&tovisit))
+  {
+    uint8_t queued = pick_rm_first(&tovisit);
+    struct dfa_node *node = &ds[queued];
+    //printf("queued %d\n", (int)queued);
+    if (node->algo_tmp > bound)
+    {
+      return -1;
+    }
+    if (node->algo_tmp > max_backtrack)
+    {
+      max_backtrack = node->algo_tmp;
+    }
+    set_bitset(&visited, queued);
+    for (i = 0; i < 256; i++)
+    {
+      if (node->d[i] != 255)
+      {
+        if (ds[node->d[i]].accepting)
+        {
+          continue;
+        }
+        if (!has_bitset(&visited, node->d[i]) ||
+            ds[node->d[i]].algo_tmp < node->algo_tmp + 1)
+        {
+          ds[node->d[i]].algo_tmp = node->algo_tmp + 1;
+          set_bitset(&tovisit, node->d[i]);
+        }
+      }
+    }
+    if (node->default_tr != 255)
+    {
+      if (!has_bitset(&visited, node->default_tr) ||
+          ds[node->default_tr].algo_tmp < node->algo_tmp + 1)
+      {
+        ds[node->default_tr].algo_tmp = node->algo_tmp + 1;
+        set_bitset(&tovisit, node->default_tr);
+      }
+    }
+  }
+  return max_backtrack;
+}
+
+ssize_t maximal_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
+{
+  struct bitset tovisit = {};
+  struct bitset visited = {};
+  ssize_t state_bt;
+  ssize_t max_backtrack = 0;
+  size_t i;
+  set_bitset(&tovisit, state);
+  while (!bitset_empty(&tovisit))
+  {
+    uint8_t queued = pick_rm_first(&tovisit);
+    //printf("QUEUED %d\n", (int)queued);
+    if (has_bitset(&visited, queued))
+    {
+      continue;
+    }
+    set_bitset(&visited, queued);
+    if (ds[queued].accepting)
+    {
+      state_bt = state_backtrack(ds, queued, bound);
+      if (state_bt < 0)
+      {
+        return -1;
+      }
+      if (state_bt > max_backtrack)
+      {
+        max_backtrack = state_bt;
+      }
+    }
+    for (i = 0; i < 256; i++)
+    {
+      if (ds[queued].d[i] != 255)
+      {
+        if (!has_bitset(&visited, ds[queued].d[i]))
+        {
+          set_bitset(&tovisit, ds[queued].d[i]);
+        }
+      }
+    }
+    if (ds[queued].default_tr != 255)
+    {
+      if (!has_bitset(&visited, ds[queued].default_tr))
+      {
+        set_bitset(&tovisit, ds[queued].default_tr);
+      }
+    }
+  }
+  return max_backtrack;
+}
+
 
 void dfaviz(struct dfa_node *ds, uint8_t cnt)
 {
@@ -1315,6 +1450,7 @@ int main(int argc, char **argv)
       //printf("\n\n\n\n");
       dscnt = nfa2dfa(ns, ds, 0);
       printf("DFA state count %d\n", (int)dscnt);
+      printf("Max backtrack %zd\n", maximal_backtrack(ds, 0, 250));
       //printf("\n\n\n\n");
       //dfaviz(ds, dscnt);
       //printf("\n\n\n\n");
