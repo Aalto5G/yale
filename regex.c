@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 struct bitset {
   uint64_t bitset[4];
@@ -247,7 +248,38 @@ void dfaviz(struct dfa_node *ds, uint8_t cnt)
     {
       if (ds[i].d[j] != 255)
       {
-        printf("n%d -> n%d [label=\"%c\"];\n", i, ds[i].d[j], (char)j);
+        printf("n%d -> n%d [label=\"%c\"];\n", i, ds[i].d[j], (unsigned char)j);
+      }
+    }
+  }
+  printf("}\n");
+}
+
+void nfaviz(struct nfa_node *ns, uint8_t cnt)
+{
+  uint8_t i;
+  uint16_t j;
+  uint16_t k;
+  printf("digraph fsm {\n");
+  for (i = 0; i < cnt; i++)
+  {
+    printf("n%d [label=\"%d%s\"];\n",
+           (int)i, (int)i,
+           ns[cnt].accepting ? "+" : "");
+  }
+  for (i = 0; i < cnt; i++)
+  {
+    for (j = 0; j < 256; j++)
+    {
+      struct bitset *bs = &ns[i].d[j];
+      for (k = 0; k < 256; k++)
+      {
+        uint8_t wordoff = k/64;
+        uint8_t bitoff = k%64;
+        if (bs->bitset[wordoff] & (1ULL<<bitoff))
+        {
+          printf("n%d -> n%d [label=\"%c\"];\n", i, k, (unsigned char)j);
+        }
       }
     }
   }
@@ -448,12 +480,448 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
   return curdfanode;
 }
 
+void gennfa(const char *re, size_t resz, size_t *remainderstart,
+            struct nfa_node *ns, uint8_t *ncnt,
+            uint8_t begin, uint8_t end,
+            uint8_t taintid);
+
+void concat(const char *re1, size_t re1sz,
+            const char *re2, size_t re2sz,
+            struct nfa_node *ns, uint8_t *ncnt,
+            uint8_t begin, uint8_t end,
+            uint8_t taintid)
+{
+  uint8_t middle = (*ncnt)++;
+  size_t rem;
+  printf("Concat: %s %zu %s %zu (%d)\n", re1, re1sz, re2, re2sz, (int)taintid);
+  nfa_init(&ns[middle], 0, taintid);
+  gennfa(re1, re1sz, &rem, ns, ncnt, begin, middle, taintid);
+  gennfa(re2, re2sz, &rem, ns, ncnt, middle, end, taintid);
+}
+
+void wildcard(struct nfa_node *ns, uint8_t *ncnt, 
+              uint8_t begin, uint8_t end,
+              uint8_t taintid)
+{
+  nfa_connect_default(&ns[begin], end); // FIXME suspicious
+}
+
+void literals(const char *lit, size_t litsz,
+              struct nfa_node *ns, uint8_t *ncnt, 
+              uint8_t begin, uint8_t end,
+              uint8_t taintid)
+{
+  size_t i;
+  for (i = 0; i < litsz; i++)
+  {
+    nfa_connect(&ns[begin], (unsigned char)lit[i], end);
+  }
+}
+
+void literalsmask(const uint64_t lit[4],
+                  struct nfa_node *ns, uint8_t *ncnt, 
+                  uint8_t begin, uint8_t end,
+                  uint8_t taintid)
+{
+  size_t i;
+  for (i = 0; i < 256; i++)
+  {
+    uint8_t wordoff = i/64;
+    uint8_t bitoff = i%64;
+    if (lit[wordoff] & 1ULL<<bitoff)
+    {
+      nfa_connect(&ns[begin], (unsigned char)i, end);
+    }
+  }
+}
+
+void emptystr(struct nfa_node *ns, uint8_t *ncnt, 
+              uint8_t begin, uint8_t end,
+              uint8_t taintid)
+{
+  nfa_connect_epsilon(&ns[begin], end);
+}
+
+void star(const char *re, size_t resz,
+          struct nfa_node *ns, uint8_t *ncnt, 
+          uint8_t begin, uint8_t end,
+          uint8_t taintid)
+{
+  uint8_t begin1 = (*ncnt)++;
+  uint8_t end1 = (*ncnt)++;
+  size_t rem;
+  nfa_init(&ns[begin1], 0, taintid);
+  nfa_init(&ns[end1], 0, taintid);
+  gennfa(re, resz, &rem, ns, ncnt, begin1, end1, taintid);
+  nfa_connect_epsilon(&ns[begin], begin1);
+  nfa_connect_epsilon(&ns[begin], end);
+  nfa_connect_epsilon(&ns[end1], begin1);
+  nfa_connect_epsilon(&ns[end1], end);
+}
+
+void plus(const char *re, size_t resz,
+          struct nfa_node *ns, uint8_t *ncnt, 
+          uint8_t begin, uint8_t end,
+          uint8_t taintid)
+{
+  uint8_t begin11 = (*ncnt)++;
+  uint8_t begin1 = (*ncnt)++;
+  uint8_t end1 = (*ncnt)++;
+  size_t rem;
+  nfa_init(&ns[begin11], 0, taintid);
+  nfa_init(&ns[begin1], 0, taintid);
+  nfa_init(&ns[end1], 0, taintid);
+  gennfa(re, resz, &rem, ns, ncnt, begin, begin11, taintid);
+  gennfa(re, resz, &rem, ns, ncnt, begin1, end1, taintid);
+  nfa_connect_epsilon(&ns[begin11], begin1);
+  nfa_connect_epsilon(&ns[begin11], end);
+  nfa_connect_epsilon(&ns[end1], begin1);
+  nfa_connect_epsilon(&ns[end1], end);
+}
+
+void questionmark(const char *re, size_t resz,
+                  struct nfa_node *ns, uint8_t *ncnt, 
+                  uint8_t begin, uint8_t end,
+                  uint8_t taintid)
+{
+  size_t rem;
+  gennfa(re, resz, &rem, ns, ncnt, begin, end, taintid);
+  nfa_connect_epsilon(&ns[begin], end);
+}
+
+void altern(const char *re1, size_t re1sz,
+            const char *re2, size_t re2sz,
+            struct nfa_node *ns, uint8_t *ncnt,
+            uint8_t begin, uint8_t end,
+            uint8_t taintid)
+{
+  size_t rem;
+  gennfa(re1, re1sz, &rem, ns, ncnt, begin, end, taintid);
+  gennfa(re2, re2sz, &rem, ns, ncnt, begin, end, taintid);
+}
+
+void alternmulti(const char *const*res, size_t sz,
+                 struct nfa_node *ns, uint8_t *ncnt)
+{
+  uint8_t begin = (*ncnt)++;
+  uint8_t end;
+  uint8_t taintid = 0;
+  size_t rem;
+  size_t i;
+  nfa_init(&ns[begin], 0, 255);
+  for (i = 0; i < sz; i++)
+  {
+    end = (*ncnt)++;
+    nfa_init(&ns[end], 1, taintid);
+    gennfa(res[i], strlen(res[i]), &rem, ns, ncnt, begin, end, taintid);
+    taintid++;
+  }
+}
+
+static inline void set_char(uint64_t bitmask[4], unsigned char ch)
+{
+  uint8_t wordoff = ch/64;
+  uint8_t bitoff = ch%64;
+  bitmask[wordoff] |= 1ULL<<bitoff;
+}
+
+void parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart,
+                       struct nfa_node *ns, uint8_t *ncnt,
+                       uint8_t begin, uint8_t end,
+                       uint8_t taintid)
+{
+  uint64_t bitmask[4] = {};
+  const char *start;
+  const char *term;
+  size_t i, len;
+  int inverse = 0;
+  int has_last = 0;
+  char last = 0;
+  if (resz == 0)
+  {
+    abort();
+  }
+  if (re[0] == '^')
+  {
+    if (resz < 2)
+    {
+      abort();
+    }
+    inverse = 1;
+    start = re+2;
+    term = memchr(re+2, ']', resz-2);
+  }
+  else
+  {
+    start = re+1;
+    term = memchr(re+1, ']', resz-1);
+  }
+  len = term - start;
+  i = 0;
+  while (i < len)
+  {
+    char first = start[i];
+    i++;
+    if (first == '\\')
+    {
+      char newlast;
+      if (i == len)
+      {
+        abort(); // FIXME error handling
+      }
+      first = start[i];
+      i++;
+      if (first == 'n')
+      {
+        newlast = '\n';
+      }
+      else if (first == 'r')
+      {
+        newlast = '\r';
+      }
+      else if (first == 't')
+      {
+        newlast = '\t';
+      }
+      else if (first == 'x')
+      {
+        char hexbuf[3] = {0};
+        if (i+2 >= len)
+        {
+          abort();
+        }
+        hexbuf[0] = start[i++];
+        hexbuf[1] = start[i++];
+        if (!isxdigit(hexbuf[0]) || !isxdigit(hexbuf[1]))
+        {
+          abort(); // FIXME error handling
+        }
+        newlast = strtol(hexbuf, NULL, 16);
+      }
+      else
+      {
+        abort(); // FIXME error handling
+      }
+      if (has_last)
+      {
+        set_char(bitmask, last);
+      }
+      last = newlast;
+      has_last = 1;
+    }
+    else if (first == '-' && has_last && i < len)
+    {
+      char lastlast;
+      has_last = 0;
+      first = start[i];
+      i++;
+      if (first == '\\')
+      {
+        if (i == len)
+        {
+          abort(); // FIXME error handling
+        }
+        first = start[i];
+        i++;
+        if (first == 'n')
+        {
+          lastlast = '\n';
+        }
+        else if (first == 'r')
+        {
+          lastlast = '\r';
+        }
+        else if (first == 't')
+        {
+          lastlast = '\t';
+        }
+        else if (first == 'x')
+        {
+          char hexbuf[3] = {0};
+          if (i+2 >= len)
+          {
+            abort();
+          }
+          hexbuf[0] = start[i++];
+          hexbuf[1] = start[i++];
+          if (!isxdigit(hexbuf[0]) || !isxdigit(hexbuf[1]))
+          {
+            abort(); // FIXME error handling
+          }
+          lastlast = strtol(hexbuf, NULL, 16);
+        }
+        else
+        {
+          abort(); // FIXME error handling
+        }
+      }
+      else if (first == '-')
+      {
+        abort(); // FIXME error handling
+      }
+      else
+      {
+        lastlast = first;
+      }
+      size_t j;
+      for (j = (unsigned char)last; j <= (unsigned char)lastlast; j++)
+      {
+        set_char(bitmask, j);
+      }
+    }
+    else
+    {
+      if (has_last)
+      {
+        set_char(bitmask, last);
+      }
+      last = first;
+      has_last = 1;
+    }
+  }
+  if (has_last)
+  {
+    set_char(bitmask, last);
+  }
+  if (inverse)
+  {
+    bitmask[0] ^= UINT64_MAX;
+    bitmask[1] ^= UINT64_MAX;
+    bitmask[2] ^= UINT64_MAX;
+    bitmask[3] ^= UINT64_MAX;
+  }
+  literalsmask(bitmask, ns, ncnt, begin, end, taintid);
+  *remainderstart = len;
+}
+
+void parse_atom(const char *re, size_t resz, size_t *remainderstart,
+                struct nfa_node *ns, uint8_t *ncnt,
+                uint8_t begin, uint8_t end,
+                uint8_t taintid)
+{
+  if (resz == 0 || re[0] == ')' || re[0] == '|')
+  {
+    emptystr(ns, ncnt, begin, end, taintid);
+    *remainderstart = 0;
+  }
+  else if (re[0] == '[')
+  {
+    size_t bracketexprsz;
+    parse_bracketexpr(re+1, resz-1, &bracketexprsz,
+                      ns, ncnt, begin, end, taintid);
+    *remainderstart = bracketexprsz + 1;
+  }
+  else if (re[0] == '.')
+  {
+    wildcard(ns, ncnt, begin, end, taintid);
+    *remainderstart = 1;
+  }
+  else if (re[0] == '(')
+  {
+    size_t resz = 0;
+    gennfa(re+1, resz-1, &resz, ns, ncnt, begin, end, taintid);
+    if (re[1+resz] != ')')
+    {
+      abort(); // FIXME error handling
+    }
+    *remainderstart = 2+resz;
+  }
+  else
+  {
+    literals(&re[0], 1, ns, ncnt, begin, end, taintid);
+    *remainderstart = 1;
+  }
+}
+
+
+void parse_piece(const char *re, size_t resz, size_t *remainderstart,
+                 struct nfa_node *ns, uint8_t *ncnt,
+                 uint8_t begin, uint8_t end,
+                 uint8_t taintid)
+{
+  size_t atomsz;
+  parse_atom(re, resz, &atomsz,
+             ns, ncnt, begin, end, taintid);
+  if (atomsz < resz)
+  {
+    if (re[atomsz] == '*')
+    {
+      star(re, resz, ns, ncnt, begin, end, taintid);
+      *remainderstart = atomsz+1;
+    }
+    else if (re[atomsz] == '+')
+    {
+      plus(re, resz, ns, ncnt, begin, end, taintid);
+      *remainderstart = atomsz+1;
+    }
+    else if (re[atomsz] == '?')
+    {
+      questionmark(re, resz, ns, ncnt, begin, end, taintid);
+      *remainderstart = atomsz+1;
+    }
+  }
+  *remainderstart = atomsz;
+}
+
+void parse_branch(const char *re, size_t resz, size_t *remainderstart,
+                  struct nfa_node *ns, uint8_t *ncnt,
+                  uint8_t begin, uint8_t end,
+                  uint8_t taintid)
+{
+  size_t piecesz, branchsz2;
+  parse_piece(re, resz, &piecesz,
+              ns, ncnt, begin, end, taintid);
+  if (piecesz < resz && re[piecesz] != '|' && re[piecesz] != ')')
+  {
+/*
+    parse_branch(re+piecesz+1, resz-piecesz-1, &branchsz2,
+                 ns, ncnt, begin, end, taintid);
+    concat(re, piecesz, re+piecesz+1, branchsz2,
+           ns, ncnt, begin, end, taintid);
+    *remainderstart = piecesz+1+branchsz2;
+*/
+    parse_branch(re+piecesz, resz-piecesz, &branchsz2,
+                 ns, ncnt, begin, end, taintid);
+    concat(re, piecesz, re+piecesz, branchsz2,
+           ns, ncnt, begin, end, taintid);
+    *remainderstart = piecesz+branchsz2;
+  }
+  else
+  {
+    *remainderstart = piecesz;
+  }
+}
+
+void gennfa(const char *re, size_t resz, size_t *remainderstart,
+            struct nfa_node *ns, uint8_t *ncnt,
+            uint8_t begin, uint8_t end,
+            uint8_t taintid)
+{
+  size_t branchsz, branchsz2;
+  parse_branch(re, resz, &branchsz,
+               ns, ncnt, begin, end, taintid);
+  if (branchsz < resz && re[branchsz] == '|')
+  {
+    parse_branch(re+branchsz+1, resz-branchsz-1, &branchsz2,
+                 ns, ncnt, begin, end, taintid);
+    altern(re, branchsz, re+branchsz+1, branchsz2,
+           ns, ncnt, begin, end, taintid);
+    *remainderstart = branchsz+1+branchsz2;
+  }
+  else
+  {
+    *remainderstart = branchsz;
+  }
+}
+
 int main(int argc, char **argv)
 {
-  struct nfa_node ns[11];
+  struct nfa_node ns[255];
   struct dfa_node ds[255];
   size_t i;
   uint8_t dscnt;
+  uint8_t ncnt;
+  const char *res[3] = {"ab","abcd","abce"};
 
   for (i = 0; i < 255; i++)
   {
@@ -489,4 +957,22 @@ int main(int argc, char **argv)
   printf("DFA state count %d\n", (int)dscnt);
   printf("\n\n\n\n");
   dfaviz(ds, dscnt);
+  printf("\n\n\n\n");
+
+  for (i = 0; i < 255; i++)
+  {
+    dfa_init_empty(&ds[i]);
+  }
+
+  ncnt = 0;
+  alternmulti(res, 3, ns, &ncnt);
+  printf("NFA state count %d\n", (int)ncnt);
+  printf("\n\n\n\n");
+  nfaviz(ns, ncnt);
+  printf("\n\n\n\n");
+  dscnt = nfa2dfa(ns, ds, 0);
+  printf("DFA state count %d\n", (int)dscnt);
+  printf("\n\n\n\n");
+  dfaviz(ds, dscnt);
+  printf("\n\n\n\n");
 }
