@@ -444,6 +444,114 @@ int bitset_equal(const struct bitset *a, const struct bitset *b)
   return 1;
 }
 
+void
+check_recurse_acceptid_is(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
+{
+  struct bitset tovisit = {};
+  struct bitset visited = {};
+  size_t i;
+  set_bitset(&tovisit, state);
+  while (!bitset_empty(&tovisit))
+  {
+    uint8_t queued = pick_rm_first(&tovisit);
+    struct dfa_node *node = &ds[queued];
+    if (has_bitset(&visited, queued))
+    {
+      continue;
+    }
+    set_bitset(&visited, queued);
+    if (!ds[queued].accepting || ds[queued].acceptid != acceptid)
+    {
+      abort(); // FIXME error handling
+    }
+    for (i = 0; i < 256; i++)
+    {
+      if (node->d[i] != 255)
+      {
+        if (!has_bitset(&visited, node->d[i]))
+        {
+          set_bitset(&tovisit, node->d[i]);
+        }
+      }
+    }
+    if (node->default_tr != 255)
+    {
+      if (!has_bitset(&visited, node->default_tr))
+      {
+        set_bitset(&tovisit, node->default_tr);
+      }
+    }
+  }
+}
+
+void
+check_recurse_acceptid_is_not(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
+{
+  struct bitset tovisit = {};
+  struct bitset visited = {};
+  size_t i;
+  set_bitset(&tovisit, state);
+  while (!bitset_empty(&tovisit))
+  {
+    uint8_t queued = pick_rm_first(&tovisit);
+    struct dfa_node *node = &ds[queued];
+    if (has_bitset(&visited, queued))
+    {
+      continue;
+    }
+    set_bitset(&visited, queued);
+    if (ds[queued].accepting && ds[queued].acceptid == acceptid)
+    {
+      abort(); // FIXME error handling
+    }
+    for (i = 0; i < 256; i++)
+    {
+      if (node->d[i] != 255)
+      {
+        if (!has_bitset(&visited, node->d[i]))
+        {
+          set_bitset(&tovisit, node->d[i]);
+        }
+      }
+    }
+    if (node->default_tr != 255)
+    {
+      if (!has_bitset(&visited, node->default_tr))
+      {
+        set_bitset(&tovisit, node->default_tr);
+      }
+    }
+  }
+}
+
+void check_cb_first(struct dfa_node *ds, uint8_t acceptid, uint8_t state)
+{
+  if (ds[state].accepting && ds[state].acceptid == acceptid)
+  {
+    check_recurse_acceptid_is(ds, state, acceptid);
+  }
+  else
+  {
+    check_recurse_acceptid_is_not(ds, state, acceptid);
+  }
+}
+
+void check_cb(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
+{
+  size_t i;
+  for (i = 0; i < 256; i++)
+  {
+    if (ds[state].d[i] != 255)
+    {
+      check_cb_first(ds, acceptid, ds[state].d[i]);
+    }
+  }
+  if (ds[state].default_tr != 255)
+  {
+    check_cb_first(ds, acceptid, ds[state].default_tr);
+  }
+}
+
 struct bitset_hash_item {
   struct bitset key;
   uint8_t dfanodeid;
