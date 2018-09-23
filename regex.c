@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/uio.h>
 #include <ctype.h>
 
 
@@ -1393,7 +1394,7 @@ struct re *parse_re(const char *re, size_t resz, size_t *remainderstart)
   }
 }
 
-struct re *parse_res(const char **regexps, uint8_t *pick_those, size_t resz)
+struct re *parse_res(struct iovec *regexps, uint8_t *pick_those, size_t resz)
 {
   struct re **res;
   struct re *result;
@@ -1408,9 +1409,9 @@ struct re *parse_res(const char **regexps, uint8_t *pick_those, size_t resz)
   result->u.altmulti.resz = resz;
   for (i = 0; i < resz; i++)
   {
-    size_t regexplen = strlen(regexps[pick_those[i]]);
+    size_t regexplen = regexps[pick_those[i]].iov_len;
     size_t remainderstart;
-    res[i] = parse_re(regexps[pick_those[i]], regexplen, &remainderstart);
+    res[i] = parse_re((const char*)regexps[pick_those[i]].iov_base, regexplen, &remainderstart);
     if (remainderstart != regexplen)
     {
       abort(); // FIXME error handling
@@ -1524,6 +1525,16 @@ int main(int argc, char **argv)
   struct re *re;
   const char *res[3] = {"ab","abcd","abce"};
   uint8_t pick_those[3] = {0,1,2};
+  const char re0[] = "[Hh][Oo][Ss][Tt]";
+  const char re1[] = "\r?\n";
+  const char re2[] = " ";
+  const char re3[] = " HTTP/[0-9]+[.][0-9]+\r?\n";
+  const char re4[] = ":[ \t]*";
+  const char re5[] = "[-!#$%&'*+.^_`|~0-9A-Za-z]+";
+  const char re6[] = "[\t\x20-\x7E\x80-\xFF]*";
+  const char re7[] = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+";
+  const char re8[] = "\r?\n[\t ]+";
+#if 0
   const char *http_res[] = {
     "[Hh][Oo][Ss][Tt]" ,
     "\r?\n" ,
@@ -1534,6 +1545,18 @@ int main(int argc, char **argv)
     "[\t\x20-\x7E\x80-\xFF]*" ,
     "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+" ,
     "\r?\n[\t ]+" ,
+  };
+#endif
+  struct iovec http_res[] = {
+    {.iov_base = (void*)re0, .iov_len = sizeof(re0)-1, },
+    {.iov_base = (void*)re1, .iov_len = sizeof(re1)-1, },
+    {.iov_base = (void*)re2, .iov_len = sizeof(re2)-1, },
+    {.iov_base = (void*)re3, .iov_len = sizeof(re3)-1, },
+    {.iov_base = (void*)re4, .iov_len = sizeof(re4)-1, },
+    {.iov_base = (void*)re5, .iov_len = sizeof(re5)-1, },
+    {.iov_base = (void*)re6, .iov_len = sizeof(re6)-1, },
+    {.iov_base = (void*)re7, .iov_len = sizeof(re7)-1, },
+    {.iov_base = (void*)re8, .iov_len = sizeof(re8)-1, },
   };
   int priorities[] = {
     1,
