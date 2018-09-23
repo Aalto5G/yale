@@ -11,6 +11,19 @@ struct bitset {
   uint64_t bitset[4];
 };
 
+int bitset_empty(struct bitset *a)
+{
+  size_t i;
+  for (i = 0; i < 4; i++)
+  {
+    if (a->bitset[i] != 0)
+    {
+      return 0;
+    }
+  }
+  return 1;
+}
+
 struct re;
 
 struct wildcard {
@@ -167,6 +180,7 @@ static inline void free_re(struct re *re)
 struct dfa_node {
   uint8_t d[256];
   uint8_t default_tr;
+  uint8_t acceptid;
   uint8_t tainted:1;
   uint8_t accepting:1;
   uint8_t final:1;
@@ -368,6 +382,12 @@ void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acc
   }
 #endif
   n->default_tr = 255;
+  n->acceptid = 255;
+  if (accepting && bitset_empty(acceptidset))
+  {
+    printf("Accepting yet acceptidset empty\n");
+    abort();
+  }
   n->accepting = !!accepting;
   n->tainted = !!tainted;
   n->acceptidset = *acceptidset;
@@ -417,19 +437,6 @@ int bitset_equal(const struct bitset *a, const struct bitset *b)
   for (i = 0; i < 4; i++)
   {
     if (a->bitset[i] != b->bitset[i])
-    {
-      return 0;
-    }
-  }
-  return 1;
-}
-
-int bitset_empty(struct bitset *a)
-{
-  size_t i;
-  for (i = 0; i < 4; i++)
-  {
-    if (a->bitset[i] != 0)
     {
       return 0;
     }
@@ -497,6 +504,99 @@ ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
     }
   }
   return max_backtrack;
+}
+
+void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state, int *priorities)
+{
+  struct bitset tovisit = {};
+  struct bitset visited = {};
+  size_t i;
+  int seen = 0;
+  int priority;
+  size_t count_thisprio = 0;
+  uint8_t acceptid;
+  uint8_t wordoff, bitoff;
+  set_bitset(&tovisit, state);
+  while (!bitset_empty(&tovisit))
+  {
+    uint8_t queued = pick_rm_first(&tovisit);
+    //printf("QUEUED %d\n", (int)queued);
+    if (has_bitset(&visited, queued))
+    {
+      continue;
+    }
+    set_bitset(&visited, queued);
+    if (ds[queued].accepting)
+    {
+      seen = 0;
+      //printf("Setting seen to 0\n");
+      for (i = 0; i < 256; /*i++*/)
+      {
+        wordoff = i/64;
+        bitoff = i%64;
+        //printf("? %d\n", (int)i);
+        if (ds[queued].acceptidset.bitset[wordoff] & (1ULL<<bitoff))
+        {
+          //printf("! %d\n", (int)i);
+          if (!seen)
+          {
+            seen = 1;
+            priority = priorities[i];
+            count_thisprio = 1;
+            acceptid = i;
+          }
+          else if (priorities[i] == priority)
+          {
+            count_thisprio++;
+          }
+          else if (priorities[i] > priority)
+          {
+            priority = priorities[i];
+            count_thisprio = 1;
+            acceptid = i;
+          }
+        }
+        if (bitoff != 63)
+        {
+          i = (wordoff*64) + ffsll(ds[queued].acceptidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        }
+        else
+        {
+          i++;
+        }
+      }
+      if (!seen)
+      {
+        abort(); // Shouldn't happen
+      }
+      if (count_thisprio > 1)
+      {
+        abort(); // FIXME better error handling
+      }
+      if (count_thisprio == 0)
+      {
+        abort(); // Shouldn't happen
+      }
+      ds[queued].acceptid = acceptid;
+    }
+    for (i = 0; i < 256; i++)
+    {
+      if (ds[queued].d[i] != 255)
+      {
+        if (!has_bitset(&visited, ds[queued].d[i]))
+        {
+          set_bitset(&tovisit, ds[queued].d[i]);
+        }
+      }
+    }
+    if (ds[queued].default_tr != 255)
+    {
+      if (!has_bitset(&visited, ds[queued].default_tr))
+      {
+        set_bitset(&tovisit, ds[queued].default_tr);
+      }
+    }
+  }
 }
 
 ssize_t maximal_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
@@ -1292,7 +1392,7 @@ void gennfa_alternmulti(struct re *regexp,
   for (i = 0; i < regexp->u.altmulti.resz; i++)
   {
     uint8_t end = (*ncnt)++;
-    nfa_init(&ns[end], 1, 0);
+    nfa_init(&ns[end], 1, regexp->u.altmulti.pick_those[i]);
     gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, regexp->u.altmulti.pick_those[i]);
   }
 }
@@ -1323,6 +1423,17 @@ int main(int argc, char **argv)
     "[\t\x20-\x7E\x80-\xFF]*" ,
     "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+" ,
     "\r?\n[\t ]+" ,
+  };
+  int priorities[] = {
+    1,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
   };
   uint8_t pick_those0[] = {0};
   uint8_t pick_those1[] = {0,1,5};
@@ -1452,6 +1563,7 @@ int main(int argc, char **argv)
       //printf("\n\n\n\n");
       dscnt = nfa2dfa(ns, ds, 0);
       printf("DFA state count %d\n", (int)dscnt);
+      set_accepting(ds, 0, priorities);
       printf("Max backtrack %zd\n", maximal_backtrack(ds, 0, 250));
       //printf("\n\n\n\n");
       //dfaviz(ds, dscnt);
