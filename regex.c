@@ -250,6 +250,7 @@ uint8_t pick_rm_first(struct bitset *bs)
       return i*64 + j;
     }
   }
+  abort();
 }
 
 uint8_t has_bitset(struct bitset *bs, uint8_t bit)
@@ -372,7 +373,9 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
 
 void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acceptidset)
 {
+#if 0
   uint16_t i;
+#endif
   memset(n, 0, sizeof(*n));
   memset(n->d, 0xff, 256*sizeof(*n->d));
 #if 0
