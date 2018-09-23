@@ -354,14 +354,14 @@ ACTION maybe_token_ltgt
 {
   struct rule *rule;
   struct ruleitem *it;
+  struct ruleitem *it2;
   uint8_t i;
   rule = &yale->rules[yale->rulecnt - 1];
-  if (rule->itemcnt == 255)
+  if (rule->itemcnt == 255 || rule->noactcnt == 255)
   {
     printf("7\n");
     YYABORT;
   }
-  it = &rule->rhs[rule->itemcnt++];
   for (i = 0; i < yale->nscnt; i++) // FIXME check all cnt uses
   {
     if (strcmp(yale->ns[i].name, $1) == 0)
@@ -369,6 +369,7 @@ ACTION maybe_token_ltgt
       break;
     }
   }
+  it = &rule->rhs[rule->itemcnt++];
   if (i != yale->nscnt)
   {
     it->value = i;
@@ -391,6 +392,8 @@ ACTION maybe_token_ltgt
     it->cb = $2;
     yale->nscnt++;
   }
+  it2 = &rule->rhsnoact[rule->noactcnt++];
+  *it2 = *it;
   free($1);
 }
 | uint_token

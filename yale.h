@@ -72,6 +72,8 @@ struct rule {
   uint8_t lhs;
   struct ruleitem rhs[255];
   uint8_t itemcnt;
+  struct ruleitem rhsnoact[255];
+  uint8_t noactcnt;
 };
 
 struct yale {
