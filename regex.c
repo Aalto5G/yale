@@ -326,10 +326,13 @@ void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acc
 {
   uint16_t i;
   memset(n, 0, sizeof(*n));
+  memset(n->d, 0xff, 256*sizeof(*n->d));
+#if 0
   for (i = 0; i < 256; i++)
   {
     n->d[i] = 255;
   }
+#endif
   n->default_tr = 255;
   n->accepting = !!accepting;
   n->tainted = !!tainted;
@@ -488,7 +491,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
   initial.bitset[wordoff] |= (1ULL<<bitoff);
 
   epsilonclosure(ns, initial, &dfabegin, &tainted, &acceptidset);
-  for (i = 0; i < 256; i++)
+  for (i = 0; i < 256; /*i++*/)
   {
     wordoff = i/64;
     bitoff = i%64;
@@ -499,6 +502,14 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
         accepting = 1;
         break;
       }
+    }
+    if (bitoff != 63)
+    {
+      i = (wordoff*64) + ffsll(dfabegin.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+    }
+    else
+    {
+      i++;
     }
   }
 
@@ -518,7 +529,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
     struct bitset defaultsec;
     //printf("Iter\n");
     defaults = defaults_empty;
-    for (i = 0; i < 256; i++) // for nn in nns
+    for (i = 0; i < 256; /*i++*/) // for nn in nns
     {
       wordoff = i/64;
       bitoff = i%64;
@@ -531,6 +542,14 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
           bitset_update(&d2[j], &ns[i].d[j]);
         }
         bitset_update(&d2epsilon, &ns[i].epsilon);
+      }
+      if (bitoff != 63)
+      {
+        i = (wordoff*64) + ffsll(nns.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      }
+      else
+      {
+        i++;
       }
     }
     epsilonclosure(ns, defaults, &defaultsec, &tainted, &acceptidset);
@@ -548,7 +567,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
       if (dfanodeid == 255)
       {
         accepting = 0;
-        for (i = 0; i < 256; i++)
+        for (i = 0; i < 256; /*i++*/)
         {
           wordoff = i/64;
           bitoff = i%64;
@@ -559,6 +578,14 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
               accepting = 1;
               break;
             }
+          }
+          if (bitoff != 63)
+          {
+            i = (wordoff*64) + ffsll(defaultsec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+          }
+          else
+          {
+            i++;
           }
         }
         if (curdfanode >= 255)
@@ -614,7 +641,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
       if (dfanodeid == 255)
       {
         accepting = 0;
-        for (j = 0; j < 256; j++)
+        for (j = 0; j < 256; /*j++*/)
         {
           wordoff = j/64;
           bitoff = j%64;
@@ -625,6 +652,14 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
               accepting = 1;
               break;
             }
+          }
+          if (bitoff != 63)
+          {
+            j = (wordoff*64) + ffsll(ec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+          }
+          else
+          {
+            j++;
           }
         }
         if (curdfanode >= 255)
