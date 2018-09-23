@@ -232,7 +232,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
   size_t stacksz = 0;
   size_t i;
   uint16_t taintcnt = 0;
-  for (i = 0; i < 256; i++)
+  for (i = 0; i < 256; /*i++*/)
   {
     uint8_t wordoff = i/64;
     uint8_t bitoff = i%64;
@@ -244,6 +244,14 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
       }
       stack[stacksz++] = i;
     }
+    if (bitoff != 63)
+    {
+      i = (wordoff*64) + ffsll(nodes.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+    }
+    else
+    {
+      i++;
+    }
   }
   if (stacksz > 0)
   {
@@ -254,7 +262,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     struct nfa_node *n;
     nidx = stack[--stacksz];
     n = &ns[nidx];
-    for (i = 0; i < 256; i++)
+    for (i = 0; i < 256; /*i++*/)
     {
       uint8_t wordoff = i/64;
       uint8_t bitoff = i%64;
@@ -270,9 +278,17 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
           stack[stacksz++] = i;
         }
       }
+      if (bitoff != 63)
+      {
+        i = (wordoff*64) + ffsll(n->epsilon.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      }
+      else
+      {
+        i++;
+      }
     }
   }
-  for (i = 0; i < 256; i++)
+  for (i = 0; i < 256; /*i++*/)
   {
     uint8_t wordoff = i/64;
     uint8_t bitoff = i%64;
@@ -291,6 +307,14 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
           acceptidset.bitset[wordoff] |= (1ULL<<bitoff);
         }
       }
+    }
+    if (bitoff != 63)
+    {
+      i = (wordoff*64) + ffsll(taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+    }
+    else
+    {
+      i++;
     }
   }
   *closurep = closure;
@@ -1111,9 +1135,10 @@ struct pick_those_struct {
 
 int main(int argc, char **argv)
 {
-  size_t i, j;
+  size_t i, j, k;
   uint8_t dscnt;
   uint8_t ncnt;
+  struct re *re;
   const char *res[3] = {"ab","abcd","abce"};
   uint8_t pick_those[3] = {0,1,2};
   const char *http_res[] = {
@@ -1195,8 +1220,8 @@ int main(int argc, char **argv)
     dfa_init_empty(&ds[i]);
   }
 
+#if 0
   ncnt = 0;
-  struct re *re;
   const char *relit = "ab|abcd|abce";
   size_t remainderstart;
   re = parse_re(relit, strlen(relit), &remainderstart);
@@ -1230,30 +1255,34 @@ int main(int argc, char **argv)
   printf("\n\n\n\n");
   dfaviz(ds, dscnt);
   printf("\n\n\n\n");
+#endif
 
 
-  for (j = 0; j < sizeof(pick_thoses)/sizeof(*pick_thoses); j++)
-  //for (j = 0; j < 1; j++)
+  for (k = 0; k < 100; k++)
   {
-    for (i = 0; i < 255; i++)
+    for (j = 0; j < sizeof(pick_thoses)/sizeof(*pick_thoses); j++)
+    //for (j = 0; j < 1; j++)
     {
-      dfa_init_empty(&ds[i]);
-    }
-
-    printf("Pick those %d\n", (int)j);
+      for (i = 0; i < 255; i++)
+      {
+        dfa_init_empty(&ds[i]);
+      }
   
-    ncnt = 0;
-    re = parse_res(http_res, pick_thoses[j].pick_those, pick_thoses[j].len);
-    gennfa_alternmulti(re, ns, &ncnt);
-    free_re(re);
-    printf("NFA state count %d\n", (int)ncnt);
-    //printf("\n\n\n\n");
-    //nfaviz(ns, ncnt);
-    //printf("\n\n\n\n");
-    dscnt = nfa2dfa(ns, ds, 0);
-    printf("DFA state count %d\n", (int)dscnt);
-    //printf("\n\n\n\n");
-    //dfaviz(ds, dscnt);
-    //printf("\n\n\n\n");
+      printf("Pick those %d\n", (int)j);
+
+      ncnt = 0;
+      re = parse_res(http_res, pick_thoses[j].pick_those, pick_thoses[j].len);
+      gennfa_alternmulti(re, ns, &ncnt);
+      free_re(re);
+      printf("NFA state count %d\n", (int)ncnt);
+      //printf("\n\n\n\n");
+      //nfaviz(ns, ncnt);
+      //printf("\n\n\n\n");
+      dscnt = nfa2dfa(ns, ds, 0);
+      printf("DFA state count %d\n", (int)dscnt);
+      //printf("\n\n\n\n");
+      //dfaviz(ds, dscnt);
+      //printf("\n\n\n\n");
+    }
   }
 }
