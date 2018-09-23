@@ -342,7 +342,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + ffsll(taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + ffsll(closure.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
