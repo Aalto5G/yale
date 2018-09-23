@@ -329,14 +329,16 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
       struct nfa_node *n = &ns[i];
       if (n->taintid != 255)
       {
-        if (!(taintidset.bitset[wordoff] & (1ULL<<bitoff)))
+        uint8_t wordoff2 = n->taintid/64;
+        uint8_t bitoff2 = n->taintid%64;
+        if (!(taintidset.bitset[wordoff2] & (1ULL<<bitoff2)))
         {
-          taintidset.bitset[wordoff] |= (1ULL<<bitoff);
+          taintidset.bitset[wordoff2] |= (1ULL<<bitoff2);
           taintcnt++;
         }
         if (n->accepting)
         {
-          acceptidset.bitset[wordoff] |= (1ULL<<bitoff);
+          acceptidset.bitset[wordoff2] |= (1ULL<<bitoff2);
         }
       }
     }
