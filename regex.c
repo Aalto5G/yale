@@ -327,7 +327,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     if (closure.bitset[wordoff] & (1ULL<<bitoff))
     {
       struct nfa_node *n = &ns[i];
-      if (n->taintid)
+      if (n->taintid != 255)
       {
         if (!(taintidset.bitset[wordoff] & (1ULL<<bitoff)))
         {
@@ -1276,8 +1276,8 @@ void gennfa_main(struct re *regexp,
 {
   uint8_t begin = (*ncnt)++;
   uint8_t end = (*ncnt)++;
-  nfa_init(&ns[begin], 0, 0);
-  nfa_init(&ns[end], 1, 0);
+  nfa_init(&ns[begin], 0, 255);
+  nfa_init(&ns[end], 1, 255);
   gennfa(regexp, ns, ncnt, begin, end, taintid);
 }
 
@@ -1286,7 +1286,7 @@ void gennfa_alternmulti(struct re *regexp,
 {
   uint8_t begin = (*ncnt)++;
   size_t i;
-  nfa_init(&ns[begin], 0, 0);
+  nfa_init(&ns[begin], 0, 255);
   for (i = 0; i < regexp->u.altmulti.resz; i++)
   {
     uint8_t end = (*ncnt)++;
