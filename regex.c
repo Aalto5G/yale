@@ -35,6 +35,7 @@ struct altern {
 
 struct alternmulti {
   struct re **res;
+  uint8_t *pick_those;
   size_t resz;
 };
 
@@ -69,38 +70,93 @@ struct re {
   } u;
 };
 
-static inline struct re *alloc_re()
+static inline struct re *alloc_re(void)
 {
   struct re *result = malloc(sizeof(*result));
+  return result;
+}
+
+struct re *dup_re(struct re *re)
+{
+  struct re *result = alloc_re();
+  *result = *re;
+  switch (re->type)
+  {
+    case WILDCARD:
+    case EMPTYSTR:
+      break;
+    case LITERALS:
+      break;
+    case STAR:
+      result->u.star.re = dup_re(re->u.star.re);
+      break;
+    case ALTERNMULTI:
+      abort();
+      break;
+    case ALTERN:
+      result->u.alt.re1 = dup_re(re->u.alt.re1);
+      result->u.alt.re2 = dup_re(re->u.alt.re2);
+      break;
+    case CONCAT:
+      result->u.cat.re1 = dup_re(re->u.cat.re1);
+      result->u.cat.re2 = dup_re(re->u.cat.re2);
+      break;
+    default:
+      abort();
+  }
   return result;
 }
 
 static inline void free_re(struct re *re)
 {
   size_t i;
+  //printf("re->type %d\n", re->type);
   switch (re->type)
   {
     case WILDCARD:
     case EMPTYSTR:
+      break;
     case LITERALS:
+#if 0
+  printf("[");
+  for (i = 0; i < 256; i++)
+  {
+    uint8_t wordoff = i/64;
+    uint8_t bitoff = i%64;
+    if (re->u.lit.bitmask.bitset[wordoff] & 1ULL<<bitoff)
+    {
+      printf("%c", (char)(unsigned char)i);
+    }
+  }
+  printf("]\n");
+#endif
       break;
     case STAR:
       free_re(re->u.star.re);
+      re->u.star.re = NULL;
       break;
     case ALTERNMULTI:
       for (i = 0; i < re->u.altmulti.resz; i++)
       {
         free_re(re->u.altmulti.res[i]);
+        re->u.altmulti.res[i] = NULL;
       }
       free(re->u.altmulti.res);
+      re->u.altmulti.res = NULL;
+      free(re->u.altmulti.pick_those);
+      re->u.altmulti.pick_those = NULL;
       break;
     case ALTERN:
       free_re(re->u.alt.re1);
+      re->u.alt.re1 = NULL;
       free_re(re->u.alt.re2);
+      re->u.alt.re2 = NULL;
       break;
     case CONCAT:
       free_re(re->u.cat.re1);
+      re->u.cat.re1 = NULL;
       free_re(re->u.cat.re2);
+      re->u.cat.re2 = NULL;
       break;
     default:
       abort();
@@ -113,6 +169,7 @@ struct dfa_node {
   uint8_t default_tr;
   uint8_t tainted:1;
   uint8_t accepting:1;
+  uint8_t final:1;
   struct bitset acceptidset;
 };
 
@@ -336,10 +393,11 @@ void dfaviz(struct dfa_node *ds, uint8_t cnt)
   printf("digraph fsm {\n");
   for (i = 0; i < cnt; i++)
   {
-    printf("n%d [label=\"%d%s%s\"];\n",
+    printf("n%d [label=\"%d%s%s%s\"];\n",
            (int)i, (int)i,
            ds[i].accepting ? "+" : "",
-           ds[i].tainted ? "*" : "");
+           ds[i].tainted ? "*" : "",
+           ds[i].final ? "F" : "");
   }
   for (i = 0; i < cnt; i++)
   {
@@ -576,6 +634,20 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
       dfa_connect(&ds[dfanodeid2], i, dfanodeid);
     }
   }
+  for (i = 0; i < curdfanode; i++)
+  {
+    for (j = 0; j < 256; j++)
+    {
+      if (ds[i].d[j] != 255)
+      {
+        break;
+      }
+    }
+    if (j == 256 && ds[i].default_tr == 255)
+    {
+      ds[i].final = 1;
+    }
+  }
   return curdfanode;
 }
 
@@ -609,15 +681,15 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
       abort();
     }
     inverse = 1;
-    start = re+2;
+    start = re+1;
     term = memchr(re+2, ']', resz-2);
   }
   else
   {
-    start = re+1;
+    start = re;
     term = memchr(re+1, ']', resz-1);
   }
-  len = term - start;
+  len = term - start; // FIXME is return value correct for inverse?
   i = 0;
   while (i < len)
   {
@@ -754,7 +826,20 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
   struct re *result = alloc_re();
   result->type = LITERALS;
   memcpy(result->u.lit.bitmask.bitset, bitmask, sizeof(bitmask));
-  *remainderstart = len;
+#if 0
+  printf("[");
+  for (i = 0; i < 256; i++)
+  {
+    uint8_t wordoff = i/64;
+    uint8_t bitoff = i%64;
+    if (bitmask[wordoff] & 1ULL<<bitoff)
+    {
+      printf("%c", (char)(unsigned char)i);
+    }
+  }
+  printf("]\n");
+#endif
+  *remainderstart = len + 1;
   return result;
 }
 
@@ -827,19 +912,19 @@ struct re *parse_piece(const char *re, size_t resz, size_t *remainderstart)
     }
     else if (re[atomsz] == '+')
     {
-      intermediate = malloc(sizeof(*intermediate));
+      intermediate = alloc_re();
       intermediate->type = STAR;
       intermediate->u.star.re = re1;
       result = alloc_re();
       result->type = CONCAT;
-      result->u.cat.re1 = re1;
+      result->u.cat.re1 = dup_re(re1);
       result->u.cat.re2 = intermediate;
       *remainderstart = atomsz+1;
       return result;
     }
     else if (re[atomsz] == '?')
     {
-      intermediate = malloc(sizeof(*intermediate));
+      intermediate = alloc_re();
       intermediate->type = EMPTYSTR;
       result = alloc_re();
       result->type = ALTERN;
@@ -901,21 +986,24 @@ struct re *parse_re(const char *re, size_t resz, size_t *remainderstart)
   }
 }
 
-struct re *parse_res(const char **regexps, size_t resz)
+struct re *parse_res(const char **regexps, uint8_t *pick_those, size_t resz)
 {
   struct re **res;
   struct re *result;
   size_t i;
+  uint8_t *pick_those2 = malloc(sizeof(*pick_those2)*resz);
+  memcpy(pick_those2, pick_those, sizeof(*pick_those2)*resz);
   res = malloc(sizeof(*res)*resz);
-  result = malloc(sizeof(*result));
+  result = alloc_re();
   result->type = ALTERNMULTI;
   result->u.altmulti.res = res;
+  result->u.altmulti.pick_those = pick_those2;
   result->u.altmulti.resz = resz;
   for (i = 0; i < resz; i++)
   {
-    size_t regexplen = strlen(regexps[i]);
+    size_t regexplen = strlen(regexps[pick_those[i]]);
     size_t remainderstart;
-    res[i] = parse_re(regexps[i], regexplen, &remainderstart);
+    res[i] = parse_re(regexps[pick_those[i]], regexplen, &remainderstart);
     if (remainderstart != regexplen)
     {
       abort(); // FIXME error handling
@@ -1009,19 +1097,62 @@ void gennfa_alternmulti(struct re *regexp,
   {
     uint8_t end = (*ncnt)++;
     nfa_init(&ns[end], 1, 0);
-    gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, i);
+    gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, regexp->u.altmulti.pick_those[i]);
   }
 }
 
 struct nfa_node ns[255];
 struct dfa_node ds[255];
 
+struct pick_those_struct {
+  uint8_t *pick_those;
+  size_t len;
+};
+
 int main(int argc, char **argv)
 {
-  size_t i;
+  size_t i, j;
   uint8_t dscnt;
   uint8_t ncnt;
   const char *res[3] = {"ab","abcd","abce"};
+  uint8_t pick_those[3] = {0,1,2};
+  const char *http_res[] = {
+    "[Hh][Oo][Ss][Tt]" ,
+    "\r?\n" ,
+    " " ,
+    " HTTP/[0-9]+[.][0-9]+\r?\n" ,
+    ":[ \t]*" ,
+    "[-!#$%&'*+.^_`|~0-9A-Za-z]+" ,
+    "[\t\x20-\x7E\x80-\xFF]*" ,
+    "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+" ,
+    "\r?\n[\t ]+" ,
+  };
+  uint8_t pick_those0[] = {0};
+  uint8_t pick_those1[] = {0,1,5};
+  uint8_t pick_those2[] = {0,5};
+  uint8_t pick_those3[] = {1};
+  uint8_t pick_those4[] = {1,8};
+  uint8_t pick_those5[] = {2};
+  uint8_t pick_those6[] = {3};
+  uint8_t pick_those7[] = {4};
+  uint8_t pick_those8[] = {5};
+  uint8_t pick_those9[] = {6};
+  uint8_t pick_those10[] = {7};
+  uint8_t pick_those11[] = {8};
+  struct pick_those_struct pick_thoses[] = {
+    {.pick_those=pick_those0, .len=sizeof(pick_those0)/sizeof(*pick_those0)},
+    {.pick_those=pick_those1, .len=sizeof(pick_those1)/sizeof(*pick_those1)},
+    {.pick_those=pick_those2, .len=sizeof(pick_those2)/sizeof(*pick_those2)},
+    {.pick_those=pick_those3, .len=sizeof(pick_those3)/sizeof(*pick_those3)},
+    {.pick_those=pick_those4, .len=sizeof(pick_those4)/sizeof(*pick_those4)},
+    {.pick_those=pick_those5, .len=sizeof(pick_those5)/sizeof(*pick_those5)},
+    {.pick_those=pick_those6, .len=sizeof(pick_those6)/sizeof(*pick_those6)},
+    {.pick_those=pick_those7, .len=sizeof(pick_those7)/sizeof(*pick_those7)},
+    {.pick_those=pick_those8, .len=sizeof(pick_those8)/sizeof(*pick_those8)},
+    {.pick_those=pick_those9, .len=sizeof(pick_those9)/sizeof(*pick_those9)},
+    {.pick_those=pick_those10, .len=sizeof(pick_those10)/sizeof(*pick_those10)},
+    {.pick_those=pick_those11, .len=sizeof(pick_those11)/sizeof(*pick_those11)},
+  };
 
   for (i = 0; i < 255; i++)
   {
@@ -1087,7 +1218,7 @@ int main(int argc, char **argv)
   }
 
   ncnt = 0;
-  re = parse_res(res, 3);
+  re = parse_res(res, pick_those, 3);
   gennfa_alternmulti(re, ns, &ncnt);
   free_re(re);
   printf("NFA state count %d\n", (int)ncnt);
@@ -1099,4 +1230,30 @@ int main(int argc, char **argv)
   printf("\n\n\n\n");
   dfaviz(ds, dscnt);
   printf("\n\n\n\n");
+
+
+  for (j = 0; j < sizeof(pick_thoses)/sizeof(*pick_thoses); j++)
+  //for (j = 0; j < 1; j++)
+  {
+    for (i = 0; i < 255; i++)
+    {
+      dfa_init_empty(&ds[i]);
+    }
+
+    printf("Pick those %d\n", (int)j);
+  
+    ncnt = 0;
+    re = parse_res(http_res, pick_thoses[j].pick_those, pick_thoses[j].len);
+    gennfa_alternmulti(re, ns, &ncnt);
+    free_re(re);
+    printf("NFA state count %d\n", (int)ncnt);
+    //printf("\n\n\n\n");
+    //nfaviz(ns, ncnt);
+    //printf("\n\n\n\n");
+    dscnt = nfa2dfa(ns, ds, 0);
+    printf("DFA state count %d\n", (int)dscnt);
+    //printf("\n\n\n\n");
+    //dfaviz(ds, dscnt);
+    //printf("\n\n\n\n");
+  }
 }
