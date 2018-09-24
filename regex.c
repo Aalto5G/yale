@@ -1602,6 +1602,11 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
   }
 }
 
+int fprints(FILE *f, const char *s)
+{
+  return fputs(s, f);
+}
+
 void dump_headers(FILE *f, const char *parsername, size_t max_bt)
 {
   char *parserupper = strdup(parsername);
@@ -1613,29 +1618,29 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt)
   }
   fprintf(f, "#define %s_BACKTRACKLEN (%zu)\n", parserupper, max_bt);
   fprintf(f, "#define %s_BACKTRACKLEN_PLUS_1 ((%s_BACKTRACKLEN) + 1)\n", parserupper, parserupper);
-  fprintf(f, "\n");
+  fprints(f, "\n");
   fprintf(f, "struct %s_parserctx;", parsername);
-  fprintf(f, "\n");
+  fprints(f, "\n");
   fprintf(f, "struct %s_rectx {\n", parsername);
-  fprintf(f, "  uint8_t state; // 0 is initial state\n");
-  fprintf(f, "  uint8_t last_accept; // 255 means never accepted\n");
-  fprintf(f, "  uint8_t backtrackstart;\n");
-  fprintf(f, "  uint8_t backtrackend;\n");
+  fprints(f, "  uint8_t state; // 0 is initial state\n");
+  fprints(f, "  uint8_t last_accept; // 255 means never accepted\n");
+  fprints(f, "  uint8_t backtrackstart;\n");
+  fprints(f, "  uint8_t backtrackend;\n");
   fprintf(f, "  uint8_t backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper);
-  fprintf(f, "};\n");
-  fprintf(f, "\n");
-  fprintf(f, "static inline void\n");
+  fprints(f, "};\n");
+  fprints(f, "\n");
+  fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);
-  fprintf(f, "{\n");
-  fprintf(f, "  ctx->state = 0;\n");
-  fprintf(f, "  ctx->last_accept = 255;\n");
-  fprintf(f, "  ctx->backtrackstart = 0;\n");
-  fprintf(f, "  ctx->backtrackend = 0;\n");
-  fprintf(f, "}\n");
-  fprintf(f, "\n");
-  fprintf(f, "ssize_t\n");
+  fprints(f, "{\n");
+  fprints(f, "  ctx->state = 0;\n");
+  fprints(f, "  ctx->last_accept = 255;\n");
+  fprints(f, "  ctx->backtrackstart = 0;\n");
+  fprints(f, "  ctx->backtrackend = 0;\n");
+  fprints(f, "}\n");
+  fprints(f, "\n");
+  fprints(f, "ssize_t\n");
   fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1);//, void *baton);\n", parsername, parsername, parsername);
-  fprintf(f, "\n");
+  fprints(f, "\n");
   free(parserupper);
 }
 
@@ -1644,19 +1649,26 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
 {
   size_t i;
   size_t j;
-  fprintf(f, "#ifdef SMALL_CODE\n");
+  fprints(f, "#ifdef SMALL_CODE\n");
   fprintf(f, "const uint8_t %s_transitiontbl[][256] = {\n", parsername);
   for (i = 0; i < bufs->cnt; i++)
   {
     fprintf(f, "{");
     for (j = 0; j < 256; j++)
     {
-      fprintf(f, "%d, ", (int)bufs->all[i].transitions[j]);
+      if (bufs->all[i].transitions[j] == 255)
+      {
+        fprints(f, "255, ");
+      }
+      else
+      {
+        fprintf(f, "%d, ", (int)bufs->all[i].transitions[j]);
+      }
     }
-    fprintf(f, "},\n");
+    fprints(f, "},\n");
   }
-  fprintf(f, "};\n");
-  fprintf(f, "#endif\n");
+  fprints(f, "};\n");
+  fprints(f, "#endif\n");
 }
 
 void
@@ -1668,13 +1680,13 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
   {
     fprintf(f, "_%d", pick_those->pick_those[i]);
   }
-  fprintf(f, "[] = {\n");
+  fprints(f, "[] = {\n");
   for (i = 0; i < pick_those->dscnt; i++)
   {
     struct dfa_node *ds = &pick_those->ds[i];
     fprintf(f, "{ .accepting = %d, .acceptid = %d, .final = %d,\n",
                (int)ds->accepting, (int)ds->acceptid, (int)ds->final);
-    fprintf(f, ".fastpathbitmask = {");
+    fprints(f, ".fastpathbitmask = {");
     if (ds->accepting && !ds->final)
     {
       size_t iid, jid;
@@ -1697,20 +1709,27 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
         fprintf(f, "0x%llx,", (unsigned long long)curval);
       }
     }
-    fprintf(f, "},\n");
-    fprintf(f, "#ifdef SMALL_CODE\n");
+    fprints(f, "},\n");
+    fprints(f, "#ifdef SMALL_CODE\n");
     fprintf(f, ".transitions = %s_transitiontbl[%zu],\n", parsername, ds->transitions_id);
-    fprintf(f, "#else\n");
-    fprintf(f, ".transitions = {");
+    fprints(f, "#else\n");
+    fprints(f, ".transitions = {");
     for (j = 0; j < 256; j++)
     {
-      fprintf(f, "%d, ", (int)ds->d[j]);
+      if (ds->d[j] == 255)
+      {
+        fprints(f, "255, ");
+      }
+      else
+      {
+        fprintf(f, "%d, ", (int)ds->d[j]);
+      }
     }
-    fprintf(f, "},\n");
-    fprintf(f, "#endif\n");
-    fprintf(f, "},\n");
+    fprints(f, "},\n");
+    fprints(f, "#endif\n");
+    fprints(f, "},\n");
   }
-  fprintf(f, "};\n");
+  fprints(f, "};\n");
 }
 
 void
@@ -1723,199 +1742,199 @@ dump_chead(FILE *f, const char *parsername)
   {
     parserupper[i] = toupper((unsigned char)parserupper[i]);
   }
-  fprintf(f, "static inline int\n");
+  fprints(f, "static inline int\n");
   fprintf(f, "%s_is_fastpath(const struct state *st, unsigned char uch)\n", parsername);
-  fprintf(f, "{\n");
-  fprintf(f, "  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%%64)));\n");
-  fprintf(f, "}\n");
-  fprintf(f, "\n");
-  fprintf(f, "ssize_t\n");
+  fprints(f, "{\n");
+  fprints(f, "  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));\n");
+  fprints(f, "}\n");
+  fprints(f, "\n");
+  fprints(f, "ssize_t\n");
   fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1)//, void *baton)\n", parsername, parsername, parsername);
-  fprintf(f, "{\n");
-  fprintf(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
-  fprintf(f, "  const struct state *st = NULL;\n");
-  fprintf(f, "  size_t i;\n");
-  fprintf(f, "  uint8_t newstate;\n");
+  fprints(f, "{\n");
+  fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
+  fprints(f, "  const struct state *st = NULL;\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  uint8_t newstate;\n");
   fprintf(f, "  struct %s_parserctx *pctx = CONTAINER_OF(ctx, struct %s_parserctx, rctx);\n", parsername, parsername);
-  fprintf(f, "  if (ctx->state == 255)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    *state = 255;\n");
-  fprintf(f, "    return -EINVAL;\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "  //printf(\"Called: %%s\\n\", buf);\n");
-  fprintf(f, "  if (unlikely(ctx->backtrackstart != ctx->backtrackend))\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    while (ctx->backtrackstart != ctx->backtrackend)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      st = &stbl[ctx->state];\n");
-  fprintf(f, "      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];\n");
-  fprintf(f, "      if (unlikely(ctx->state == 255))\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        if (ctx->last_accept == 255)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          *state = 255;\n");
-  fprintf(f, "          return -EINVAL;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        ctx->state = ctx->last_accept;\n");
-  fprintf(f, "        ctx->last_accept = 255;\n");
-  fprintf(f, "        st = &stbl[ctx->state];\n");
-  fprintf(f, "        *state = st->acceptid;\n");
-  fprintf(f, "        ctx->state = 0;\n");
-  fprintf(f, "        return 0;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      ctx->backtrackstart++;\n");
+  fprints(f, "  if (ctx->state == 255)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    *state = 255;\n");
+  fprints(f, "    return -EINVAL;\n");
+  fprints(f, "  }\n");
+  fprints(f, "  //printf(\"Called: %s\\n\", buf);\n");
+  fprints(f, "  if (unlikely(ctx->backtrackstart != ctx->backtrackend))\n");
+  fprints(f, "  {\n");
+  fprints(f, "    while (ctx->backtrackstart != ctx->backtrackend)\n");
+  fprints(f, "    {\n");
+  fprints(f, "      st = &stbl[ctx->state];\n");
+  fprints(f, "      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];\n");
+  fprints(f, "      if (unlikely(ctx->state == 255))\n");
+  fprints(f, "      {\n");
+  fprints(f, "        if (ctx->last_accept == 255)\n");
+  fprints(f, "        {\n");
+  fprints(f, "          *state = 255;\n");
+  fprints(f, "          return -EINVAL;\n");
+  fprints(f, "        }\n");
+  fprints(f, "        ctx->state = ctx->last_accept;\n");
+  fprints(f, "        ctx->last_accept = 255;\n");
+  fprints(f, "        st = &stbl[ctx->state];\n");
+  fprints(f, "        *state = st->acceptid;\n");
+  fprints(f, "        ctx->state = 0;\n");
+  fprints(f, "        return 0;\n");
+  fprints(f, "      }\n");
+  fprints(f, "      ctx->backtrackstart++;\n");
   fprintf(f, "      if (ctx->backtrackstart >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
-  fprintf(f, "      {\n");
-  fprintf(f, "        ctx->backtrackstart = 0;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      st = &stbl[ctx->state];\n");
-  fprintf(f, "      if (st->accepting)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        if (st->final)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          *state = st->acceptid;\n");
-  fprintf(f, "          ctx->state = 0;\n");
-  fprintf(f, "          ctx->last_accept = 255;\n");
-  fprintf(f, "          return 0;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        else\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          ctx->last_accept = ctx->state; // FIXME correct?\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "  for (i = 0; i < sz; i++)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    st = &stbl[ctx->state];\n");
+  fprints(f, "      {\n");
+  fprints(f, "        ctx->backtrackstart = 0;\n");
+  fprints(f, "      }\n");
+  fprints(f, "      st = &stbl[ctx->state];\n");
+  fprints(f, "      if (st->accepting)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        if (st->final)\n");
+  fprints(f, "        {\n");
+  fprints(f, "          *state = st->acceptid;\n");
+  fprints(f, "          ctx->state = 0;\n");
+  fprints(f, "          ctx->last_accept = 255;\n");
+  fprints(f, "          return 0;\n");
+  fprints(f, "        }\n");
+  fprints(f, "        else\n");
+  fprints(f, "        {\n");
+  fprints(f, "          ctx->last_accept = ctx->state; // FIXME correct?\n");
+  fprints(f, "        }\n");
+  fprints(f, "      }\n");
+  fprints(f, "    }\n");
+  fprints(f, "  }\n");
+  fprints(f, "  for (i = 0; i < sz; i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    st = &stbl[ctx->state];\n");
   fprintf(f, "    if (%s_is_fastpath(st, ubuf[i]))\n", parsername);
-  fprintf(f, "    {\n");
-  fprintf(f, "      ctx->last_accept = ctx->state;\n");
-  fprintf(f, "      while (i + 8 < sz) // FIXME test this thoroughly, all branches!\n");
-  fprintf(f, "      {\n");
+  fprints(f, "    {\n");
+  fprints(f, "      ctx->last_accept = ctx->state;\n");
+  fprints(f, "      while (i + 8 < sz) // FIXME test this thoroughly, all branches!\n");
+  fprints(f, "      {\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+1]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 0;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 0;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+2]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 1;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 1;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+3]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 2;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 2;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+4]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 3;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 3;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+5]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 4;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 4;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+6]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 5;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 5;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+7]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 6;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 6;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
   fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+8]))\n", parsername);
-  fprintf(f, "        {\n");
-  fprintf(f, "          i += 7;\n");
-  fprintf(f, "          break;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        i += 8;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      continue;\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    newstate = st->transitions[ubuf[i]];\n");
-  fprintf(f, "    if (newstate != ctx->state) // Improves perf a lot\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      ctx->state = newstate;\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    //printf(\"New state: %%d\\n\", ctx->state);\n");
-  fprintf(f, "    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      if (ctx->last_accept == 255)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        *state = 255;\n");
-  fprintf(f, "        //printf(\"Error\\n\");\n");
-  fprintf(f, "        return -EINVAL;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      ctx->state = ctx->last_accept;\n");
-  fprintf(f, "      ctx->last_accept = 255;\n");
-  fprintf(f, "      st = &stbl[ctx->state];\n");
-  fprintf(f, "      *state = st->acceptid;\n");
-  fprintf(f, "      ctx->state = 0;\n");
-  fprintf(f, "      if (cbs && st->accepting && cbs[st->acceptid] != 255)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        cbtbl[cbs[st->acceptid]](buf, i, pctx);\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      if (cb1 != 255 && st->accepting)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        cbtbl[cb1](buf, i, pctx);\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      return i;\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here\n");
-  fprintf(f, "    if (st->accepting)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      if (st->final)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        *state = st->acceptid;\n");
-  fprintf(f, "        ctx->state = 0;\n");
-  fprintf(f, "        ctx->last_accept = 255;\n");
-  fprintf(f, "        if (cbs && st->accepting && cbs[st->acceptid] != 255)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          cbtbl[cbs[st->acceptid]](buf, i + 1, pctx);\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        if (cb1 != 255 && st->accepting)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          cbtbl[cb1](buf, i + 1, pctx);\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        return i + 1;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        ctx->last_accept = ctx->state; // FIXME correct?\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    else\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      if (ctx->last_accept != 255)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?\n");
+  fprints(f, "        {\n");
+  fprints(f, "          i += 7;\n");
+  fprints(f, "          break;\n");
+  fprints(f, "        }\n");
+  fprints(f, "        i += 8;\n");
+  fprints(f, "      }\n");
+  fprints(f, "      continue;\n");
+  fprints(f, "    }\n");
+  fprints(f, "    newstate = st->transitions[ubuf[i]];\n");
+  fprints(f, "    if (newstate != ctx->state) // Improves perf a lot\n");
+  fprints(f, "    {\n");
+  fprints(f, "      ctx->state = newstate;\n");
+  fprints(f, "    }\n");
+  fprints(f, "    //printf(\"New state: %d\\n\", ctx->state);\n");
+  fprints(f, "    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster\n");
+  fprints(f, "    {\n");
+  fprints(f, "      if (ctx->last_accept == 255)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        *state = 255;\n");
+  fprints(f, "        //printf(\"Error\\n\");\n");
+  fprints(f, "        return -EINVAL;\n");
+  fprints(f, "      }\n");
+  fprints(f, "      ctx->state = ctx->last_accept;\n");
+  fprints(f, "      ctx->last_accept = 255;\n");
+  fprints(f, "      st = &stbl[ctx->state];\n");
+  fprints(f, "      *state = st->acceptid;\n");
+  fprints(f, "      ctx->state = 0;\n");
+  fprints(f, "      if (cbs && st->accepting && cbs[st->acceptid] != 255)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        cbtbl[cbs[st->acceptid]](buf, i, pctx);\n");
+  fprints(f, "      }\n");
+  fprints(f, "      if (cb1 != 255 && st->accepting)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        cbtbl[cb1](buf, i, pctx);\n");
+  fprints(f, "      }\n");
+  fprints(f, "      return i;\n");
+  fprints(f, "    }\n");
+  fprints(f, "    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here\n");
+  fprints(f, "    if (st->accepting)\n");
+  fprints(f, "    {\n");
+  fprints(f, "      if (st->final)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        *state = st->acceptid;\n");
+  fprints(f, "        ctx->state = 0;\n");
+  fprints(f, "        ctx->last_accept = 255;\n");
+  fprints(f, "        if (cbs && st->accepting && cbs[st->acceptid] != 255)\n");
+  fprints(f, "        {\n");
+  fprints(f, "          cbtbl[cbs[st->acceptid]](buf, i + 1, pctx);\n");
+  fprints(f, "        }\n");
+  fprints(f, "        if (cb1 != 255 && st->accepting)\n");
+  fprints(f, "        {\n");
+  fprints(f, "          cbtbl[cb1](buf, i + 1, pctx);\n");
+  fprints(f, "        }\n");
+  fprints(f, "        return i + 1;\n");
+  fprints(f, "      }\n");
+  fprints(f, "      else\n");
+  fprints(f, "      {\n");
+  fprints(f, "        ctx->last_accept = ctx->state; // FIXME correct?\n");
+  fprints(f, "      }\n");
+  fprints(f, "    }\n");
+  fprints(f, "    else\n");
+  fprints(f, "    {\n");
+  fprints(f, "      if (ctx->last_accept != 255)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?\n");
   fprintf(f, "        if (ctx->backtrackstart >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
-  fprintf(f, "        {\n");
-  fprintf(f, "          ctx->backtrackstart = 0;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        if (ctx->backtrackstart == ctx->backtrackend)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          abort();\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    cbtbl[cbs[st->acceptid]](buf, sz, pctx);\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "  if (st && cb1 != 255 && st->accepting)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    cbtbl[cb1](buf, sz, pctx);\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "  *state = 255;\n");
-  fprintf(f, "  return -EAGAIN; // Not yet\n");
-  fprintf(f, "}\n");
+  fprints(f, "        {\n");
+  fprints(f, "          ctx->backtrackstart = 0;\n");
+  fprints(f, "        }\n");
+  fprints(f, "        if (ctx->backtrackstart == ctx->backtrackend)\n");
+  fprints(f, "        {\n");
+  fprints(f, "          abort();\n");
+  fprints(f, "        }\n");
+  fprints(f, "      }\n");
+  fprints(f, "    }\n");
+  fprints(f, "  }\n");
+  fprints(f, "  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    cbtbl[cbs[st->acceptid]](buf, sz, pctx);\n");
+  fprints(f, "  }\n");
+  fprints(f, "  if (st && cb1 != 255 && st->accepting)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    cbtbl[cb1](buf, sz, pctx);\n");
+  fprints(f, "  }\n");
+  fprints(f, "  *state = 255;\n");
+  fprints(f, "  return -EAGAIN; // Not yet\n");
+  fprints(f, "}\n");
 
   free(parserupper);
 }
@@ -2089,27 +2108,6 @@ int main(int argc, char **argv)
   printf("\n\n\n\n");
 #endif
 
-  for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
-  {
-    pick(ns, ds, http_res, &pick_thoses[i], priorities);
-  }
-  collect(pick_thoses, sizeof(pick_thoses)/sizeof(*pick_thoses), &bufs);
-  for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
-  {
-    ssize_t curbt;
-    curbt = maximal_backtrack(pick_thoses[i].ds, 0, 250);
-    if (curbt < 0)
-    {
-      abort(); // FIXME error handling
-    }
-    if (maxbt < curbt)
-    {
-      maxbt = curbt;
-    }
-  }
-
-  printf("Max backtrack %zd\n", maxbt);
-
 #if 0
   for (k = 0; k < 100; k++)
   {
@@ -2140,20 +2138,45 @@ int main(int argc, char **argv)
     }
   }
 #endif
-  f = fopen("httpparser2.h", "w");
-  fprintf(f, "#ifndef _HTTPPARSER_H_\n");
-  fprintf(f, "#define _HTTPPARSER_H_\n");
-  fprintf(f, "#include \"yalecommon.h\"\n");
-  dump_headers(f, "http", maxbt);
-  fprintf(f, "#endif\n");
-  fclose(f);
-  f = fopen("httpparser2.c", "w");
-  fprintf(f, "#include \"httpparser2.h\"\n");
-  dump_chead(f, "http");
-  dump_collected(f, "http", &bufs);
-  for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
+
+  size_t outiter;
+  for (outiter = 0; outiter < 100; outiter++)
   {
-    dump_one(f, "http", &pick_thoses[i]);
+    for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
+    {
+      pick(ns, ds, http_res, &pick_thoses[i], priorities);
+    }
+    collect(pick_thoses, sizeof(pick_thoses)/sizeof(*pick_thoses), &bufs);
+    for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
+    {
+      ssize_t curbt;
+      curbt = maximal_backtrack(pick_thoses[i].ds, 0, 250);
+      if (curbt < 0)
+      {
+        abort(); // FIXME error handling
+      }
+      if (maxbt < curbt)
+      {
+        maxbt = curbt;
+      }
+    }
+  
+    printf("Max backtrack %zd\n", maxbt);
+    f = fopen("httpparser2.h", "w");
+    fprints(f, "#ifndef _HTTPPARSER_H_\n");
+    fprints(f, "#define _HTTPPARSER_H_\n");
+    fprints(f, "#include \"yalecommon.h\"\n");
+    dump_headers(f, "http", maxbt);
+    fprints(f, "#endif\n");
+    fclose(f);
+    f = fopen("httpparser2.c", "w");
+    fprints(f, "#include \"httpparser2.h\"\n");
+    dump_chead(f, "http");
+    dump_collected(f, "http", &bufs);
+    for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
+    {
+      dump_one(f, "http", &pick_thoses[i]);
+    }
+    fclose(f);
   }
-  fclose(f);
 }
