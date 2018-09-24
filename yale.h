@@ -62,6 +62,7 @@ struct namespaceitem {
   char *name;
   uint8_t is_token:1;
   uint8_t is_lhs:1;
+  uint8_t val;
 };
 
 struct cb {
