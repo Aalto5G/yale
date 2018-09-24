@@ -1597,7 +1597,7 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
     uint8_t dscnt = pick_thoses[i].dscnt;
     for (j = 0; j < dscnt; j++)
     {
-      ds->transitions_id = get_transid(ds[j].d, bufs);
+      ds[j].transitions_id = get_transid(ds[j].d, bufs);
     }
   }
 }
@@ -1657,6 +1657,60 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
   }
   fprintf(f, "};\n");
   fprintf(f, "#endif\n");
+}
+
+void
+dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
+{
+  size_t i, j;
+  fprintf(f, "const struct state %s_states", parsername);
+  for (i = 0; i < pick_those->len; i++)
+  {
+    fprintf(f, "_%d", pick_those->pick_those[i]);
+  }
+  fprintf(f, "[] = {\n");
+  for (i = 0; i < pick_those->dscnt; i++)
+  {
+    struct dfa_node *ds = &pick_those->ds[i];
+    fprintf(f, "{ .accepting = %d, .acceptid = %d, .final = %d,\n",
+               (int)ds->accepting, (int)ds->acceptid, (int)ds->final);
+    fprintf(f, ".fastpathbitmask = {");
+    if (ds->accepting && !ds->final)
+    {
+      size_t iid, jid;
+      uint64_t curval;
+      for (iid = 0; iid < 4; iid++)
+      {
+        curval = 0;
+        for (jid = 0; jid < 64; jid++)
+        {
+          unsigned char uch = 64*iid + jid;
+          if (ds->d[uch] == i)
+          {
+            curval |= (1ULL<<jid);
+          }
+          else if (ds->default_tr == i)
+          {
+            curval |= (1ULL<<jid);
+          }
+        }
+        fprintf(f, "0x%llx,", (unsigned long long)curval);
+      }
+    }
+    fprintf(f, "},\n");
+    fprintf(f, "#ifdef SMALL_CODE\n");
+    fprintf(f, ".transitions = %s_transitiontbl[%zu],\n", parsername, ds->transitions_id);
+    fprintf(f, "#else\n");
+    fprintf(f, ".transitions = {");
+    for (j = 0; j < 256; j++)
+    {
+      fprintf(f, "%d, ", (int)ds->d[j]);
+    }
+    fprintf(f, "},\n");
+    fprintf(f, "#endif\n");
+    fprintf(f, "},\n");
+  }
+  fprintf(f, "};\n");
 }
 
 void
@@ -2086,11 +2140,20 @@ int main(int argc, char **argv)
     }
   }
 #endif
-  f = fopen("httpparser.H", "w");
+  f = fopen("httpparser2.h", "w");
+  fprintf(f, "#ifndef _HTTPPARSER_H_\n");
+  fprintf(f, "#define _HTTPPARSER_H_\n");
+  fprintf(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, "http", maxbt);
+  fprintf(f, "#endif\n");
   fclose(f);
-  f = fopen("httpparser.C", "w");
+  f = fopen("httpparser2.c", "w");
+  fprintf(f, "#include \"httpparser2.h\"\n");
   dump_chead(f, "http");
   dump_collected(f, "http", &bufs);
+  for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
+  {
+    dump_one(f, "http", &pick_thoses[i]);
+  }
   fclose(f);
 }
