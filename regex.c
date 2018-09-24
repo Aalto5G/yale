@@ -187,6 +187,7 @@ struct dfa_node {
   uint8_t final:1;
   struct bitset acceptidset;
   uint64_t algo_tmp;
+  size_t transitions_id;
 };
 
 struct nfa_node {
@@ -395,6 +396,7 @@ void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acc
   n->accepting = !!accepting;
   n->tainted = !!tainted;
   n->acceptidset = *acceptidset;
+  n->transitions_id = SIZE_MAX;
 }
 
 void dfa_init_empty(struct dfa_node *n)
@@ -1516,6 +1518,53 @@ struct pick_those_struct {
   size_t dscnt;
 };
 
+struct transitionbuf {
+  uint8_t transitions[256];
+};
+
+#define MAX_TRANS 65536 // 256 automatons, 256 states per automaton
+
+struct transitionbufs {
+  struct transitionbuf all[MAX_TRANS];
+  size_t cnt;
+};
+
+size_t
+get_transid(const uint8_t *transitions, struct transitionbufs *bufs)
+{
+  size_t j;
+  for (j = 0; j < bufs->cnt; j++)
+  {
+    if (memcmp(transitions, bufs->all[j].transitions, 256) == 0)
+    {
+      break;
+    }
+  }
+  if (j == bufs->cnt)
+  {
+    if (j == MAX_TRANS)
+    {
+      abort(); // FIXME error handling
+    }
+    memcpy(bufs->all[j].transitions, transitions, 256);
+    bufs->cnt++;
+  }
+  return j;
+}
+
+void
+perf_trans(uint8_t *transitions, struct transitionbufs *bufs)
+{
+  size_t i;
+  memset(bufs, 0, sizeof(*bufs));
+  for (i = 0; i < MAX_TRANS; i++)
+  {
+    transitions[0] = i&256;
+    transitions[1] = i>>8;
+    get_transid(transitions, bufs);
+  }
+}
+
 void
 pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities)
@@ -1535,6 +1584,22 @@ pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
   set_accepting(dsglobal, 0, priorities);
   pick_those->ds = malloc(sizeof(*pick_those->ds)*pick_those->dscnt);
   memcpy(pick_those->ds, dsglobal, sizeof(*pick_those->ds)*pick_those->dscnt);
+}
+
+void
+collect(struct pick_those_struct *pick_thoses, size_t cnt,
+        struct transitionbufs *bufs)
+{
+  size_t i, j;
+  for (i = 0; i < cnt; i++)
+  {
+    struct dfa_node *ds = pick_thoses[i].ds;
+    uint8_t dscnt = pick_thoses[i].dscnt;
+    for (j = 0; j < dscnt; j++)
+    {
+      ds->transitions_id = get_transid(ds[j].d, bufs);
+    }
+  }
 }
 
 void dump_headers(FILE *f, const char *parsername, size_t max_bt)
@@ -1572,6 +1637,26 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt)
   fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1);//, void *baton);\n", parsername, parsername, parsername);
   fprintf(f, "\n");
   free(parserupper);
+}
+
+void
+dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
+{
+  size_t i;
+  size_t j;
+  fprintf(f, "#ifdef SMALL_CODE\n");
+  fprintf(f, "const uint8_t %s_transitiontbl[][256] = {\n", parsername);
+  for (i = 0; i < bufs->cnt; i++)
+  {
+    fprintf(f, "{");
+    for (j = 0; j < 256; j++)
+    {
+      fprintf(f, "%d, ", (int)bufs->all[i].transitions[j]);
+    }
+    fprintf(f, "},\n");
+  }
+  fprintf(f, "};\n");
+  fprintf(f, "#endif\n");
 }
 
 void
@@ -1783,6 +1868,7 @@ dump_chead(FILE *f, const char *parsername)
 
 struct nfa_node ns[255];
 struct dfa_node ds[255];
+struct transitionbufs bufs;
 
 int main(int argc, char **argv)
 {
@@ -1868,6 +1954,9 @@ int main(int argc, char **argv)
   ssize_t maxbt = 0;
   FILE *f;
 
+  //uint8_t transitions[256] = {};
+  //perf_trans(transitions, &bufs);
+
 #if 0
   for (i = 0; i < 255; i++)
   {
@@ -1950,6 +2039,7 @@ int main(int argc, char **argv)
   {
     pick(ns, ds, http_res, &pick_thoses[i], priorities);
   }
+  collect(pick_thoses, sizeof(pick_thoses)/sizeof(*pick_thoses), &bufs);
   for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
   {
     ssize_t curbt;
@@ -2001,5 +2091,6 @@ int main(int argc, char **argv)
   fclose(f);
   f = fopen("httpparser.C", "w");
   dump_chead(f, "http");
+  dump_collected(f, "http", &bufs);
   fclose(f);
 }
