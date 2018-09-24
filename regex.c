@@ -2140,7 +2140,7 @@ int main(int argc, char **argv)
 #endif
 
   size_t outiter;
-  for (outiter = 0; outiter < 100; outiter++)
+  for (outiter = 0; outiter < 1000; outiter++)
   {
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
     {
