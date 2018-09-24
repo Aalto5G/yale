@@ -626,7 +626,7 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state,
   int seen = 0;
   int priority;
   size_t count_thisprio = 0;
-  uint8_t acceptid;
+  uint8_t acceptid = 0;
   uint8_t wordoff, bitoff;
   set_bitset(&tovisit, state);
   while (!bitset_empty(&tovisit))
@@ -1509,13 +1509,33 @@ void gennfa_alternmulti(struct re *regexp,
   }
 }
 
-struct nfa_node ns[255];
-struct dfa_node ds[255];
-
 struct pick_those_struct {
   uint8_t *pick_those;
   size_t len;
+  struct dfa_node *ds;
+  size_t dscnt;
 };
+
+void
+pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
+     struct iovec *res, struct pick_those_struct *pick_those, int *priorities)
+{
+  uint8_t ncnt;
+  struct re *re;
+  size_t i;
+  for (i = 0; i < 255; i++)
+  {
+    dfa_init_empty(&dsglobal[i]);
+  }
+  ncnt = 0;
+  re = parse_res(res, pick_those->pick_those, pick_those->len);
+  gennfa_alternmulti(re, nsglobal, &ncnt);
+  free_re(re);
+  pick_those->dscnt = nfa2dfa(nsglobal, dsglobal, 0);
+  set_accepting(dsglobal, 0, priorities);
+  pick_those->ds = malloc(sizeof(*pick_those->ds)*pick_those->dscnt);
+  memcpy(pick_those->ds, dsglobal, sizeof(*pick_those->ds)*pick_those->dscnt);
+}
 
 void dump_headers(FILE *f, const char *parsername, size_t max_bt)
 {
@@ -1761,14 +1781,20 @@ dump_chead(FILE *f, const char *parsername)
   free(parserupper);
 }
 
+struct nfa_node ns[255];
+struct dfa_node ds[255];
+
 int main(int argc, char **argv)
 {
-  size_t i, j, k;
+  size_t i;
+#if 0
+  size_t j, k;
   uint8_t dscnt;
   uint8_t ncnt;
   struct re *re;
   const char *res[3] = {"ab","abcd","abce"};
   uint8_t pick_those[3] = {0,1,2};
+#endif
   const char re0[] = "[Hh][Oo][Ss][Tt]";
   const char re1[] = "\r?\n";
   const char re2[] = " ";
@@ -1842,6 +1868,7 @@ int main(int argc, char **argv)
   ssize_t maxbt = 0;
   FILE *f;
 
+#if 0
   for (i = 0; i < 255; i++)
   {
     dfa_init_empty(&ds[i]);
@@ -1883,7 +1910,6 @@ int main(int argc, char **argv)
     dfa_init_empty(&ds[i]);
   }
 
-#if 0
   ncnt = 0;
   const char *relit = "ab|abcd|abce";
   size_t remainderstart;
@@ -1920,21 +1946,14 @@ int main(int argc, char **argv)
   printf("\n\n\n\n");
 #endif
 
-  for (j = 0; j < sizeof(pick_thoses)/sizeof(*pick_thoses); j++)
-  //for (j = 0; j < 1; j++)
+  for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
+  {
+    pick(ns, ds, http_res, &pick_thoses[i], priorities);
+  }
+  for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
   {
     ssize_t curbt;
-    for (i = 0; i < 255; i++)
-    {
-      dfa_init_empty(&ds[i]);
-    }
-    ncnt = 0;
-    re = parse_res(http_res, pick_thoses[j].pick_those, pick_thoses[j].len);
-    gennfa_alternmulti(re, ns, &ncnt);
-    free_re(re);
-    dscnt = nfa2dfa(ns, ds, 0);
-    set_accepting(ds, 0, priorities);
-    curbt = maximal_backtrack(ds, 0, 250);
+    curbt = maximal_backtrack(pick_thoses[i].ds, 0, 250);
     if (curbt < 0)
     {
       abort(); // FIXME error handling
@@ -1944,8 +1963,10 @@ int main(int argc, char **argv)
       maxbt = curbt;
     }
   }
+
   printf("Max backtrack %zd\n", maxbt);
 
+#if 0
   for (k = 0; k < 100; k++)
   {
     for (j = 0; j < sizeof(pick_thoses)/sizeof(*pick_thoses); j++)
@@ -1974,6 +1995,7 @@ int main(int argc, char **argv)
       //printf("\n\n\n\n");
     }
   }
+#endif
   f = fopen("httpparser.H", "w");
   dump_headers(f, "http", maxbt);
   fclose(f);
