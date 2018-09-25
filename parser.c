@@ -84,6 +84,13 @@ void set_bitset(struct bitset *bs, uint8_t bit)
   bs->bitset[wordoff] |= (1ULL<<bitoff);
 }
 
+void clr_bitset(struct bitset *bs, uint8_t bit)
+{
+  uint8_t wordoff = bit/64;
+  uint8_t bitoff = bit%64;
+  bs->bitset[wordoff] &= ~(1ULL<<bitoff);
+}
+
 struct dict {
   struct bitset bitset[256];
   struct bitset has;
@@ -96,9 +103,20 @@ void firstset_update(struct dict *da, struct dict *db)
   {
     bitset_update(&da->bitset[i], &db->bitset[i]);
   }
+  bitset_update(&da->has, &db->has);
 }
 
-void firstset_settoken(struct dict *da, struct ruleitem *ri)
+void firstset_update_one(struct dict *da, struct dict *db, uint8_t one)
+{
+  if (!has_bitset(&db->has, one))
+  {
+    abort();
+  }
+  set_bitset(&da->has, one);
+  bitset_update(&da->bitset[one], &db->bitset[one]);
+}
+
+void firstset_settoken(struct dict *da, const struct ruleitem *ri)
 {
   if (ri->is_action)
   {
@@ -162,6 +180,46 @@ struct LookupTblEntry {
   uint8_t cb;
 };
 
+struct firstset_entry {
+  uint8_t rhs[256]; // 0.25 KB
+  uint8_t rhssz;
+  struct dict dict; // 8 KB
+};
+
+uint8_t get_sole_cb(struct dict *d, uint8_t x)
+{
+  uint8_t cb = 255;
+  int seen = 0;
+  size_t i;
+  for (i = 0; i < 256; /*i++*/)
+  {
+    uint8_t wordoff = i/64;
+    uint8_t bitoff = i%64;
+    if (d->bitset[x].bitset[wordoff] & (1ULL<<bitoff))
+    {
+      if (seen)
+      {
+        abort(); // FIXME error handling
+      }
+      seen = 1;
+      cb = i;
+    }
+    if (bitoff != 63)
+    {
+      i = (wordoff*64) + ffsll(d->bitset[x].bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+    }
+    else
+    {
+      i++;
+    }
+  }
+  if (seen && cb == 255)
+  {
+    abort();
+  }
+  return seen ? cb : 255;
+}
+
 struct ParserGen {
   struct iovec re_by_idx[255];
   int priorities[255];
@@ -179,6 +237,9 @@ struct ParserGen {
   uint8_t max_stack_size;
   struct REGen re_gen;
   struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
+  struct dict Fo[256]; // 2 MB
+  struct firstset_entry Fi[8192]; // 66 MB
+  size_t Ficnt;
 };
 
 void parsergen_init(struct ParserGen *gen, char *parsername)
@@ -195,6 +256,208 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->max_stack_size = 0;
   memset(&gen->re_gen, 0, sizeof(gen->re_gen));
   memset(gen->T, 0xff, sizeof(gen->T));
+  memset(gen->Fo, 0, sizeof(gen->Fo));
+  gen->Ficnt = 0;
+  // leave gen->Fi purposefully uninitiailized as it's 66 MB
+}
+
+struct firstset_entry *firstset_lookup(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
+{
+  size_t i;
+  for (i = 0; i < gen->Ficnt; i++)
+  {
+    if (gen->Fi[i].rhssz != rhssz)
+    {
+      continue;
+    }
+    if (memcmp(gen->Fi[i].rhs, rhs, rhssz*sizeof(*rhs)) != 0)
+    {
+      continue;
+    }
+    return &gen->Fi[i];
+  }
+  return NULL;
+}
+
+void firstset_setdefault(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
+{
+  if (firstset_lookup(gen, rhs, rhssz) != NULL)
+  {
+    return;
+  }
+  gen->Fi[gen->Ficnt].rhssz = rhssz;
+  memcpy(gen->Fi[gen->Ficnt].rhs, rhs, rhssz*sizeof(*rhs));
+  memset(&gen->Fi[gen->Ficnt].dict, 0, sizeof(gen->Fi[gen->Ficnt].dict));
+  gen->Ficnt++;
+}
+
+int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs);
+
+struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
+{
+  struct firstset_entry result = {};
+  if (rhssz == 0)
+  {
+    struct ruleitem ri = {};
+    ri.value = gen->epsilon;
+    firstset_settoken(&result.dict, &ri);
+    return result;
+  }
+  if (parsergen_is_rhs_terminal(gen, &rhs[0]))
+  {
+    firstset_settoken(&result.dict, &rhs[0]);
+    return result;
+  }
+  result = *firstset_lookup(gen, &rhs[0].value, 1);
+  if (!has_bitset(&result.dict.has, gen->epsilon))
+  {
+    return result;
+  }
+  else
+  {
+    struct firstset_entry result2 = {};
+    clr_bitset(&result.dict.has, gen->epsilon);
+    result2 = firstset_func(gen, rhs+1, rhssz-1);
+    firstset_update(&result.dict, &result2.dict);
+    return result;
+  }
+}
+
+int parsergen_is_terminal(struct ParserGen *gen, uint8_t x);
+
+void gen_parser(struct ParserGen *gen)
+{
+  int changed;
+  size_t i, j;
+  for (i = 0; i < gen->tokencnt; i++)
+  {
+    gen->Fi[i].rhssz = 1;
+    gen->Fi[i].rhs[0] = i;
+    memset(&gen->Fi[i].dict, 0, sizeof(gen->Fi[i].dict));
+  }
+  changed = 1;
+  while (changed)
+  {
+    changed = 0;
+    for (i = 0; i < gen->rulecnt; i++)
+    {
+      struct firstset_entry fs =
+        firstset_func(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
+      uint8_t rhs[gen->rules[i].noactcnt];
+      for (j = 0; j < gen->rules[i].noactcnt; j++)
+      {
+        rhs[j] = gen->rules[i].rhsnoact[j].value;
+      }
+      firstset_setdefault(gen, rhs, gen->rules[i].noactcnt);
+      if (firstset_issubset(&fs.dict, &firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict))
+      {
+        continue;
+      }
+      firstset_update(&firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict, &fs.dict);
+      changed = 1;
+    }
+    for (i = 0; i < gen->rulecnt; i++)
+    {
+      uint8_t nonterminal = gen->rules[i].lhs;
+      uint8_t rhs[gen->rules[i].noactcnt];
+      for (j = 0; j < gen->rules[i].noactcnt; j++)
+      {
+        rhs[j] = gen->rules[i].rhsnoact[j].value;
+      }
+      if (firstset_issubset(&firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict, &firstset_lookup(gen, &nonterminal, 1)->dict))
+      {
+        continue;
+      }
+      firstset_update(&firstset_lookup(gen, &nonterminal, 1)->dict, &firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict);
+      changed = 1;
+    }
+  }
+  changed = 1;
+  while (changed)
+  {
+    changed = 0;
+    for (i = 0; i < gen->rulecnt; i++)
+    {
+      uint8_t nonterminal = gen->rules[i].lhs;
+      uint8_t rhs[gen->rules[i].noactcnt];
+      for (j = 0; j < gen->rules[i].noactcnt; j++)
+      {
+        rhs[j] = gen->rules[i].rhsnoact[j].value;
+      }
+      for (j = 0; j < gen->rules[i].noactcnt; j++)
+      {
+        uint8_t rhsmid = rhs[j];
+        struct firstset_entry firstrhsright;
+        uint8_t terminal;
+        if (parsergen_is_terminal(gen, rhsmid))
+        {
+          continue;
+        }
+        firstrhsright =
+          firstset_func(gen, &gen->rules[i].rhsnoact[j+1], gen->rules[i].noactcnt - j - 1);
+        for (terminal = 0; terminal < gen->tokencnt; terminal++)
+        {
+          if (has_bitset(&firstrhsright.dict.has, terminal))
+          {
+            if (!has_bitset(&gen->Fo[rhsmid].has, terminal))
+            {
+              changed = 1;
+              firstset_update_one(&gen->Fo[rhsmid], &firstrhsright.dict, terminal);
+            }
+          }
+        }
+        if (has_bitset(&firstrhsright.dict.has, gen->epsilon))
+        {
+          if (!firstset_issubset(&gen->Fo[nonterminal], &gen->Fo[rhsmid]))
+          {
+            changed = 1;
+            firstset_update(&gen->Fo[rhsmid], &gen->Fo[nonterminal]);
+          }
+        }
+        if (j == gen->rules[i].noactcnt - 1)
+        {
+          if (!firstset_issubset(&gen->Fo[nonterminal], &gen->Fo[rhsmid]))
+          {
+            changed = 1;
+           firstset_update(&gen->Fo[rhsmid], &gen->Fo[nonterminal]);
+          }
+        }
+      }
+    }
+  }
+  for (i = 0; i < gen->rulecnt; i++)
+  {
+    uint8_t rhs[gen->rules[i].noactcnt];
+    uint8_t a;
+    uint8_t A = gen->rules[i].lhs;
+    for (j = 0; j < gen->rules[i].noactcnt; j++)
+    {
+      rhs[j] = gen->rules[i].rhsnoact[j].value;
+    }
+    for (a = 0; a < gen->tokencnt; a++)
+    {
+      struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
+      struct dict *fo = &gen->Fo[a];
+      if (has_bitset(&fi->dict.has, a))
+      {
+        if (gen->T[A][a].val != 255 || gen->T[A][a].cb != 255)
+        {
+          abort();
+        }
+        gen->T[A][a].val = i;
+        gen->T[A][a].cb = get_sole_cb(&fi->dict, a);
+      }
+      if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
+      {
+        if (gen->T[A][a].val != 255 || gen->T[A][a].cb != 255)
+        {
+          abort();
+        }
+        gen->T[A][a].val = i;
+        gen->T[A][a].cb = get_sole_cb(fo, a);
+      }
+    }
+  }
 }
 
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude)
@@ -260,7 +523,7 @@ uint8_t parsergen_add_nonterminal(struct ParserGen *gen)
   return gen->nonterminalcnt++;
 }
 
-int parsergen_is_nonterminal(struct ParserGen *gen, uint8_t x)
+int parsergen_is_terminal(struct ParserGen *gen, uint8_t x)
 {
   if (!gen->tokens_finalized)
   {
@@ -269,7 +532,7 @@ int parsergen_is_nonterminal(struct ParserGen *gen, uint8_t x)
   return x < gen->tokencnt;
 }
 
-int parsergen_is_rhs_nonterminal(struct ParserGen *gen, const struct ruleitem *rhs)
+int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs)
 {
   if (!gen->tokens_finalized)
   {
@@ -279,7 +542,7 @@ int parsergen_is_rhs_nonterminal(struct ParserGen *gen, const struct ruleitem *r
   {
     return 0;
   }
-  return parsergen_is_nonterminal(gen, rhs->value);
+  return parsergen_is_terminal(gen, rhs->value);
 }
 
 void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, uint8_t rulecnt, const struct namespaceitem *ns)
