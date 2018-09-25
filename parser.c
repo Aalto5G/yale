@@ -1,9 +1,6 @@
 #include "yale.h"
+#include "parser.h"
 #include <sys/uio.h>
-
-struct bitset {
-  uint64_t bitset[4];
-};
 
 int bitset_empty(struct bitset *a)
 {
@@ -91,11 +88,6 @@ void clr_bitset(struct bitset *bs, uint8_t bit)
   bs->bitset[wordoff] &= ~(1ULL<<bitoff);
 }
 
-struct dict {
-  struct bitset bitset[256];
-  struct bitset has;
-};
-
 void firstset_update(struct dict *da, struct dict *db)
 {
   size_t i;
@@ -165,27 +157,6 @@ int firstset_issubset(struct dict *da, struct dict *db)
   return 1;
 }
 
-struct REGenEntry {
-  struct bitset key;
-  struct dfa_node *dfas;
-  uint8_t dfacnt;
-};
-
-struct REGen {
-  struct REGenEntry entries[255];
-};
-
-struct LookupTblEntry {
-  uint8_t val;
-  uint8_t cb;
-};
-
-struct firstset_entry {
-  uint8_t rhs[256]; // 0.25 KB
-  uint8_t rhssz;
-  struct dict dict; // 8 KB
-};
-
 uint8_t get_sole_cb(struct dict *d, uint8_t x)
 {
   uint8_t cb = 255;
@@ -220,28 +191,6 @@ uint8_t get_sole_cb(struct dict *d, uint8_t x)
   return seen ? cb : 255;
 }
 
-struct ParserGen {
-  struct iovec re_by_idx[255];
-  int priorities[255];
-  uint8_t tokencnt;
-  uint8_t nonterminalcnt;
-  char *parsername;
-  uint8_t start_state;
-  uint8_t epsilon;
-  char *state_include_str;
-  int tokens_finalized;
-  struct rule rules[255];
-  uint8_t rulecnt;
-  struct cb cbs[255];
-  uint8_t cbcnt;
-  uint8_t max_stack_size;
-  struct REGen re_gen;
-  struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
-  struct dict Fo[256]; // 2 MB
-  struct firstset_entry Fi[8192]; // 66 MB
-  size_t Ficnt;
-};
-
 void parsergen_init(struct ParserGen *gen, char *parsername)
 {
   gen->tokencnt = 0;
@@ -256,7 +205,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->max_stack_size = 0;
   memset(&gen->re_gen, 0, sizeof(gen->re_gen));
   memset(gen->T, 0xff, sizeof(gen->T));
-  memset(gen->Fo, 0, sizeof(gen->Fo));
+  //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
   gen->Ficnt = 0;
   // leave gen->Fi purposefully uninitiailized as it's 66 MB
 }
@@ -295,16 +244,18 @@ int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs)
 
 struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
 {
-  struct firstset_entry result = {};
+  struct firstset_entry result;
   if (rhssz == 0)
   {
     struct ruleitem ri = {};
+    memset(&result, 0, sizeof(result));
     ri.value = gen->epsilon;
     firstset_settoken(&result.dict, &ri);
     return result;
   }
   if (parsergen_is_rhs_terminal(gen, &rhs[0]))
   {
+    memset(&result, 0, sizeof(result));
     firstset_settoken(&result.dict, &rhs[0]);
     return result;
   }
@@ -315,7 +266,7 @@ struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem
   }
   else
   {
-    struct firstset_entry result2 = {};
+    struct firstset_entry result2;
     clr_bitset(&result.dict.has, gen->epsilon);
     result2 = firstset_func(gen, rhs+1, rhssz-1);
     firstset_update(&result.dict, &result2.dict);
@@ -329,11 +280,15 @@ void gen_parser(struct ParserGen *gen)
 {
   int changed;
   size_t i, j;
-  for (i = 0; i < gen->tokencnt; i++)
+
+  memset(gen->Fo, 0, sizeof(gen->Fo[0])*(gen->tokencnt + gen->nonterminalcnt));
+
+  for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
-    gen->Fi[i].rhssz = 1;
-    gen->Fi[i].rhs[0] = i;
-    memset(&gen->Fi[i].dict, 0, sizeof(gen->Fi[i].dict));
+    gen->Fi[gen->Ficnt].rhssz = 1;
+    gen->Fi[gen->Ficnt].rhs[0] = i;
+    memset(&gen->Fi[gen->Ficnt].dict, 0, sizeof(gen->Fi[gen->Ficnt].dict));
+    gen->Ficnt++;
   }
   changed = 1;
   while (changed)
@@ -364,7 +319,9 @@ void gen_parser(struct ParserGen *gen)
       {
         rhs[j] = gen->rules[i].rhsnoact[j].value;
       }
-      if (firstset_issubset(&firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict, &firstset_lookup(gen, &nonterminal, 1)->dict))
+      struct firstset_entry *fa = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
+      struct firstset_entry *fb = firstset_lookup(gen, &nonterminal, 1);
+      if (firstset_issubset(&fa->dict, &fb->dict))
       {
         continue;
       }
@@ -414,7 +371,7 @@ void gen_parser(struct ParserGen *gen)
             firstset_update(&gen->Fo[rhsmid], &gen->Fo[nonterminal]);
           }
         }
-        if (j == gen->rules[i].noactcnt - 1)
+        if (gen->rules[i].noactcnt == 0 || j == gen->rules[i].noactcnt - 1U)
         {
           if (!firstset_issubset(&gen->Fo[nonterminal], &gen->Fo[rhsmid]))
           {
