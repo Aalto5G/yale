@@ -118,6 +118,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->tokens_finalized = 0;
   gen->max_stack_size = 0;
   gen->max_bt = 0;
+  gen->stackconfigcnt = 0;
   memset(&gen->re_gen, 0, sizeof(gen->re_gen));
   memset(gen->T, 0xff, sizeof(gen->T));
   //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
@@ -190,7 +191,95 @@ struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem
   }
 }
 
+void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
+{
+  size_t i;
+  for (i = 0; i < gen->stackconfigcnt; i++)
+  {
+    if (gen->stackconfigs[i].sz != sz)
+    {
+      continue;
+    }
+    if (memcmp(gen->stackconfigs[i].stack, stack, sz*sizeof(uint8_t)) != 0)
+    {
+      continue;
+    }
+    //printf("Found %d!\n", (int)sz);
+    break;
+  }
+  if (i == gen->stackconfigcnt)
+  {
+    if (gen->stackconfigcnt == sizeof(gen->stackconfigs)/sizeof(*gen->stackconfigs))
+    {
+      abort();
+    }
+    memcpy(gen->stackconfigs[i].stack, stack, sz*sizeof(uint8_t));
+    gen->stackconfigs[i].sz = sz;
+    gen->stackconfigcnt++;
+    //printf("Not found %d!\n", (int)sz);
+  }
+}
+
 int parsergen_is_terminal(struct ParserGen *gen, uint8_t x);
+
+ssize_t max_stack_sz(struct ParserGen *gen)
+{
+  size_t maxsz = 1;
+  size_t i, j;
+  uint8_t stack[255];
+  size_t sz;
+  uint8_t a;
+  gen->stackconfigcnt = 1;
+  gen->stackconfigs[0].stack[0] = gen->start_state;
+  gen->stackconfigs[0].sz = 1;
+  //printf("Start state is %d, terminal? %d\n", gen->start_state, parsergen_is_terminal(gen, gen->start_state));
+  for (i = 0; i < gen->stackconfigcnt; i++)
+  {
+    struct stackconfig *current = &gen->stackconfigs[i];
+    if (current->sz > maxsz)
+    {
+      maxsz = current->sz;
+    }
+    if (current->sz > 0)
+    {
+      uint8_t last = current->stack[current->sz-1];
+      if (parsergen_is_terminal(gen, last) || last == 255)
+      {
+        stackconfig_append(gen, current->stack, current->sz-1);
+        continue;
+      }
+      for (a = 0; a < gen->tokencnt; a++)
+      {
+        uint8_t rule = gen->T[last][a].val;
+        if (rule != 255)
+        {
+          //printf("Rule differs from 255\n");
+          memcpy(stack, current->stack, current->sz-1);
+          sz = current->sz - 1;
+          if (sz + gen->rules[rule].itemcnt > 255)
+          {
+            return -1;
+          }
+          for (j = 0; j < gen->rules[rule].itemcnt; j++)
+          {
+            struct ruleitem *it =
+              &gen->rules[rule].rhs[gen->rules[rule].itemcnt-j-1];
+            if (it->is_action)
+            {
+              stack[sz++] = 255;
+            }
+            else
+            {
+              stack[sz++] = it->value;
+            }
+          }
+          stackconfig_append(gen, stack, sz);
+        }
+      }
+    }
+  }
+  return maxsz;
+}
 
 void gen_parser(struct ParserGen *gen)
 {
@@ -380,6 +469,7 @@ void gen_parser(struct ParserGen *gen)
       gen->max_bt = curbt;
     }
   }
+  gen->max_stack_size = max_stack_sz(gen);
 }
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
@@ -447,7 +537,7 @@ uint8_t parsergen_add_nonterminal(struct ParserGen *gen)
   {
     abort();
   }
-  return gen->nonterminalcnt++;
+  return gen->tokencnt + (gen->nonterminalcnt++);
 }
 
 int parsergen_is_terminal(struct ParserGen *gen, uint8_t x)

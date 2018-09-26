@@ -31,6 +31,11 @@ struct firstset_entry {
   struct dict dict; // 8 KB
 };
 
+struct stackconfig {
+  uint8_t stack[255];
+  uint8_t sz;
+};
+
 struct ParserGen {
   struct iovec re_by_idx[255];
   int priorities[255];
@@ -58,6 +63,8 @@ struct ParserGen {
   struct nfa_node ns[255];
   struct dfa_node ds[255];
   struct transitionbufs bufs;
+  struct stackconfig stackconfigs[32768]; // 8 MB
+  size_t stackconfigcnt;
 };
 
 void parsergen_init(struct ParserGen *gen, char *parsername);
@@ -77,5 +84,7 @@ uint8_t parsergen_add_nonterminal(struct ParserGen *gen);
 void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, uint8_t rulecnt, const struct namespaceitem *ns);
 
 void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, uint8_t cbcnt);
+
+ssize_t max_stack_sz(struct ParserGen *gen);
 
 #endif
