@@ -5,84 +5,7 @@
 #include <string.h>
 #include <sys/uio.h>
 #include <ctype.h>
-
-
-
-struct bitset {
-  uint64_t bitset[4];
-};
-
-int bitset_empty(struct bitset *a)
-{
-  size_t i;
-  for (i = 0; i < 4; i++)
-  {
-    if (a->bitset[i] != 0)
-    {
-      return 0;
-    }
-  }
-  return 1;
-}
-
-struct re;
-
-struct wildcard {
-};
-
-struct emptystr {
-};
-
-struct literals {
-  struct bitset bitmask;
-};
-
-struct concat {
-  struct re *re1;
-  struct re *re2;
-};
-
-struct altern {
-  struct re *re1;
-  struct re *re2;
-};
-
-struct alternmulti {
-  struct re **res;
-  uint8_t *pick_those;
-  size_t resz;
-};
-
-struct star {
-  struct re *re;
-};
-
-struct re_parse_result {
-  size_t branchsz;
-};
-
-enum re_type {
-  WILDCARD,
-  EMPTYSTR,
-  LITERALS,
-  CONCAT,
-  ALTERN,
-  ALTERNMULTI,
-  STAR
-};
-
-struct re {
-  enum re_type type;
-  union {
-    struct wildcard wc;
-    struct emptystr e;
-    struct literals lit;
-    struct concat cat;
-    struct altern alt;
-    struct alternmulti altmulti;
-    struct star star;
-  } u;
-};
+#include "regex.h"
 
 static inline struct re *alloc_re(void)
 {
@@ -178,26 +101,6 @@ static inline void free_re(struct re *re)
   free(re);
 }
 
-struct dfa_node {
-  uint8_t d[256];
-  uint8_t default_tr;
-  uint8_t acceptid;
-  uint8_t tainted:1;
-  uint8_t accepting:1;
-  uint8_t final:1;
-  struct bitset acceptidset;
-  uint64_t algo_tmp;
-  size_t transitions_id;
-};
-
-struct nfa_node {
-  struct bitset d[256];
-  struct bitset defaults;
-  struct bitset epsilon;
-  uint8_t accepting:1;
-  uint8_t taintid;
-};
-
 void nfa_init(struct nfa_node *n, int accepting, int taintid)
 {
   memset(n, 0, sizeof(*n));
@@ -224,49 +127,6 @@ void nfa_connect_default(struct nfa_node *n, uint8_t node2)
   uint8_t wordoff = node2/64;
   uint8_t bitoff = node2%64;
   n->defaults.bitset[wordoff] |= (1ULL<<bitoff);
-}
-
-#if 0
-uint8_t ffs_bitset(const struct bitset *bs)
-{
-  size_t i;
-  for (i = 0; i < 4; i++)
-  {
-    ffsll(bs->bitset[i]);
-  }
-}
-#endif
-
-uint8_t pick_rm_first(struct bitset *bs)
-{
-  size_t i;
-  int j;
-  int ffsres;
-  for (i = 0; i < 4; i++)
-  {
-    ffsres = ffsll(bs->bitset[i]);
-    if (ffsres)
-    {
-      j = ffsres - 1;
-      bs->bitset[i] &= ~(1ULL<<j);
-      return i*64 + j;
-    }
-  }
-  abort();
-}
-
-uint8_t has_bitset(struct bitset *bs, uint8_t bit)
-{
-  uint8_t wordoff = bit/64;
-  uint8_t bitoff = bit%64;
-  return !!(bs->bitset[wordoff] & (1ULL<<bitoff));
-}
-
-void set_bitset(struct bitset *bs, uint8_t bit)
-{
-  uint8_t wordoff = bit/64;
-  uint8_t bitoff = bit%64;
-  bs->bitset[wordoff] |= (1ULL<<bitoff);
 }
 
 void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
@@ -429,27 +289,6 @@ void dfa_connect_default(struct dfa_node *n, uint8_t node2)
   n->default_tr = node2;
 }
 
-void bitset_update(struct bitset *a, const struct bitset *b)
-{
-  size_t i;
-  for (i = 0; i < 4; i++)
-  {
-    a->bitset[i] |= b->bitset[i];
-  }
-}
-int bitset_equal(const struct bitset *a, const struct bitset *b)
-{
-  size_t i;
-  for (i = 0; i < 4; i++)
-  {
-    if (a->bitset[i] != b->bitset[i])
-    {
-      return 0;
-    }
-  }
-  return 1;
-}
-
 void
 check_recurse_acceptid_is(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
 {
@@ -557,16 +396,6 @@ void check_cb(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
     check_cb_first(ds, acceptid, ds[state].default_tr);
   }
 }
-
-struct bitset_hash_item {
-  struct bitset key;
-  uint8_t dfanodeid;
-};
-
-struct bitset_hash {
-  struct bitset_hash_item tbl[255];
-  uint8_t tblsz;
-};
 
 // FIXME this algorithm requires thorough review
 ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
@@ -1510,24 +1339,6 @@ void gennfa_alternmulti(struct re *regexp,
     gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, regexp->u.altmulti.pick_those[i]);
   }
 }
-
-struct pick_those_struct {
-  uint8_t *pick_those;
-  size_t len;
-  struct dfa_node *ds;
-  size_t dscnt;
-};
-
-struct transitionbuf {
-  uint8_t transitions[256];
-};
-
-#define MAX_TRANS 65536 // 256 automatons, 256 states per automaton
-
-struct transitionbufs {
-  struct transitionbuf all[MAX_TRANS];
-  size_t cnt;
-};
 
 size_t
 get_transid(const uint8_t *transitions, struct transitionbufs *bufs)

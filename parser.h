@@ -2,11 +2,8 @@
 #define _PARSER_H_
 
 #include "yale.h"
+#include "regex.h"
 #include <sys/uio.h>
-
-struct bitset {
-  uint64_t bitset[4];
-};
 
 struct dict {
   struct bitset bitset[256];
@@ -54,6 +51,8 @@ struct ParserGen {
   struct dict Fo[256]; // 2 MB
   struct firstset_entry Fi[8192]; // 66 MB
   size_t Ficnt;
+  uint8_t pick_those[255][255];
+  struct pick_those_struct pick_thoses[255];
 };
 
 void parsergen_init(struct ParserGen *gen, char *parsername);
