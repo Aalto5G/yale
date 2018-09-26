@@ -45,7 +45,6 @@ struct ParserGen {
   uint8_t rulecnt;
   struct cb cbs[255];
   uint8_t cbcnt;
-  uint8_t max_stack_size;
   struct REGen re_gen;
   struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
   struct dict Fo[256]; // 2 MB
@@ -53,6 +52,12 @@ struct ParserGen {
   size_t Ficnt;
   uint8_t pick_those[255][255];
   struct pick_those_struct pick_thoses[255];
+  uint8_t pick_thoses_cnt;
+  uint8_t max_stack_size;
+  uint8_t max_bt;
+  struct nfa_node ns[255];
+  struct dfa_node ds[255];
+  struct transitionbufs bufs;
 };
 
 void parsergen_init(struct ParserGen *gen, char *parsername);

@@ -117,10 +117,12 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->cbcnt = 0;
   gen->tokens_finalized = 0;
   gen->max_stack_size = 0;
+  gen->max_bt = 0;
   memset(&gen->re_gen, 0, sizeof(gen->re_gen));
   memset(gen->T, 0xff, sizeof(gen->T));
   //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
   gen->Ficnt = 0;
+  gen->pick_thoses_cnt = 0;
   // leave gen->Fi purposefully uninitiailized as it's 66 MB
 }
 
@@ -327,6 +329,55 @@ void gen_parser(struct ParserGen *gen)
         gen->T[A][a].val = i;
         gen->T[A][a].cb = get_sole_cb(fo, a);
       }
+    }
+  }
+  for (i = 0; i < gen->tokencnt; i++)
+  {
+    gen->pick_those[gen->pick_thoses_cnt][0] = i;
+    gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
+      gen->pick_those[gen->pick_thoses_cnt];
+    gen->pick_thoses[gen->pick_thoses_cnt].len = 1;
+    gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
+    gen->pick_thoses[gen->pick_thoses_cnt].dscnt = 0;
+    gen->pick_thoses_cnt++;
+  }
+  for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
+  {
+    size_t len = 0;
+    for (j = 0; j < gen->tokencnt; j++)
+    {
+      if (gen->T[i][j].val != 255)
+      {
+        if (len >= 255)
+        {
+          abort();
+        }
+        gen->pick_those[gen->pick_thoses_cnt][len++] = j;
+      }
+    }
+    gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
+      gen->pick_those[gen->pick_thoses_cnt];
+    gen->pick_thoses[gen->pick_thoses_cnt].len = len;
+    gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
+    gen->pick_thoses[gen->pick_thoses_cnt].dscnt = 0;
+    gen->pick_thoses_cnt++;
+  }
+  for (i = 0; i < gen->pick_thoses_cnt; i++)
+  {
+    pick(gen->ns, gen->ds, gen->re_by_idx, &gen->pick_thoses[i], gen->priorities);
+  }
+  collect(gen->pick_thoses, gen->pick_thoses_cnt, &gen->bufs);
+  for (i = 0; i < gen->pick_thoses_cnt; i++)
+  {
+    ssize_t curbt;
+    curbt = maximal_backtrack(gen->pick_thoses[i].ds, 0, 250);
+    if (curbt < 0)
+    {
+      abort(); // FIXME error handling
+    }
+    if (gen->max_bt < curbt)
+    {
+      gen->max_bt = curbt;
     }
   }
 }

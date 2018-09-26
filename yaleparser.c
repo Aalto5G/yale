@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     printf("Fail action\n");
     exit(1);
   }
-  for (iter = 0; iter < 1000*30; iter++)
+  for (iter = 0; iter < 10*1000; iter++)
   {
     parsergen_init(&gen, yale.parsername);
     for (i = 0; i < yale.tokencnt; i++)
