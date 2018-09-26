@@ -30,7 +30,7 @@ int main(int argc, char **argv)
     printf("Fail action\n");
     exit(1);
   }
-  for (iter = 0; iter < 10*1000; iter++)
+  for (iter = 0; iter < 1000; iter++)
   {
     parsergen_init(&gen, yale.parsername);
     for (i = 0; i < yale.tokencnt; i++)
@@ -72,6 +72,11 @@ int main(int argc, char **argv)
     fprintf(f, "#define _HTTP2PARSER_H_\n");
     parsergen_dump_headers(&gen, f);
     fprintf(f, "#endif\n");
+    fclose(f);
+    f = fopen("http2parser.c", "w");
+    fprintf(f, "#include \"httpcommon.h\"\n");
+    fprintf(f, "#include \"http2parser.h\"\n");
+    parsergen_dump_parser(&gen, f);
     fclose(f);
   }
   yale_free(&yale);

@@ -433,6 +433,7 @@ void gen_parser(struct ParserGen *gen)
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
     size_t len = 0;
+    uint8_t buf[256];
     for (j = 0; j < gen->tokencnt; j++)
     {
       if (gen->T[i][j].val != 255)
@@ -441,15 +442,42 @@ void gen_parser(struct ParserGen *gen)
         {
           abort();
         }
-        gen->pick_those[gen->pick_thoses_cnt][len++] = j;
+        buf[len++] = j;
       }
     }
-    gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
-      gen->pick_those[gen->pick_thoses_cnt];
-    gen->pick_thoses[gen->pick_thoses_cnt].len = len;
-    gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
-    gen->pick_thoses[gen->pick_thoses_cnt].dscnt = 0;
-    gen->pick_thoses_cnt++;
+    for (j = 0; j < gen->pick_thoses_cnt; j++)
+    {
+      if (gen->pick_thoses[j].len != len)
+      {
+        continue;
+      }
+      if (memcmp(gen->pick_thoses[j].pick_those, buf, len*sizeof(uint8_t)) != 0)
+      {
+        continue;
+      }
+      break;
+    }
+    if (j == gen->pick_thoses_cnt)
+    {
+      len = 0;
+      for (j = 0; j < gen->tokencnt; j++)
+      {
+        if (gen->T[i][j].val != 255)
+        {
+          if (len >= 255)
+          {
+            abort();
+          }
+          gen->pick_those[gen->pick_thoses_cnt][len++] = j;
+        }
+      }
+      gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
+        gen->pick_those[gen->pick_thoses_cnt];
+      gen->pick_thoses[gen->pick_thoses_cnt].len = len;
+      gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
+      gen->pick_thoses[gen->pick_thoses_cnt].dscnt = 0;
+      gen->pick_thoses_cnt++;
+    }
   }
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
@@ -471,6 +499,85 @@ void gen_parser(struct ParserGen *gen)
   }
   gen->max_stack_size = max_stack_sz(gen);
 }
+
+void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
+{
+  size_t i, j, X;
+  dump_chead(f, gen->parsername);
+  dump_collected(f, gen->parsername, &gen->bufs);
+  for (i = 0; i < gen->pick_thoses_cnt; i++)
+  {
+    dump_one(f, gen->parsername, &gen->pick_thoses[i]);
+  }
+  fprintf(f, "const uint8_t %s_num_terminals;\n", gen->parsername);
+  fprintf(f, "void(*%s_callbacks[])(const char*, size_t, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
+  for (i = 0; i < gen->cbcnt; i++)
+  {
+    fprintf(f, "%s, ", gen->cbs[i].name);
+  }
+  fprintf(f, "};\n");
+  fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
+  fprintf(f, "  const struct state *re;\n");
+  fprintf(f, "  //const uint8_t rhs[%d];\n", gen->tokencnt);
+  fprintf(f, "  const uint8_t cb[%d];\n", gen->tokencnt);
+  fprintf(f, "};\n");
+  fprintf(f, "const uint8_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt);
+  fprintf(f, "const uint8_t %s_start_state = %d;\n", gen->parsername, gen->start_state);
+  fprintf(f, "const struct reentry %s_reentries[] = {\n", gen->parsername);
+  for (i = 0; i < gen->tokencnt; i++)
+  {
+    fprintf(f, "{\n");
+    fprintf(f, ".re = %s_states_%d,", gen->parsername, (int)i);
+    fprintf(f, "},\n");
+  }
+  fprintf(f, "};\n");
+  fprintf(f, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {\n", gen->parsername, gen->parsername);
+  for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
+  {
+    fprintf(f, "{\n");
+    fprintf(f, ".re = %s_states", gen->parsername);
+    for (i = 0; i < gen->tokencnt; i++)
+    {
+      if (gen->T[X][i].val != 255)
+      {
+        fprintf(f, "_%d", (int)i);
+      }
+    }
+    fprintf(f, ",\n");
+    fprintf(f, ".cb = {\n");
+    for (i = 0; i < gen->tokencnt; i++)
+    {
+      fprintf(f, "%d, ", gen->T[X][i].cb);
+    }
+    fprintf(f, "},\n");
+    fprintf(f, "},\n");
+  }
+  fprintf(f, "};\n");
+  for (i = 0; i < gen->rulecnt; i++)
+  {
+    fprintf(f, "const struct ruleentry %s_rule_%d[] = {\n", gen->parsername, (int)i);
+    for (j = 0; j < gen->rules[i].itemcnt; j++)
+    {
+      struct ruleitem *it = &gen->rules[i].rhs[gen->rules[i].itemcnt-1-j];
+      fprintf(f, "{\n");
+      fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
+      fprintf(f, "},\n");
+    }
+    fprintf(f, "};\n");
+    fprintf(f, "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);\n", gen->parsername, (int)i, gen->parsername, (int)i);
+  }
+  fprintf(f, "const struct rule %s_rules[] = {\n", gen->parsername);
+  for (i = 0; i < gen->rulecnt; i++)
+  {
+    fprintf(f, "{\n");
+    fprintf(f, "  .lhs = %d,\n", gen->rules[i].lhs);
+    fprintf(f, "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry),\n", gen->parsername, (int)i);
+    fprintf(f, "  .rhs = %s_rule_%d,\n", gen->parsername, (int)i);
+    fprintf(f, "},\n");
+  }
+  fprintf(f, "};\n");
+}
+
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {

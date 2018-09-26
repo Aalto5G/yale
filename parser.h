@@ -89,4 +89,6 @@ ssize_t max_stack_sz(struct ParserGen *gen);
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f);
 
+void parsergen_dump_parser(struct ParserGen *gen, FILE *f);
+
 #endif
