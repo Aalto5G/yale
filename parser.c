@@ -474,7 +474,30 @@ void gen_parser(struct ParserGen *gen)
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {
-  
+  fprintf(f, "#include \"yalecommon.h\"\n");
+  dump_headers(f, gen->parsername, gen->max_bt);
+  fprintf(f, "struct %s_parserctx {\n", gen->parsername);
+  fprintf(f, "  uint8_t stacksz;\n");
+  fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
+  fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
+  fprintf(f, "  uint8_t saved_token;\n");
+  if (gen->state_include_str)
+  {
+    fprintf(f, "  %s\n", gen->state_include_str);
+  }
+  fprintf(f, "};\n");
+  fprintf(f, "\n");
+  fprintf(f, "static inline void %s_parserctx_init(struct %s_parserctx *pctx)\n",
+          gen->parsername, gen->parsername);
+  fprintf(f, "{\n");
+  fprintf(f, "  pctx->saved_token = 255;\n");
+  fprintf(f, "  pctx->stacksz = 1;\n");
+  fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
+  fprintf(f, "  pctx->stack[0].cb = 255;\n");
+  fprintf(f, "  %s_init_statemachine(&pctx->rctx);\n", gen->parsername);
+  fprintf(f, "}\n");
+  fprintf(f, "\n");
+  fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//, void *baton);\n", gen->parsername, gen->parsername);
 }
 
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude)

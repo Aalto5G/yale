@@ -67,6 +67,12 @@ int main(int argc, char **argv)
     parsergen_set_cb(&gen, yale.cbs, yale.cbcnt);
     parsergen_set_rules(&gen, yale.rules, yale.rulecnt, yale.ns);
     gen_parser(&gen);
+    FILE *f = fopen("http2parser.h", "w");
+    fprintf(f, "#ifndef _HTTP2PARSER_H_\n");
+    fprintf(f, "#define _HTTP2PARSER_H_\n");
+    parsergen_dump_headers(&gen, f);
+    fprintf(f, "#endif\n");
+    fclose(f);
   }
   yale_free(&yale);
   return 0;

@@ -87,4 +87,6 @@ void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, uint8_t cbcnt
 
 ssize_t max_stack_sz(struct ParserGen *gen);
 
+void parsergen_dump_headers(struct ParserGen *gen, FILE *f);
+
 #endif
