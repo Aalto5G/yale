@@ -69,6 +69,8 @@ struct ParserGen {
 
 void parsergen_init(struct ParserGen *gen, char *parsername);
 
+void parsergen_free(struct ParserGen *gen);
+
 void gen_parser(struct ParserGen *gen);
 
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude);

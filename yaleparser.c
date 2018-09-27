@@ -136,6 +136,7 @@ int main(int argc, char **argv)
       parsergen_dump_parser(&gen, f);
       fclose(f);
     }
+    parsergen_free(&gen);
   }
   yale_free(&yale);
   return 0;

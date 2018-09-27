@@ -132,6 +132,23 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   // leave gen->Fi purposefully uninitiailized as it's 66 MB
 }
 
+void parsergen_free(struct ParserGen *gen)
+{
+  size_t i;
+  for (i = 0; i < gen->tokencnt; i++)
+  {
+    free(gen->re_by_idx[i].iov_base);
+    gen->re_by_idx[i].iov_base = NULL;
+  }
+  for (i = 0; i < gen->pick_thoses_cnt; i++)
+  {
+    free(gen->pick_thoses[i].ds);
+    gen->pick_thoses[i].ds = NULL;
+  }
+  free(gen->state_include_str);
+  free(gen->parsername);
+}
+
 struct firstset_entry *firstset_lookup(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
 {
   size_t i;
