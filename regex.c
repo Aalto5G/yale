@@ -136,7 +136,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
   struct bitset closure = nodes;
   struct bitset taintidset = {};
   struct bitset acceptidset = {};
-  uint8_t stack[256] = {};
+  uint8_t stack[256];
   uint8_t nidx;
   size_t stacksz = 0;
   size_t i;
