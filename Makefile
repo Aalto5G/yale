@@ -1,8 +1,9 @@
 .PHONY: all clean distclean
 
-CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
+#CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
+CFLAGS = -O0 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
@@ -41,11 +42,11 @@ httpmain: httpmain.o httpparser.o Makefile
 httpmainprint: httpmainprint.o httpparser.o Makefile
 	$(CC) $(CFLAGS) -o httpmainprint httpmainprint.o httpparser.o
 
-httpcmain: httpmain.o httpcparser.o Makefile
-	$(CC) $(CFLAGS) -o httpcmain httpmain.o httpcparser.o
+httpcmain: httpcmain.o httpcparser.o Makefile
+	$(CC) $(CFLAGS) -o httpcmain httpcmain.o httpcparser.o
 
-httpcmainprint: httpmainprint.o httpcparser.o Makefile
-	$(CC) $(CFLAGS) -o httpcmainprint httpmainprint.o httpcparser.o
+httpcmainprint: httpcmainprint.o httpcparser.o Makefile
+	$(CC) $(CFLAGS) -o httpcmainprint httpcmainprint.o httpcparser.o
 
 regexmain: regexmain.o regex.o Makefile
 	$(CC) $(CFLAGS) -o regexmain regexmain.o regex.o
@@ -54,6 +55,11 @@ httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile
 httpparser.d: httpparser.h Makefile
 httpparser.o: httpparser.h Makefile
+
+httpcmain.d: httpcparser.h Makefile
+httpcmain.o: httpcparser.h Makefile
+httpcparser.d: httpcparser.h Makefile
+httpcparser.o: httpcparser.h Makefile
 
 http.py: yaletopy httppaper.txt
 	./yaletopy httppaper.txt http.py
@@ -64,10 +70,10 @@ httpparser.h: http.py parser.py regex.py Makefile
 httpparser.c: http.py parser.py regex.py Makefile
 	python http.py c
 
-httpcparser.h: yaleparser Makefile
+httpcparser.h: yaleparser httppaper.txt Makefile
 	./yaleparser httppaper.txt h
 
-httpcparser.c: yaleparser Makefile
+httpcparser.c: yaleparser httppaper.txt Makefile
 	./yaleparser httppaper.txt c
 
 yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o Makefile
