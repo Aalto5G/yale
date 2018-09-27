@@ -560,7 +560,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     {
       struct ruleitem *it = &gen->rules[i].rhs[gen->rules[i].itemcnt-1-j];
       fprintf(f, "{\n");
-      fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
+      if (it->is_action)
+      {
+        fprintf(f, ".rhs = 255, .cb = %d", it->cb);
+      }
+      else
+      {
+        fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
+      }
       fprintf(f, "},\n");
     }
     fprintf(f, "};\n");
