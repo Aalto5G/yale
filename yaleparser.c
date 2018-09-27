@@ -10,10 +10,41 @@ int main(int argc, char **argv)
   FILE *f;
   struct yale yale = {};
   size_t i, iter;
+  char cnamebuf[1024] = {0};
+  char hnamebuf[1024] = {0};
+  char hdefbuf[1024] = {0};
+  size_t len;
+  int c;
+  int h;
+  size_t iters = 1;
 
-  if (argc != 2)
+  if (argc != 3)
   {
-    fprintf(stderr, "Usage: %s file.txt\n", argv[0]);
+    fprintf(stderr, "Usage: %s file.txt [c|h|b|p]\n", argv[0]);
+    exit(1);
+  }
+  if (strcmp(argv[2], "c"))
+  {
+    c = 1;
+  }
+  else if (strcmp(argv[2], "h"))
+  {
+    h = 1;
+  }
+  else if (strcmp(argv[2], "b"))
+  {
+    c = 1;
+    h = 1;
+  }
+  else if (strcmp(argv[2], "p"))
+  {
+    iters = 1000;
+    c = 1;
+    h = 1;
+  }
+  else
+  {
+    fprintf(stderr, "Usage: %s file.txt [c|h|b|p]\n", argv[0]);
     exit(1);
   }
 
@@ -30,7 +61,17 @@ int main(int argc, char **argv)
     printf("Fail action\n");
     exit(1);
   }
-  for (iter = 0; iter < 1000; iter++)
+
+  snprintf(cnamebuf, sizeof(cnamebuf), "%s%s", yale.parsername, "cparser.c");
+  snprintf(hnamebuf, sizeof(hnamebuf), "%s%s", yale.parsername, "cparser.h");
+  snprintf(hdefbuf, sizeof(hnamebuf), "_%sCPARSER_H_", yale.parsername);
+  len = strlen(hdefbuf);
+  for (i = 0; i < len; i++)
+  {
+    hdefbuf[i] = toupper((unsigned char)hdefbuf[i]);
+  }
+
+  for (iter = 0; iter < iters; iter++)
   {
     parsergen_init(&gen, yale.parsername);
     for (i = 0; i < yale.tokencnt; i++)
@@ -67,17 +108,26 @@ int main(int argc, char **argv)
     parsergen_set_cb(&gen, yale.cbs, yale.cbcnt);
     parsergen_set_rules(&gen, yale.rules, yale.rulecnt, yale.ns);
     gen_parser(&gen);
-    FILE *f = fopen("http2parser.h", "w");
-    fprintf(f, "#ifndef _HTTP2PARSER_H_\n");
-    fprintf(f, "#define _HTTP2PARSER_H_\n");
-    parsergen_dump_headers(&gen, f);
-    fprintf(f, "#endif\n");
-    fclose(f);
-    f = fopen("http2parser.c", "w");
-    fprintf(f, "#include \"httpcommon.h\"\n");
-    fprintf(f, "#include \"http2parser.h\"\n");
-    parsergen_dump_parser(&gen, f);
-    fclose(f);
+    if (h)
+    {
+      f = fopen(hnamebuf, "w");
+      fprintf(f, "#ifndef %s\n", hdefbuf);
+      fprintf(f, "#define %s\n", hdefbuf);
+      parsergen_dump_headers(&gen, f);
+      fprintf(f, "#endif\n");
+      fclose(f);
+    }
+    if (c)
+    {
+      f = fopen(cnamebuf, "w");
+      if (yale.cs.data)
+      {
+        fprintf(f, "%s", yale.cs.data);
+      }
+      fprintf(f, "#include \"%s\"\n", hnamebuf);
+      parsergen_dump_parser(&gen, f);
+      fclose(f);
+    }
   }
   yale_free(&yale);
   return 0;

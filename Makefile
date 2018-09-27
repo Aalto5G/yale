@@ -9,7 +9,7 @@ YACCSRC := yale.y
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN) httpparser.c
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint yaleparser regexmain
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -38,11 +38,17 @@ yaleparser: yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o Makefi
 httpmain: httpmain.o httpparser.o Makefile
 	$(CC) $(CFLAGS) -o httpmain httpmain.o httpparser.o
 
-regexmain: regexmain.o regex.o Makefile
-	$(CC) $(CFLAGS) -o regexmain regexmain.o regex.o
-
 httpmainprint: httpmainprint.o httpparser.o Makefile
 	$(CC) $(CFLAGS) -o httpmainprint httpmainprint.o httpparser.o
+
+httpcmain: httpmain.o httpcparser.o Makefile
+	$(CC) $(CFLAGS) -o httpcmain httpmain.o httpcparser.o
+
+httpcmainprint: httpmainprint.o httpcparser.o Makefile
+	$(CC) $(CFLAGS) -o httpcmainprint httpmainprint.o httpcparser.o
+
+regexmain: regexmain.o regex.o Makefile
+	$(CC) $(CFLAGS) -o regexmain regexmain.o regex.o
 
 httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile
@@ -57,6 +63,12 @@ httpparser.h: http.py parser.py regex.py Makefile
 
 httpparser.c: http.py parser.py regex.py Makefile
 	python http.py c
+
+httpcparser.h: yaleparser Makefile
+	./yaleparser httppaper.txt h
+
+httpcparser.c: yaleparser Makefile
+	./yaleparser httppaper.txt c
 
 yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o Makefile
 	$(CC) $(CFLAGS) -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
