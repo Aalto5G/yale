@@ -32,39 +32,41 @@ struct firstset_entry {
 };
 
 struct stackconfig {
-  uint8_t stack[255];
+  uint8_t *stack;
   uint8_t sz;
 };
 
 struct ParserGen {
-  struct iovec re_by_idx[255];
-  int priorities[255];
   uint8_t tokencnt;
   uint8_t nonterminalcnt;
   char *parsername;
   uint8_t start_state;
   uint8_t epsilon;
   char *state_include_str;
-  int tokens_finalized;
-  struct rule rules[255];
-  uint8_t rulecnt;
-  struct cb cbs[255];
-  uint8_t cbcnt;
-  struct REGen re_gen;
-  struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
-  struct dict Fo[256]; // 2 MB
-  struct firstset_entry Fi[8192]; // 66 MB
   size_t Ficnt;
-  uint8_t pick_those[255][255];
-  struct pick_those_struct pick_thoses[255];
   uint8_t pick_thoses_cnt;
   uint8_t max_stack_size;
   uint8_t max_bt;
+  size_t stackconfigcnt;
+  char *userareaptr;
+  int tokens_finalized;
+  uint8_t rulecnt;
+  uint8_t cbcnt;
+  struct dict *Fo[256]; // 2 kB
+  struct REGen re_gen;
+  struct pick_those_struct pick_thoses[255];
+  struct iovec re_by_idx[255];
+  int priorities[255];
+  struct rule rules[255];
+  struct cb cbs[255];
   struct nfa_node ns[255];
   struct dfa_node ds[255];
-  struct transitionbufs bufs;
-  struct stackconfig stackconfigs[32768]; // 8 MB
-  size_t stackconfigcnt;
+  struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
+  uint8_t pick_those[255][255]; // 64 kB
+  struct firstset_entry *Fi[8192]; // 64 kB
+  struct stackconfig stackconfigs[32768]; // 512 kB
+  struct transitionbufs bufs; // 16 MB, this could be made to use dynamic alloc
+  char userarea[64*1024*1024];
 };
 
 void parsergen_init(struct ParserGen *gen, char *parsername);

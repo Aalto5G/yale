@@ -2,6 +2,13 @@
 #include "parser.h"
 #include <sys/uio.h>
 
+void *parsergen_alloc(struct ParserGen *gen, size_t sz)
+{
+  void *result = gen->userareaptr;
+  gen->userareaptr += (sz+7)/8 * 8;
+  return result;
+}
+
 static int fprints(FILE *f, const char *s)
 {
   return fputs(s, f);
@@ -129,6 +136,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
   gen->Ficnt = 0;
   gen->pick_thoses_cnt = 0;
+  gen->userareaptr = gen->userarea;
   // leave gen->Fi purposefully uninitiailized as it's 66 MB
 }
 
@@ -154,15 +162,15 @@ struct firstset_entry *firstset_lookup(struct ParserGen *gen, const uint8_t *rhs
   size_t i;
   for (i = 0; i < gen->Ficnt; i++)
   {
-    if (gen->Fi[i].rhssz != rhssz)
+    if (gen->Fi[i]->rhssz != rhssz)
     {
       continue;
     }
-    if (memcmp(gen->Fi[i].rhs, rhs, rhssz*sizeof(*rhs)) != 0)
+    if (memcmp(gen->Fi[i]->rhs, rhs, rhssz*sizeof(*rhs)) != 0)
     {
       continue;
     }
-    return &gen->Fi[i];
+    return gen->Fi[i];
   }
   return NULL;
 }
@@ -177,9 +185,10 @@ void firstset_setdefault(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz
   {
     abort();
   }
-  gen->Fi[gen->Ficnt].rhssz = rhssz;
-  memcpy(gen->Fi[gen->Ficnt].rhs, rhs, rhssz*sizeof(*rhs));
-  memset(&gen->Fi[gen->Ficnt].dict, 0, sizeof(gen->Fi[gen->Ficnt].dict));
+  gen->Fi[gen->Ficnt] = parsergen_alloc(gen, sizeof(*gen->Fi[gen->Ficnt]));
+  gen->Fi[gen->Ficnt]->rhssz = rhssz;
+  memcpy(gen->Fi[gen->Ficnt]->rhs, rhs, rhssz*sizeof(*rhs));
+  memset(&gen->Fi[gen->Ficnt]->dict, 0, sizeof(gen->Fi[gen->Ficnt]->dict));
   gen->Ficnt++;
 }
 
@@ -239,6 +248,7 @@ void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
     {
       abort();
     }
+    gen->stackconfigs[i].stack = parsergen_alloc(gen, sz*sizeof(uint8_t));
     memcpy(gen->stackconfigs[i].stack, stack, sz*sizeof(uint8_t));
     gen->stackconfigs[i].sz = sz;
     gen->stackconfigcnt++;
@@ -256,6 +266,7 @@ ssize_t max_stack_sz(struct ParserGen *gen)
   size_t sz;
   uint8_t a;
   gen->stackconfigcnt = 1;
+  gen->stackconfigs[0].stack = parsergen_alloc(gen, 1*sizeof(uint8_t));
   gen->stackconfigs[0].stack[0] = gen->start_state;
   gen->stackconfigs[0].sz = 1;
   //printf("Start state is %d, terminal? %d\n", gen->start_state, parsergen_is_terminal(gen, gen->start_state));
@@ -312,7 +323,12 @@ void gen_parser(struct ParserGen *gen)
   int changed;
   size_t i, j;
 
-  memset(gen->Fo, 0, sizeof(gen->Fo[0])*(gen->tokencnt + gen->nonterminalcnt));
+  //memset(gen->Fo, 0, sizeof(gen->Fo[0])*(gen->tokencnt + gen->nonterminalcnt));
+  for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
+  {
+    gen->Fo[i] = parsergen_alloc(gen, sizeof(*gen->Fo[i]));
+    memset(gen->Fo[i], 0, sizeof(*gen->Fo[i]));
+  }
 
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
@@ -320,9 +336,10 @@ void gen_parser(struct ParserGen *gen)
     {
       abort();
     }
-    gen->Fi[gen->Ficnt].rhssz = 1;
-    gen->Fi[gen->Ficnt].rhs[0] = i;
-    memset(&gen->Fi[gen->Ficnt].dict, 0, sizeof(gen->Fi[gen->Ficnt].dict));
+    gen->Fi[gen->Ficnt] = parsergen_alloc(gen, sizeof(*gen->Fi[gen->Ficnt]));
+    gen->Fi[gen->Ficnt]->rhssz = 1;
+    gen->Fi[gen->Ficnt]->rhs[0] = i;
+    memset(&gen->Fi[gen->Ficnt]->dict, 0, sizeof(gen->Fi[gen->Ficnt]->dict));
     gen->Ficnt++;
   }
   changed = 1;
@@ -391,27 +408,27 @@ void gen_parser(struct ParserGen *gen)
         {
           if (has_bitset(&firstrhsright.dict.has, terminal))
           {
-            if (!has_bitset(&gen->Fo[rhsmid].has, terminal))
+            if (!has_bitset(&gen->Fo[rhsmid]->has, terminal))
             {
               changed = 1;
-              firstset_update_one(&gen->Fo[rhsmid], &firstrhsright.dict, terminal);
+              firstset_update_one(gen->Fo[rhsmid], &firstrhsright.dict, terminal);
             }
           }
         }
         if (has_bitset(&firstrhsright.dict.has, gen->epsilon))
         {
-          if (!firstset_issubset(&gen->Fo[nonterminal], &gen->Fo[rhsmid]))
+          if (!firstset_issubset(gen->Fo[nonterminal], gen->Fo[rhsmid]))
           {
             changed = 1;
-            firstset_update(&gen->Fo[rhsmid], &gen->Fo[nonterminal]);
+            firstset_update(gen->Fo[rhsmid], gen->Fo[nonterminal]);
           }
         }
         if (gen->rules[i].noactcnt == 0 || j == gen->rules[i].noactcnt - 1U)
         {
-          if (!firstset_issubset(&gen->Fo[nonterminal], &gen->Fo[rhsmid]))
+          if (!firstset_issubset(gen->Fo[nonterminal], gen->Fo[rhsmid]))
           {
             changed = 1;
-           firstset_update(&gen->Fo[rhsmid], &gen->Fo[nonterminal]);
+           firstset_update(gen->Fo[rhsmid], gen->Fo[nonterminal]);
           }
         }
       }
@@ -429,7 +446,7 @@ void gen_parser(struct ParserGen *gen)
     for (a = 0; a < gen->tokencnt; a++)
     {
       struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
-      struct dict *fo = &gen->Fo[A];
+      struct dict *fo = gen->Fo[A];
       if (has_bitset(&fi->dict.has, a))
       {
         if (gen->T[A][a].val != 255 || gen->T[A][a].cb != 255)
