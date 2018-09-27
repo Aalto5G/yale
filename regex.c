@@ -1413,7 +1413,7 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
   }
 }
 
-int fprints(FILE *f, const char *s)
+static int fprints(FILE *f, const char *s)
 {
   return fputs(s, f);
 }

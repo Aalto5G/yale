@@ -2,6 +2,11 @@
 #include "parser.h"
 #include <sys/uio.h>
 
+static int fprints(FILE *f, const char *s)
+{
+  return fputs(s, f);
+}
+
 void firstset_update(struct dict *da, struct dict *db)
 {
   size_t i;
@@ -515,26 +520,26 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   {
     fprintf(f, "%s, ", gen->cbs[i].name);
   }
-  fprintf(f, "};\n");
+  fprints(f, "};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
-  fprintf(f, "  const struct state *re;\n");
+  fprints(f, "  const struct state *re;\n");
   fprintf(f, "  //const uint8_t rhs[%d];\n", gen->tokencnt);
   fprintf(f, "  const uint8_t cb[%d];\n", gen->tokencnt);
-  fprintf(f, "};\n");
+  fprints(f, "};\n");
   fprintf(f, "const uint8_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt);
   fprintf(f, "const uint8_t %s_start_state = %d;\n", gen->parsername, gen->start_state);
   fprintf(f, "const struct reentry %s_reentries[] = {\n", gen->parsername);
   for (i = 0; i < gen->tokencnt; i++)
   {
-    fprintf(f, "{\n");
+    fprints(f, "{\n");
     fprintf(f, ".re = %s_states_%d,", gen->parsername, (int)i);
-    fprintf(f, "},\n");
+    fprints(f, "},\n");
   }
-  fprintf(f, "};\n");
+  fprints(f, "};\n");
   fprintf(f, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {\n", gen->parsername, gen->parsername);
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
-    fprintf(f, "{\n");
+    fprints(f, "{\n");
     fprintf(f, ".re = %s_states", gen->parsername);
     for (i = 0; i < gen->tokencnt; i++)
     {
@@ -543,16 +548,16 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         fprintf(f, "_%d", (int)i);
       }
     }
-    fprintf(f, ",\n");
-    fprintf(f, ".cb = {\n");
+    fprints(f, ",\n");
+    fprints(f, ".cb = {\n");
     for (i = 0; i < gen->tokencnt; i++)
     {
       fprintf(f, "%d, ", gen->T[X][i].cb);
     }
-    fprintf(f, "},\n");
-    fprintf(f, "},\n");
+    fprints(f, "},\n");
+    fprints(f, "},\n");
   }
-  fprintf(f, "};\n");
+  fprints(f, "};\n");
   for (i = 0; i < gen->rulecnt; i++)
   {
     fprintf(f, "const struct ruleentry %s_rule_%d[] = {\n", gen->parsername, (int)i);
@@ -572,263 +577,263 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       {
         fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
       }
-      fprintf(f, "},\n");
+      fprints(f, "},\n");
     }
-    fprintf(f, "};\n");
+    fprints(f, "};\n");
     fprintf(f, "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);\n", gen->parsername, (int)i, gen->parsername, (int)i);
   }
   fprintf(f, "const struct rule %s_rules[] = {\n", gen->parsername);
   for (i = 0; i < gen->rulecnt; i++)
   {
-    fprintf(f, "{\n");
+    fprints(f, "{\n");
     fprintf(f, "  .lhs = %d,\n", gen->rules[i].lhs);
     fprintf(f, "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry),\n", gen->parsername, (int)i);
     fprintf(f, "  .rhs = %s_rule_%d,\n", gen->parsername, (int)i);
-    fprintf(f, "},\n");
+    fprints(f, "},\n");
   }
-  fprintf(f, "};\n");
-  fprintf(f, "static inline ssize_t\n");
+  fprints(f, "};\n");
+  fprints(f, "static inline ssize_t\n");
   fprintf(f, "%s_get_saved_token(struct %s_parserctx *pctx, const struct state *restates,\n", gen->parsername, gen->parsername);
-  fprintf(f, "                const char *blkoff, size_t szoff, uint8_t *state,\n");
-  fprintf(f, "                const uint8_t *cbs, uint8_t cb1)//, void *baton)\n");
-  fprintf(f, "{\n");
-  fprintf(f, "  if (pctx->saved_token != 255)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    *state = pctx->saved_token;\n");
-  fprintf(f, "    pctx->saved_token = 255;\n");
-  fprintf(f, "    return 0;\n");
-  fprintf(f, "  }\n");
+  fprints(f, "                const char *blkoff, size_t szoff, uint8_t *state,\n"
+             "                const uint8_t *cbs, uint8_t cb1)//, void *baton)\n"
+             "{\n"
+             "  if (pctx->saved_token != 255)\n"
+             "  {\n"
+             "    *state = pctx->saved_token;\n"
+             "    pctx->saved_token = 255;\n"
+             "    return 0;\n"
+             "  }\n");
   fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cbs, cb1);//, baton);\n", gen->parsername, gen->parsername);
-  fprintf(f, "}\n");
-  fprintf(f, "\n");
-  fprintf(f, "#define EXTRA_SANITY\n");
-  fprintf(f, "\n");
+  fprints(f, "}\n"
+             "\n"
+             "#define EXTRA_SANITY\n"
+             "\n");
   fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz)//, void *baton)\n", gen->parsername, gen->parsername);
-  fprintf(f, "{\n");
-  fprintf(f, "  size_t off = 0;\n");
-  fprintf(f, "  ssize_t ret;\n");
-  fprintf(f, "  uint8_t curstateoff;\n");
-  fprintf(f, "  uint8_t curstate;\n");
-  fprintf(f, "  uint8_t state;\n");
-  fprintf(f, "  uint8_t ruleid;\n");
-  fprintf(f, "  uint8_t i; // FIXME is 8 bits enough?\n");
-  fprintf(f, "  uint8_t cb1;\n");
-  fprintf(f, "  const struct state *restates;\n");
-  fprintf(f, "  const struct rule *rule;\n");
-  fprintf(f, "  const uint8_t *cbs;\n");
+  fprints(f, "{\n"
+             "  size_t off = 0;\n"
+             "  ssize_t ret;\n"
+             "  uint8_t curstateoff;\n"
+             "  uint8_t curstate;\n"
+             "  uint8_t state;\n"
+             "  uint8_t ruleid;\n"
+             "  uint8_t i; // FIXME is 8 bits enough?\n"
+             "  uint8_t cb1;\n"
+             "  const struct state *restates;\n"
+             "  const struct rule *rule;\n"
+             "  const uint8_t *cbs;\n");
   fprintf(f, "  void (*cb1f)(const char *, size_t, struct %s_parserctx*);\n", gen->parsername);
-  fprintf(f, "\n");
-  fprintf(f, "  while (off < sz || pctx->saved_token != 255)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    if (unlikely(pctx->stacksz == 0))\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      if (off >= sz && pctx->saved_token == 255)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "#ifdef EXTRA_SANITY\n");
-  fprintf(f, "        if (off > sz)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          abort();\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "        return sz; // EOF\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "#ifdef EXTRA_SANITY\n");
-  fprintf(f, "        if (off > sz)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          abort();\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "        return -EBADMSG;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    curstate = pctx->stack[pctx->stacksz - 1].rhs;\n");
+  fprints(f, "\n"
+             "  while (off < sz || pctx->saved_token != 255)\n"
+             "  {\n"
+             "    if (unlikely(pctx->stacksz == 0))\n"
+             "    {\n"
+             "      if (off >= sz && pctx->saved_token == 255)\n"
+             "      {\n"
+             "#ifdef EXTRA_SANITY\n");
+  fprints(f, "        if (off > sz)\n"
+             "        {\n"
+             "          abort();\n"
+             "        }\n"
+             "#endif\n"
+             "        return sz; // EOF\n"
+             "      }\n"
+             "      else\n"
+             "      {\n");
+  fprints(f, "#ifdef EXTRA_SANITY\n"
+             "        if (off > sz)\n"
+             "        {\n"
+             "          abort();\n"
+             "        }\n"
+             "#endif\n"
+             "        return -EBADMSG;\n"
+             "      }\n"
+             "    }\n"
+             "    curstate = pctx->stack[pctx->stacksz - 1].rhs;\n");
   fprintf(f, "    if (curstate < %s_num_terminals)\n", gen->parsername);
-  fprintf(f, "    {\n");
+  fprints(f, "    {\n");
   fprintf(f, "      restates = %s_reentries[curstate].re;\n", gen->parsername);
-  fprintf(f, "      cb1 = pctx->stack[pctx->stacksz - 1].cb;\n");
+  fprints(f, "      cb1 = pctx->stack[pctx->stacksz - 1].cb;\n");
   fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1);//, baton);\n", gen->parsername);
-  fprintf(f, "      if (ret == -EAGAIN)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        //off = sz;\n");
-  fprintf(f, "        return -EAGAIN;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else if (ret < 0)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        //fprintf(stderr, \"Parser error: tokenizer error, curstate=%%d\\n\", curstate);\n");
-  fprintf(f, "        //fprintf(stderr, \"blk[off] = '%%c'\\n\", blk[off]);\n");
-  fprintf(f, "        //abort();\n");
-  fprintf(f, "        //exit(1);\n");
-  fprintf(f, "        return -EINVAL;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        off += ret;\n");
-  fprintf(f, "#if 0\n");
-  fprintf(f, "        if (off > sz)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          abort();\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "#ifdef EXTRA_SANITY\n");
-  fprintf(f, "      if (curstate != state)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        //fprintf(stderr, \"Parser error: state mismatch %%d %%d\\n\",\n");
-  fprintf(f, "        //                (int)curstate, (int)state);\n");
-  fprintf(f, "        //exit(1);\n");
-  fprintf(f, "        //return -EINVAL;\n");
-  fprintf(f, "        abort();\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "      //printf(\"Got expected token %%d\\n\", (int)state);\n");
-  fprintf(f, "      pctx->stacksz--;\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    else if (likely(curstate != 255))\n");
-  fprintf(f, "    {\n");
+  fprints(f, "      if (ret == -EAGAIN)\n"
+             "      {\n"
+             "        //off = sz;\n"
+             "        return -EAGAIN;\n"
+             "      }\n"
+             "      else if (ret < 0)\n"
+             "      {\n"
+             "        //fprintf(stderr, \"Parser error: tokenizer error, curstate=%%d\\n\", curstate);\n"
+             "        //fprintf(stderr, \"blk[off] = '%%c'\\n\", blk[off]);\n");
+  fprints(f, "        //abort();\n"
+             "        //exit(1);\n"
+             "        return -EINVAL;\n"
+             "      }\n"
+             "      else\n"
+             "      {\n"
+             "        off += ret;\n"
+             "#if 0\n"
+             "        if (off > sz)\n"
+             "        {\n"
+             "          abort();\n"
+             "        }\n"
+             "#endif\n");
+  fprints(f, "      }\n"
+             "#ifdef EXTRA_SANITY\n"
+             "      if (curstate != state)\n"
+             "      {\n"
+             "        //fprintf(stderr, \"Parser error: state mismatch %%d %%d\\n\",\n"
+             "        //                (int)curstate, (int)state);\n"
+             "        //exit(1);\n"
+             "        //return -EINVAL;\n"
+             "        abort();\n"
+             "      }\n"
+             "#endif\n");
+  fprints(f, "      //printf(\"Got expected token %%d\\n\", (int)state);\n"
+             "      pctx->stacksz--;\n"
+             "    }\n"
+             "    else if (likely(curstate != 255))\n"
+             "    {\n");
   fprintf(f, "      curstateoff = curstate - %s_num_terminals;\n", gen->parsername);
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
   fprintf(f, "      cbs = %s_parserstatetblentries[curstateoff].cb;\n", gen->parsername);
   fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);//, baton);\n", gen->parsername);
-  fprintf(f, "      if (ret == -EAGAIN)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        //off = sz;\n");
-  fprintf(f, "        return -EAGAIN;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else if (ret < 0 || state == 255)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        //fprintf(stderr, \"Parser error: tokenizer error, curstate=%%d, token=%%d\\n\", (int)curstate, (int)state);\n");
-  fprintf(f, "        //exit(1);\n");
-  fprintf(f, "        return -EINVAL;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        off += ret;\n");
-  fprintf(f, "#if 0\n");
-  fprintf(f, "        if (off > sz)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          abort();\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      //printf(\"Got token %%d, curstate=%%d\\n\", (int)state, (int)curstate);\n");
-  fprintf(f, "      switch (curstate)\n");
-  fprintf(f, "      {\n");
+  fprints(f, "      if (ret == -EAGAIN)\n"
+             "      {\n"
+             "        //off = sz;\n"
+             "        return -EAGAIN;\n"
+             "      }\n"
+             "      else if (ret < 0 || state == 255)\n"
+             "      {\n"
+             "        //fprintf(stderr, \"Parser error: tokenizer error, curstate=%%d, token=%%d\\n\", (int)curstate, (int)state);\n");
+  fprints(f, "        //exit(1);\n"
+             "        return -EINVAL;\n"
+             "      }\n"
+             "      else\n"
+             "      {\n"
+             "        off += ret;\n"
+             "#if 0\n"
+             "        if (off > sz)\n");
+  fprints(f, "        {\n"
+             "          abort();\n"
+             "        }\n"
+             "#endif\n"
+             "      }\n"
+             "      //printf(\"Got token %%d, curstate=%%d\\n\", (int)state, (int)curstate);\n"
+             "      switch (curstate)\n"
+             "      {\n");
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
     fprintf(f, "      case %d:\n", (int)X);
-    fprintf(f, "        switch (state)\n");
-    fprintf(f, "        {\n");
+    fprints(f, "        switch (state)\n"
+               "        {\n");
     for (x = 0; x < gen->tokencnt; x++)
     {
       if (gen->T[X][x].val != 255)
       {
         fprintf(f, "        case %d:\n", (int)x);
         fprintf(f, "          ruleid=%d;\n", (int)gen->T[X][x].val);
-        fprintf(f, "          break;\n");
+        fprints(f, "          break;\n");
       }
     }
-    fprintf(f, "        default:\n");
-    fprintf(f, "          ruleid=255;\n");
-    fprintf(f, "          break;\n");
-    fprintf(f, "        }\n");
-    fprintf(f, "        break;\n");
+    fprints(f, "        default:\n"
+               "          ruleid=255;\n"
+               "          break;\n"
+               "        }\n"
+               "        break;\n");
   }
-  fprintf(f, "      default:\n");
-  fprintf(f, "        abort();\n");
-  fprintf(f, "      }\n");
+  fprints(f, "      default:\n"
+             "        abort();\n"
+             "      }\n");
   fprintf(f, "      //ruleid = %s_parserstatetblentries[curstateoff].rhs[state];\n", gen->parsername);
   fprintf(f, "      rule = &%s_rules[ruleid];\n", gen->parsername);
-  fprintf(f, "      pctx->stacksz--;\n");
-  fprintf(f, "#if 0\n");
-  fprintf(f, "      if (rule->lhs != curstate)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        abort();\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "      if (pctx->stacksz + rule->rhssz > sizeof(pctx->stack)/sizeof(struct ruleentry))\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        abort();\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      i = 0;\n");
-  fprintf(f, "      while (i + 4 <= rule->rhssz)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        pctx->stack[pctx->stacksz++] = rule->rhs[i+0];\n");
-  fprintf(f, "        pctx->stack[pctx->stacksz++] = rule->rhs[i+1];\n");
-  fprintf(f, "        pctx->stack[pctx->stacksz++] = rule->rhs[i+2];\n");
-  fprintf(f, "        pctx->stack[pctx->stacksz++] = rule->rhs[i+3];\n");
-  fprintf(f, "        i += 4;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      for (; i < rule->rhssz; i++)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        pctx->stack[pctx->stacksz++] = rule->rhs[i];\n");
-  fprintf(f, "      }\n");
+  fprints(f, "      pctx->stacksz--;\n"
+             "#if 0\n"
+             "      if (rule->lhs != curstate)\n"
+             "      {\n"
+             "        abort();\n"
+             "      }\n"
+             "#endif\n"
+             "      if (pctx->stacksz + rule->rhssz > sizeof(pctx->stack)/sizeof(struct ruleentry))\n");
+  fprints(f, "      {\n"
+             "        abort();\n"
+             "      }\n"
+             "      i = 0;\n"
+             "      while (i + 4 <= rule->rhssz)\n"
+             "      {\n"
+             "        pctx->stack[pctx->stacksz++] = rule->rhs[i+0];\n"
+             "        pctx->stack[pctx->stacksz++] = rule->rhs[i+1];\n"
+             "        pctx->stack[pctx->stacksz++] = rule->rhs[i+2];\n");
+  fprints(f, "        pctx->stack[pctx->stacksz++] = rule->rhs[i+3];\n"
+             "        i += 4;\n"
+             "      }\n"
+             "      for (; i < rule->rhssz; i++)\n"
+             "      {\n"
+             "        pctx->stack[pctx->stacksz++] = rule->rhs[i];\n"
+             "      }\n");
   fprintf(f, "      if (rule->rhssz && pctx->stack[pctx->stacksz-1].rhs < %s_num_terminals)\n", gen->parsername);
-  fprintf(f, "      {\n");
-  fprintf(f, "        pctx->stacksz--; // Has to be correct token so let's process immediately\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        pctx->saved_token = state;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    else // if (curstate == 255)\n");
-  fprintf(f, "    {\n");
+  fprints(f, "      {\n"
+             "        pctx->stacksz--; // Has to be correct token so let's process immediately\n"
+             "      }\n"
+             "      else\n"
+             "      {\n"
+             "        pctx->saved_token = state;\n"
+             "      }\n"
+             "    }\n"
+             "    else // if (curstate == 255)\n"
+             "    {\n");
   fprintf(f, "      cb1f = %s_callbacks[pctx->stack[pctx->stacksz - 1].cb];\n", gen->parsername);
-  fprintf(f, "      cb1f(NULL, 0, pctx);//, baton);\n");
-  fprintf(f, "      pctx->stacksz--;\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "  if (pctx->stacksz == 0)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    if (off >= sz && pctx->saved_token == 255)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "#ifdef EXTRA_SANITY\n");
-  fprintf(f, "      if (off > sz)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        abort();\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "      return sz; // EOF\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "#ifdef EXTRA_SANITY\n");
-  fprintf(f, "  if (off > sz)\n");
-  fprintf(f, "  {\n");
-  fprintf(f, "    abort();\n");
-  fprintf(f, "  }\n");
-  fprintf(f, "#endif\n");
-  fprintf(f, "  return -EAGAIN;\n");
-  fprintf(f, "}\n");
+  fprints(f, "      cb1f(NULL, 0, pctx);//, baton);\n"
+             "      pctx->stacksz--;\n"
+             "    }\n"
+             "  }\n"
+             "  if (pctx->stacksz == 0)\n"
+             "  {\n"
+             "    if (off >= sz && pctx->saved_token == 255)\n"
+             "    {\n");
+  fprints(f, "#ifdef EXTRA_SANITY\n"
+             "      if (off > sz)\n"
+             "      {\n"
+             "        abort();\n"
+             "      }\n"
+             "#endif\n"
+             "      return sz; // EOF\n");
+  fprints(f, "    }\n"
+             "  }\n"
+             "#ifdef EXTRA_SANITY\n"
+             "  if (off > sz)\n"
+             "  {\n"
+             "    abort();\n"
+             "  }\n"
+             "#endif\n"
+             "  return -EAGAIN;\n"
+             "}\n");
 }
 
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {
-  fprintf(f, "#include \"yalecommon.h\"\n");
+  fprints(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, gen->parsername, gen->max_bt);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
-  fprintf(f, "  uint8_t stacksz;\n");
+  fprints(f, "  uint8_t stacksz;\n");
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
-  fprintf(f, "  uint8_t saved_token;\n");
+  fprints(f, "  uint8_t saved_token;\n");
   if (gen->state_include_str)
   {
     fprintf(f, "  %s\n", gen->state_include_str);
   }
-  fprintf(f, "};\n");
-  fprintf(f, "\n");
+  fprints(f, "};\n");
+  fprints(f, "\n");
   fprintf(f, "static inline void %s_parserctx_init(struct %s_parserctx *pctx)\n",
           gen->parsername, gen->parsername);
-  fprintf(f, "{\n");
-  fprintf(f, "  pctx->saved_token = 255;\n");
-  fprintf(f, "  pctx->stacksz = 1;\n");
+  fprints(f, "{\n");
+  fprints(f, "  pctx->saved_token = 255;\n");
+  fprints(f, "  pctx->stacksz = 1;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
-  fprintf(f, "  pctx->stack[0].cb = 255;\n");
+  fprints(f, "  pctx->stack[0].cb = 255;\n");
   fprintf(f, "  %s_init_statemachine(&pctx->rctx);\n", gen->parsername);
-  fprintf(f, "}\n");
-  fprintf(f, "\n");
+  fprints(f, "}\n");
+  fprints(f, "\n");
   fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//, void *baton);\n", gen->parsername, gen->parsername);
 }
 
