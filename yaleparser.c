@@ -99,7 +99,10 @@ int main(int argc, char **argv)
       }
       nsit->val = parsergen_add_nonterminal(&gen);
     }
-    parsergen_state_include(&gen, yale.si.data);
+    if (yale.si.data != NULL)
+    {
+      parsergen_state_include(&gen, yale.si.data);
+    }
     if (!yale.startns_present)
     {
       abort();
