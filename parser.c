@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "yale.h"
 #include "parser.h"
 #include <sys/uio.h>

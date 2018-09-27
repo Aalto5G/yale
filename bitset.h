@@ -1,7 +1,6 @@
 #ifndef _BITSET_H_
 #define _BITSET_H_
 
-#define _GNU_SOURCE
 #include "yale.h"
 #include <sys/uio.h>
 #include <strings.h>

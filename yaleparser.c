@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "yale.h"
 #include "yyutils.h"
 #include <stdio.h>
