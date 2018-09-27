@@ -8,6 +8,19 @@ struct bitset {
   uint64_t bitset[4];
 };
 
+static inline int myffsll(long long int i)
+{
+  int res = ffsll(i);
+  if (res == 0)
+  {
+    return 65;
+  }
+  else
+  {
+    return res;
+  }
+}
+
 static inline int bitset_empty(struct bitset *a)
 {
   size_t i;

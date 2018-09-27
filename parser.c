@@ -61,7 +61,7 @@ int firstset_issubset(struct dict *da, struct dict *db)
     }
     if (bitoff != 63)
     { 
-      i = (wordoff*64) + ffsll(da->has.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(da->has.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
@@ -91,7 +91,7 @@ uint8_t get_sole_cb(struct dict *d, uint8_t x)
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + ffsll(d->bitset[x].bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(d->bitset[x].bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {

@@ -155,7 +155,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + ffsll(nodes.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(nodes.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
@@ -189,7 +189,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
       }
       if (bitoff != 63)
       {
-        i = (wordoff*64) + ffsll(n->epsilon.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        i = (wordoff*64) + myffsll(n->epsilon.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
       }
       else
       {
@@ -221,7 +221,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + ffsll(closure.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(closure.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
@@ -501,7 +501,7 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state,
         }
         if (bitoff != 63)
         {
-          i = (wordoff*64) + ffsll(ds[queued].acceptidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+          i = (wordoff*64) + myffsll(ds[queued].acceptidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
         }
         else
         {
@@ -685,7 +685,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + ffsll(dfabegin.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(dfabegin.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
@@ -725,7 +725,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
       }
       if (bitoff != 63)
       {
-        i = (wordoff*64) + ffsll(nns.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        i = (wordoff*64) + myffsll(nns.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
       }
       else
       {
@@ -761,7 +761,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
           }
           if (bitoff != 63)
           {
-            i = (wordoff*64) + ffsll(defaultsec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+            i = (wordoff*64) + myffsll(defaultsec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
           }
           else
           {
@@ -835,7 +835,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
           }
           if (bitoff != 63)
           {
-            j = (wordoff*64) + ffsll(ec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+            j = (wordoff*64) + myffsll(ec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
           }
           else
           {
