@@ -123,6 +123,8 @@ static inline void yale_free(struct yale *yale)
   yale->cs.data = NULL;
   free(yale->si.data);
   yale->si.data = NULL;
+  free(yale->parsername);
+  yale->parsername = NULL;
   memset(yale, 0, sizeof(*yale));
 }
 
