@@ -173,6 +173,10 @@ void firstset_setdefault(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz
   {
     return;
   }
+  if (gen->Ficnt >= sizeof(gen->Fi)/sizeof(*gen->Fi))
+  {
+    abort();
+  }
   gen->Fi[gen->Ficnt].rhssz = rhssz;
   memcpy(gen->Fi[gen->Ficnt].rhs, rhs, rhssz*sizeof(*rhs));
   memset(&gen->Fi[gen->Ficnt].dict, 0, sizeof(gen->Fi[gen->Ficnt].dict));
@@ -231,7 +235,7 @@ void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
   }
   if (i == gen->stackconfigcnt)
   {
-    if (gen->stackconfigcnt == sizeof(gen->stackconfigs)/sizeof(*gen->stackconfigs))
+    if (gen->stackconfigcnt >= sizeof(gen->stackconfigs)/sizeof(*gen->stackconfigs))
     {
       abort();
     }
@@ -312,6 +316,10 @@ void gen_parser(struct ParserGen *gen)
 
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
+    if (gen->Ficnt >= sizeof(gen->Fi)/sizeof(*gen->Fi))
+    {
+      abort();
+    }
     gen->Fi[gen->Ficnt].rhssz = 1;
     gen->Fi[gen->Ficnt].rhs[0] = i;
     memset(&gen->Fi[gen->Ficnt].dict, 0, sizeof(gen->Fi[gen->Ficnt].dict));
