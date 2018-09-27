@@ -399,7 +399,7 @@ void gen_parser(struct ParserGen *gen)
     for (a = 0; a < gen->tokencnt; a++)
     {
       struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
-      struct dict *fo = &gen->Fo[a];
+      struct dict *fo = &gen->Fo[A];
       if (has_bitset(&fi->dict.has, a))
       {
         if (gen->T[A][a].val != 255 || gen->T[A][a].cb != 255)
