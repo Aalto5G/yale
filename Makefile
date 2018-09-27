@@ -1,7 +1,6 @@
 .PHONY: all clean distclean
 
-#CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
-CFLAGS = -O0 -g -Wall -Wextra -Werror -Wno-unused-parameter
+CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
 SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c
 LEXSRC := yale.l
