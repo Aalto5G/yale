@@ -23,20 +23,20 @@ int main(int argc, char **argv)
     fprintf(stderr, "Usage: %s file.txt [c|h|b|p]\n", argv[0]);
     exit(1);
   }
-  if (strcmp(argv[2], "c"))
+  if (strcmp(argv[2], "c") == 0)
   {
     c = 1;
   }
-  else if (strcmp(argv[2], "h"))
+  else if (strcmp(argv[2], "h") == 0)
   {
     h = 1;
   }
-  else if (strcmp(argv[2], "b"))
+  else if (strcmp(argv[2], "b") == 0)
   {
     c = 1;
     h = 1;
   }
-  else if (strcmp(argv[2], "p"))
+  else if (strcmp(argv[2], "p") == 0)
   {
     iters = 1000;
     c = 1;
