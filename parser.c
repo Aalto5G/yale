@@ -562,6 +562,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "{\n");
       if (it->is_action)
       {
+        if (it->value != 255)
+        {
+          abort();
+        }
         fprintf(f, ".rhs = 255, .cb = %d", it->cb);
       }
       else
@@ -923,11 +927,28 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, uint8_
     gen->rules[i] = rules[i];
     for (j = 0; j < gen->rules[i].itemcnt; j++)
     {
-      gen->rules[i].rhs[j].value = ns[gen->rules[i].rhs[j].value].val;
+      if (gen->rules[i].rhs[j].is_action)
+      {
+        if (gen->rules[i].rhs[j].value != 255)
+        {
+          abort();
+        }
+      }
+      else
+      {
+        gen->rules[i].rhs[j].value = ns[gen->rules[i].rhs[j].value].val;
+      }
     }
     for (j = 0; j < gen->rules[i].noactcnt; j++)
     {
-      gen->rules[i].rhsnoact[j].value = ns[gen->rules[i].rhsnoact[j].value].val;
+      if (gen->rules[i].rhsnoact[j].is_action)
+      {
+        abort();
+      }
+      else
+      {
+        gen->rules[i].rhsnoact[j].value = ns[gen->rules[i].rhsnoact[j].value].val;
+      }
     }
   }
 }
