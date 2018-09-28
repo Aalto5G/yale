@@ -12,6 +12,11 @@ struct nfa_node ns[255];
 struct dfa_node ds[255];
 struct transitionbufs bufs;
 
+void *malloc_fn(void *ud, size_t sz)
+{
+  return malloc(sz);
+}
+
 int main(int argc, char **argv)
 {
   size_t i;
@@ -215,7 +220,7 @@ int main(int argc, char **argv)
     {
       pick(ns, ds, http_res, &pick_thoses[i], priorities);
     }
-    collect(pick_thoses, sizeof(pick_thoses)/sizeof(*pick_thoses), &bufs);
+    collect(pick_thoses, sizeof(pick_thoses)/sizeof(*pick_thoses), &bufs, malloc_fn, NULL);
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
     {
       ssize_t curbt;

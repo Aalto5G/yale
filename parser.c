@@ -10,6 +10,11 @@ void *parsergen_alloc(struct ParserGen *gen, size_t sz)
   return result;
 }
 
+void *parsergen_alloc_fn(void *gen, size_t sz)
+{
+  return parsergen_alloc(gen, sz);
+}
+
 static int fprints(FILE *f, const char *s)
 {
   return fputs(s, f);
@@ -135,6 +140,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   memset(&gen->re_gen, 0, sizeof(gen->re_gen));
   memset(gen->T, 0xff, sizeof(gen->T));
   //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
+  transitionbufs_init(&gen->bufs);
   gen->Ficnt = 0;
   gen->pick_thoses_cnt = 0;
   gen->userareaptr = gen->userarea;
@@ -156,6 +162,7 @@ void parsergen_free(struct ParserGen *gen)
   }
   free(gen->state_include_str);
   free(gen->parsername);
+  transitionbufs_fini(&gen->bufs);
 }
 
 struct firstset_entry *firstset_lookup(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
@@ -531,7 +538,7 @@ void gen_parser(struct ParserGen *gen)
   {
     pick(gen->ns, gen->ds, gen->re_by_idx, &gen->pick_thoses[i], gen->priorities);
   }
-  collect(gen->pick_thoses, gen->pick_thoses_cnt, &gen->bufs);
+  collect(gen->pick_thoses, gen->pick_thoses_cnt, &gen->bufs, parsergen_alloc_fn, gen);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
     ssize_t curbt;

@@ -7,6 +7,8 @@
 #include <sys/uio.h>
 #include <ctype.h>
 #include "regex.h"
+#include "yalemurmur.h"
+#include "yalecontainerof.h"
 
 static inline struct re *alloc_re(void)
 {
@@ -1341,31 +1343,48 @@ void gennfa_alternmulti(struct re *regexp,
   }
 }
 
-size_t
-get_transid(const uint8_t *transitions, struct transitionbufs *bufs)
+uint32_t transition_hash(const uint8_t *transitions)
 {
-  size_t j;
-  for (j = 0; j < bufs->cnt; j++)
+  return yalemurmur_buf(0x12345678U, transitions, 256*sizeof(*transitions));
+}
+
+uint32_t transition_hash_fn(struct yale_hash_list_node *node, void *ud)
+{
+  return transition_hash(YALE_CONTAINER_OF(node, struct transitionbuf, node)->transitions);
+}
+
+size_t
+get_transid(const uint8_t *transitions, struct transitionbufs *bufs,
+            void *(*alloc)(void*, size_t), void *alloc_ud)
+{
+  uint32_t hashval;
+  struct yale_hash_list_node *node;
+  struct transitionbuf *bufnew;
+  hashval = transition_hash(transitions);
+  YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&bufs->hash, node, hashval)
   {
-    if (memcmp(transitions, bufs->all[j].transitions, 256) == 0)
+    struct transitionbuf *buf = YALE_CONTAINER_OF(node, struct transitionbuf, node);
+    if (memcmp(transitions, buf->transitions, 256*sizeof(*transitions)) == 0)
     {
-      break;
+      return buf->id;
     }
   }
-  if (j == bufs->cnt)
+  if (bufs->cnt >= sizeof(bufs->all)/sizeof(*bufs->all))
   {
-    if (j == MAX_TRANS)
-    {
-      abort(); // FIXME error handling
-    }
-    memcpy(bufs->all[j].transitions, transitions, 256);
-    bufs->cnt++;
+    abort();
   }
-  return j;
+  bufnew = alloc(alloc_ud, sizeof(struct transitionbuf));
+  memcpy(bufnew->transitions, transitions, 256);
+  bufnew->id = bufs->cnt;
+  yale_hash_table_add_nogrow(&bufs->hash, &bufnew->node, hashval);
+  bufs->all[bufs->cnt] = bufnew;
+  bufs->cnt++;
+  return bufnew->id;
 }
 
 void
-perf_trans(uint8_t *transitions, struct transitionbufs *bufs)
+perf_trans(uint8_t *transitions, struct transitionbufs *bufs,
+           void *(*alloc)(void*, size_t), void *alloc_ud)
 {
   size_t i;
   memset(bufs, 0, sizeof(*bufs));
@@ -1373,7 +1392,7 @@ perf_trans(uint8_t *transitions, struct transitionbufs *bufs)
   {
     transitions[0] = i&256;
     transitions[1] = i>>8;
-    get_transid(transitions, bufs);
+    get_transid(transitions, bufs, alloc, alloc_ud);
   }
 }
 
@@ -1400,7 +1419,7 @@ pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
 
 void
 collect(struct pick_those_struct *pick_thoses, size_t cnt,
-        struct transitionbufs *bufs)
+        struct transitionbufs *bufs, void *(*alloc)(void*, size_t), void *alloc_ud)
 {
   size_t i, j;
   for (i = 0; i < cnt; i++)
@@ -1409,7 +1428,7 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
     uint8_t dscnt = pick_thoses[i].dscnt;
     for (j = 0; j < dscnt; j++)
     {
-      ds[j].transitions_id = get_transid(ds[j].d, bufs);
+      ds[j].transitions_id = get_transid(ds[j].d, bufs, alloc, alloc_ud);
     }
   }
 }
@@ -1468,13 +1487,13 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
     fprintf(f, "{");
     for (j = 0; j < 256; j++)
     {
-      if (bufs->all[i].transitions[j] == 255)
+      if (bufs->all[i]->transitions[j] == 255)
       {
         fprints(f, "255, ");
       }
       else
       {
-        fprintf(f, "%d, ", (int)bufs->all[i].transitions[j]);
+        fprintf(f, "%d, ", (int)bufs->all[i]->transitions[j]);
       }
     }
     fprints(f, "},\n");

@@ -9,6 +9,7 @@
 #include <sys/uio.h>
 #include <ctype.h>
 #include "bitset.h"
+#include "yalehashtable.h"
 
 struct re;
 
@@ -181,21 +182,45 @@ struct pick_those_struct {
 };
 
 struct transitionbuf {
+  struct yale_hash_list_node node;
   uint8_t transitions[256];
+  size_t id;
 };
 
 #define MAX_TRANS 65536 // 256 automatons, 256 states per automaton
 
 struct transitionbufs {
-  struct transitionbuf all[MAX_TRANS];
+  struct yale_hash_table hash;
+  struct transitionbuf *all[MAX_TRANS];
   size_t cnt;
 };
 
+uint32_t transition_hash_fn(struct yale_hash_list_node *node, void *ud);
+
+static inline void transitionbufs_init(struct transitionbufs *bufs)
+{
+  bufs->cnt = 0;
+  yale_hash_table_init(&bufs->hash, 65536, transition_hash_fn, NULL);
+}
+
+static inline void transitionbufs_fini(struct transitionbufs *bufs)
+{
+  struct yale_hash_list_node *n, *x;
+  unsigned bucket;
+  YALE_HASH_TABLE_FOR_EACH_SAFE(&bufs->hash, bucket, n, x)
+  {
+    yale_hash_table_delete(&bufs->hash, n);
+  }
+  yale_hash_table_free(&bufs->hash);
+}
+
 size_t
-get_transid(const uint8_t *transitions, struct transitionbufs *bufs);
+get_transid(const uint8_t *transitions, struct transitionbufs *bufs,
+            void *(*alloc)(void*, size_t), void *alloc_ud);
 
 void
-perf_trans(uint8_t *transitions, struct transitionbufs *bufs);
+perf_trans(uint8_t *transitions, struct transitionbufs *bufs,
+           void *(*alloc)(void*, size_t), void *alloc_ud);
 
 void
 pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
@@ -203,7 +228,8 @@ pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
 
 void
 collect(struct pick_those_struct *pick_thoses, size_t cnt,
-        struct transitionbufs *bufs);
+        struct transitionbufs *bufs,
+        void *(*alloc)(void*, size_t), void *alloc_ud);
 
 void dump_headers(FILE *f, const char *parsername, size_t max_bt);
 
