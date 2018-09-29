@@ -8,7 +8,6 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include "yaleuint.h"
 
 #ifndef CONTAINER_OF
 #define CONTAINER_OF(ptr, type, member) \
@@ -23,23 +22,23 @@
 struct state {
   uint8_t accepting;
   uint8_t final;
-  yale_uint_t acceptid;
+  uint8_t acceptid;
   uint64_t fastpathbitmask[4];
 #ifdef SMALL_CODE
-  const yale_uint_t *transitions;
+  const uint8_t *transitions;
 #else
-  yale_uint_t transitions[256];
+  uint8_t transitions[256];
 #endif
 };
 
 struct ruleentry {
-  yale_uint_t rhs;
-  yale_uint_t cb;
+  uint8_t rhs;
+  uint8_t cb;
 };
 
 struct rule {
-  yale_uint_t lhs;
-  yale_uint_t rhssz;
+  uint8_t lhs;
+  uint8_t rhssz;
   const struct ruleentry *rhs;
 };
 
