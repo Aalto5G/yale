@@ -359,7 +359,7 @@ ssize_t max_stack_sz(struct ParserGen *gen)
         if (rule != 255)
         {
           //printf("Rule differs from 255\n");
-          memcpy(stack, current->stack, current->sz-1);
+          memcpy(stack, current->stack, (current->sz-1)*sizeof(*stack));
           sz = current->sz - 1;
           if (sz + gen->rules[rule].itemcnt > 255)
           {

@@ -1374,7 +1374,7 @@ get_transid(const uint8_t *transitions, struct transitionbufs *bufs,
     abort();
   }
   bufnew = alloc(alloc_ud, sizeof(struct transitionbuf));
-  memcpy(bufnew->transitions, transitions, 256);
+  memcpy(bufnew->transitions, transitions, 256*sizeof(*transitions));
   bufnew->id = bufs->cnt;
   yale_hash_table_add_nogrow(&bufs->hash, &bufnew->node, hashval);
   bufs->all[bufs->cnt] = bufnew;
