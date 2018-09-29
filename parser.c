@@ -154,6 +154,7 @@ uint32_t firstset_hash_fn(struct yale_hash_list_node *node, void *ud)
 
 void parsergen_init(struct ParserGen *gen, char *parsername)
 {
+  gen->userareaptr = gen->userarea;
   gen->tokencnt = 0;
   gen->nonterminalcnt = 0;
   gen->parsername = strdup(parsername);
@@ -169,13 +170,14 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   memset(&gen->re_gen, 0, sizeof(gen->re_gen));
   memset(gen->T, 0xff, sizeof(gen->T));
   //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
-  transitionbufs_init(&gen->bufs);
+  transitionbufs_init(&gen->bufs, parsergen_alloc_fn, gen);
   gen->Ficnt = 0;
   gen->pick_thoses_cnt = 0;
-  gen->userareaptr = gen->userarea;
   // leave gen->Fi purposefully uninitiailized as it's 66 MB
-  yale_hash_table_init(&gen->Fi_hash, 8192, firstset_hash_fn, NULL);
-  yale_hash_table_init(&gen->stackconfigs_hash, 32768, stack_hash_fn, NULL);
+  yale_hash_table_init(&gen->Fi_hash, 8192, firstset_hash_fn, NULL,
+                       parsergen_alloc_fn, gen);
+  yale_hash_table_init(&gen->stackconfigs_hash, 32768, stack_hash_fn, NULL,
+                       parsergen_alloc_fn, gen);
 }
 
 void parsergen_free(struct ParserGen *gen)

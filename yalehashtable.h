@@ -33,14 +33,16 @@ static inline size_t next_highest_power_of_2(size_t x)
 }
 
 static inline int yale_hash_table_init_impl(
-  struct yale_hash_table *table, size_t bucketcnt, hash_fn fn, void *fn_userdata)
+  struct yale_hash_table *table, size_t bucketcnt, hash_fn fn, void *fn_userdata,
+  void *(*alloc_fn)(void*, size_t), void *alloc_ud)
 {
   size_t i;
   table->fn = fn;
   table->fn_userdata = fn_userdata;
   table->itemcnt = 0;
   table->bucketcnt = next_highest_power_of_2(bucketcnt);
-  table->buckets = malloc(sizeof(*table->buckets)*table->bucketcnt);
+  //&table->buckets = malloc(sizeof(*table->buckets)*table->bucketcnt);
+  table->buckets = alloc_fn(alloc_ud, sizeof(*table->buckets)*table->bucketcnt);
   if (table->buckets == NULL)
   {
     table->fn = NULL;
@@ -56,9 +58,10 @@ static inline int yale_hash_table_init_impl(
 }
 
 static inline int yale_hash_table_init(
-  struct yale_hash_table *table, size_t bucketcnt, hash_fn fn, void *fn_userdata)
+  struct yale_hash_table *table, size_t bucketcnt, hash_fn fn, void *fn_userdata,
+  void *(*alloc_fn)(void*, size_t), void *alloc_ud)
 {
-  return yale_hash_table_init_impl(table, bucketcnt, fn, fn_userdata);
+  return yale_hash_table_init_impl(table, bucketcnt, fn, fn_userdata, alloc_fn, alloc_ud);
 }
 
 static inline void yale_hash_table_free(struct yale_hash_table *table)
@@ -67,7 +70,7 @@ static inline void yale_hash_table_free(struct yale_hash_table *table)
   {
     abort();
   }
-  free(table->buckets);
+  //free(table->buckets);
   table->buckets = NULL;
   table->bucketcnt = 0;
   table->fn = NULL;

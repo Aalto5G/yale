@@ -197,10 +197,11 @@ struct transitionbufs {
 
 uint32_t transition_hash_fn(struct yale_hash_list_node *node, void *ud);
 
-static inline void transitionbufs_init(struct transitionbufs *bufs)
+static inline void transitionbufs_init(struct transitionbufs *bufs,
+                                       void *(*alloc_fn)(void*, size_t), void *alloc_ud)
 {
   bufs->cnt = 0;
-  yale_hash_table_init(&bufs->hash, 65536, transition_hash_fn, NULL);
+  yale_hash_table_init(&bufs->hash, 65536, transition_hash_fn, NULL, alloc_fn, alloc_ud);
 }
 
 static inline void transitionbufs_fini(struct transitionbufs *bufs)
