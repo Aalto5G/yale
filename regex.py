@@ -279,7 +279,10 @@ ssize_t
         cur_dictid += 1
         print("{", file=sio)
         for t in transitions:
-          print(t,",", file=sio, end=" ")
+          if t == 255:
+            print("LEXER_UINT_MAX,", file=sio, end=" ")
+          else:
+            print(t,",", file=sio, end=" ")
         print("},", file=sio)
     print("};", file=sio)
     print("#endif", file=sio)
