@@ -1,6 +1,8 @@
 #define _GNU_SOURCE
 #include "yale.h"
 #include "parser.h"
+#include "yalecontainerof.h"
+#include "yalemurmur.h"
 #include <sys/uio.h>
 
 void *parsergen_alloc(struct ParserGen *gen, size_t sz)
@@ -128,6 +130,28 @@ uint8_t get_sole_cb(struct dict *d, uint8_t x)
   return seen ? cb : 255;
 }
 
+uint32_t stack_hash(const uint8_t *stack, uint8_t sz)
+{
+  return yalemurmur_buf(0x12345678U, stack, sz);
+}
+
+uint32_t stack_hash_fn(struct yale_hash_list_node *node, void *ud)
+{
+  struct stackconfig *cfg = YALE_CONTAINER_OF(node, struct stackconfig, node);
+  return stack_hash(cfg->stack, cfg->sz);
+}
+
+uint32_t firstset_hash(const uint8_t *rhs, size_t sz)
+{
+  return yalemurmur_buf(0x12345678U, rhs, sz);
+}
+
+uint32_t firstset_hash_fn(struct yale_hash_list_node *node, void *ud)
+{
+  struct firstset_entry *cfg = YALE_CONTAINER_OF(node, struct firstset_entry, node);
+  return stack_hash(cfg->rhs, cfg->rhssz);
+}
+
 void parsergen_init(struct ParserGen *gen, char *parsername)
 {
   gen->tokencnt = 0;
@@ -150,11 +174,15 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->pick_thoses_cnt = 0;
   gen->userareaptr = gen->userarea;
   // leave gen->Fi purposefully uninitiailized as it's 66 MB
+  yale_hash_table_init(&gen->Fi_hash, 8192, firstset_hash_fn, NULL);
+  yale_hash_table_init(&gen->stackconfigs_hash, 32768, stack_hash_fn, NULL);
 }
 
 void parsergen_free(struct ParserGen *gen)
 {
   size_t i;
+  unsigned bucket;
+  struct yale_hash_list_node *n, *x;
   for (i = 0; i < gen->tokencnt; i++)
   {
     free(gen->re_by_idx[i].iov_base);
@@ -168,29 +196,47 @@ void parsergen_free(struct ParserGen *gen)
   free(gen->state_include_str);
   free(gen->parsername);
   transitionbufs_fini(&gen->bufs);
+  YALE_HASH_TABLE_FOR_EACH_SAFE(&gen->Fi_hash, bucket, n, x)
+  {
+    yale_hash_table_delete(&gen->Fi_hash, n);
+  }
+  yale_hash_table_free(&gen->Fi_hash);
+  YALE_HASH_TABLE_FOR_EACH_SAFE(&gen->stackconfigs_hash, bucket, n, x)
+  {
+    yale_hash_table_delete(&gen->stackconfigs_hash, n);
+  }
+  yale_hash_table_free(&gen->stackconfigs_hash);
 }
 
-struct firstset_entry *firstset_lookup(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
+struct firstset_entry *firstset_lookup_hashval(
+    struct ParserGen *gen, const uint8_t *rhs, size_t rhssz, uint32_t hashval)
 {
-  size_t i;
-  for (i = 0; i < gen->Ficnt; i++)
+  struct yale_hash_list_node *node;
+  YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Fi_hash, node, hashval)
   {
-    if (gen->Fi[i]->rhssz != rhssz)
+    struct firstset_entry *e = YALE_CONTAINER_OF(node, struct firstset_entry, node);
+    if (e->rhssz != rhssz)
     {
       continue;
     }
-    if (memcmp(gen->Fi[i]->rhs, rhs, rhssz*sizeof(*rhs)) != 0)
+    if (memcmp(e->rhs, rhs, rhssz*sizeof(*rhs)) != 0)
     {
       continue;
     }
-    return gen->Fi[i];
+    return e;
   }
   return NULL;
 }
 
+struct firstset_entry *firstset_lookup(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
+{
+  return firstset_lookup_hashval(gen, rhs, rhssz, firstset_hash(rhs, rhssz));
+}
+
 void firstset_setdefault(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
 {
-  if (firstset_lookup(gen, rhs, rhssz) != NULL)
+  uint32_t hashval = firstset_hash(rhs, rhssz);
+  if (firstset_lookup_hashval(gen, rhs, rhssz, hashval) != NULL)
   {
     return;
   }
@@ -202,6 +248,7 @@ void firstset_setdefault(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz
   gen->Fi[gen->Ficnt]->rhssz = rhssz;
   memcpy(gen->Fi[gen->Ficnt]->rhs, rhs, rhssz*sizeof(*rhs));
   memset(&gen->Fi[gen->Ficnt]->dict, 0, sizeof(gen->Fi[gen->Ficnt]->dict));
+  yale_hash_table_add_nogrow(&gen->Fi_hash, &gen->Fi[gen->Ficnt]->node, hashval);
   gen->Ficnt++;
 }
 
@@ -241,17 +288,21 @@ struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem
 
 void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
 {
-  size_t i;
-  for (i = 0; i < gen->stackconfigcnt; i++)
+  size_t i = gen->stackconfigcnt;
+  uint32_t hashval = stack_hash(stack, sz);
+  struct yale_hash_list_node *node;
+  YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->stackconfigs_hash, node, hashval)
   {
-    if (gen->stackconfigs[i].sz != sz)
+    struct stackconfig *cfg = YALE_CONTAINER_OF(node, struct stackconfig, node);
+    if (cfg->sz != sz)
     {
       continue;
     }
-    if (memcmp(gen->stackconfigs[i].stack, stack, sz*sizeof(uint8_t)) != 0)
+    if (memcmp(cfg->stack, stack, sz*sizeof(uint8_t)) != 0)
     {
       continue;
     }
+    i = cfg->i;
     //printf("Found %d!\n", (int)sz);
     break;
   }
@@ -264,6 +315,8 @@ void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
     gen->stackconfigs[i].stack = parsergen_alloc(gen, sz*sizeof(uint8_t));
     memcpy(gen->stackconfigs[i].stack, stack, sz*sizeof(uint8_t));
     gen->stackconfigs[i].sz = sz;
+    gen->stackconfigs[i].i = i;
+    yale_hash_table_add_nogrow(&gen->stackconfigs_hash, &gen->stackconfigs[i].node, hashval);
     gen->stackconfigcnt++;
     //printf("Not found %d!\n", (int)sz);
   }
@@ -345,6 +398,8 @@ void gen_parser(struct ParserGen *gen)
 
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
+    uint8_t rhsit = i;
+    uint32_t hashval = firstset_hash(&rhsit, 1);
     if (gen->Ficnt >= sizeof(gen->Fi)/sizeof(*gen->Fi))
     {
       abort();
@@ -353,6 +408,7 @@ void gen_parser(struct ParserGen *gen)
     gen->Fi[gen->Ficnt]->rhssz = 1;
     gen->Fi[gen->Ficnt]->rhs[0] = i;
     memset(&gen->Fi[gen->Ficnt]->dict, 0, sizeof(gen->Fi[gen->Ficnt]->dict));
+    yale_hash_table_add_nogrow(&gen->Fi_hash, &gen->Fi[gen->Ficnt]->node, hashval);
     gen->Ficnt++;
   }
   changed = 1;

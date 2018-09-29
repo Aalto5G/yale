@@ -26,14 +26,17 @@ struct LookupTblEntry {
 };
 
 struct firstset_entry {
+  struct yale_hash_list_node node;
   uint8_t rhs[256]; // 0.25 KB
   uint8_t rhssz;
   struct dict dict; // 8 KB
 };
 
 struct stackconfig {
+  struct yale_hash_list_node node;
   uint8_t *stack;
   uint8_t sz;
+  size_t i;
 };
 
 struct ParserGen {
@@ -52,6 +55,8 @@ struct ParserGen {
   int tokens_finalized;
   uint8_t rulecnt;
   uint8_t cbcnt;
+  struct yale_hash_table Fi_hash;
+  struct yale_hash_table stackconfigs_hash;
   struct dict *Fo[256]; // 2 kB
   struct REGen re_gen;
   struct pick_those_struct pick_thoses[255];
@@ -64,7 +69,7 @@ struct ParserGen {
   struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
   uint8_t pick_those[255][255]; // 64 kB
   struct firstset_entry *Fi[8192]; // 64 kB
-  struct stackconfig stackconfigs[32768]; // 512 kB
+  struct stackconfig stackconfigs[32768]; // 1.25 MB
   struct transitionbufs bufs; // 16 MB, this could be made to use dynamic alloc
   char userarea[64*1024*1024];
 };
