@@ -9,6 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+typedef uint8_t lexer_uint_t;
+typedef uint8_t parser_uint_t;
+#define LEXER_UINT_MAX UINT8_MAX
+#define PARSER_UINT_MAX UINT8_MAX
+
 #ifndef CONTAINER_OF
 #define CONTAINER_OF(ptr, type, member) \
   ((type*)(((char*)ptr) - (((char*)&(((type*)0)->member)) - ((char*)0))))
@@ -22,23 +27,23 @@
 struct state {
   uint8_t accepting;
   uint8_t final;
-  uint8_t acceptid;
+  parser_uint_t acceptid;
   uint64_t fastpathbitmask[4];
 #ifdef SMALL_CODE
-  const uint8_t *transitions;
+  const lexer_uint_t *transitions;
 #else
-  uint8_t transitions[256];
+  lexer_uint_t transitions[256];
 #endif
 };
 
 struct ruleentry {
-  uint8_t rhs;
-  uint8_t cb;
+  parser_uint_t rhs;
+  parser_uint_t cb;
 };
 
 struct rule {
-  uint8_t lhs;
-  uint8_t rhssz;
+  parser_uint_t lhs;
+  parser_uint_t rhssz;
   const struct ruleentry *rhs;
 };
 
