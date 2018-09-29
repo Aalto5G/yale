@@ -112,6 +112,8 @@ clean:
 	rm -f yale.lex.h
 	rm -f yale.tab.c
 	rm -f yale.tab.h
+	rm -f httpcparser.c
+	rm -f httpcparser.h
 	rm -f httpparser.c
 	rm -f httpparser.h
 	rm -f http.py
