@@ -6,7 +6,12 @@
 void *parsergen_alloc(struct ParserGen *gen, size_t sz)
 {
   void *result = gen->userareaptr;
-  gen->userareaptr += (sz+7)/8 * 8;
+  size_t alloc_sz = (sz+7)/8 * 8;
+  if (gen->userareaptr + alloc_sz - gen->userarea > (ssize_t)sizeof(gen->userarea))
+  {
+    return NULL;
+  }
+  gen->userareaptr += alloc_sz;
   return result;
 }
 
