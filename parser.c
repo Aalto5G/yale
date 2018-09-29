@@ -154,6 +154,9 @@ uint32_t firstset_hash_fn(struct yale_hash_list_node *node, void *ud)
 
 void parsergen_init(struct ParserGen *gen, char *parsername)
 {
+#if 1
+  size_t i, j;
+#endif
   gen->userareaptr = gen->userarea;
   gen->tokencnt = 0;
   gen->nonterminalcnt = 0;
@@ -168,7 +171,18 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->max_bt = 0;
   gen->stackconfigcnt = 0;
   memset(&gen->re_gen, 0, sizeof(gen->re_gen));
+#if 1
+  for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
+  {
+    for (j = 0; j < YALE_UINT_MAX_LEGAL; j++)
+    {
+      gen->T[i][j].val = YALE_UINT_MAX_LEGAL;
+      gen->T[i][j].cb = YALE_UINT_MAX_LEGAL;
+    }
+  }
+#else
   memset(gen->T, 0xff, sizeof(gen->T));
+#endif
   //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
   transitionbufs_init(&gen->bufs, parsergen_alloc_fn, gen);
   gen->Ficnt = 0;
