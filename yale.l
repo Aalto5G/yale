@@ -7,8 +7,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <limits.h>
-#include "yale.tab.h"
 #include "yyutils.h"
+#include "yale.tab.h"
 
 #define YYSTYPE YALEYYSTYPE
 #define YYLTYPE YALEYYLTYPE
@@ -81,7 +81,7 @@ uint64le  return UINT64LE;
   return FREEFORM_TOKEN;
 }
 
-\"([^\\\"]|\\.)*\"  yylval->s=yy_escape_string(yytext); return STRING_LITERAL;
+\"([^\\\"]|\\.)*\"  yylval->str=yy_escape_string(yytext); return STRING_LITERAL;
 
 0x[0-9A-Fa-f]+       {
   char *endptr;

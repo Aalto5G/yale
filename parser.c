@@ -1012,7 +1012,7 @@ void parsergen_set_start_state(struct ParserGen *gen, yale_uint_t start_state)
   gen->start_state = start_state;
 }
 
-void *memdup(void *base, size_t sz)
+static void *memdup(const void *base, size_t sz)
 {
   void *result = malloc(sz);
   memcpy(result, base, sz);

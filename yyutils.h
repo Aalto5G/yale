@@ -14,7 +14,7 @@ void yaleyynameparse(const char *fname, struct yale *yale, int require);
 void yaleyydirparse(
   const char *argv0, const char *fname, struct yale *yale, int require);
 
-char *yy_escape_string(char *orig);
+struct escaped_string yy_escape_string(char *orig);
 
 uint32_t yy_get_ip(char *orig);
 

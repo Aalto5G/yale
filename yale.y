@@ -38,13 +38,14 @@ int yaleyywrap(yyscan_t scanner)
 %union {
   int i;
   char *s;
+  struct escaped_string str;
   struct {
     int i;
     char *s;
   } both;
 }
 
-%destructor { free ($$); } STRING_LITERAL
+%destructor { free ($$.str); } STRING_LITERAL
 %destructor { free ($$); } FREEFORM_TOKEN
 %destructor { free ($$); } C_LITERAL
 %destructor { free ($$); } PERCENTC_LITERAL
@@ -105,7 +106,7 @@ int yaleyywrap(yyscan_t scanner)
 %type<i> maybe_minus
 %type<i> token_ltgtexp
 %type<i> maybe_token_ltgt
-%type<s> STRING_LITERAL
+%type<str> STRING_LITERAL
 %type<s> FREEFORM_TOKEN
 %type<s> C_LITERAL
 %type<s> PERCENTC_LITERAL
@@ -459,7 +460,7 @@ valstr_literal:
 PERIOD
 | STRING_LITERAL
 {
-  free($1);
+  free($1.str);
 }
 ;
 

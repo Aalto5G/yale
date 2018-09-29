@@ -48,10 +48,23 @@ void yaleyydomemparse(char *filedata, size_t filesize, struct yale *yale)
   }
 }
 
-char *yy_escape_string(char *orig)
+static void *memdup(const void *mem, size_t sz)
+{
+  void *result;
+  result = malloc(sz);
+  if (result == NULL)
+  {
+    return result;
+  }
+  memcpy(result, mem, sz);
+  return result;
+}
+
+struct escaped_string yy_escape_string(char *orig)
 {
   char *buf = NULL;
   char *result = NULL;
+  struct escaped_string resultstruct;
   size_t j = 0;
   size_t capacity = 0;
   size_t i = 1;
@@ -65,7 +78,8 @@ char *yy_escape_string(char *orig)
       if (buf2 == NULL)
       {
         free(buf);
-        return NULL;
+        resultstruct.str = NULL;
+        return resultstruct;
       }
       buf = buf2;
     }
@@ -110,14 +124,17 @@ char *yy_escape_string(char *orig)
     if (buf2 == NULL)
     {
       free(buf);
-      return NULL;
+      resultstruct.str = NULL;
+      return resultstruct;
     }
     buf = buf2;
   }
+  resultstruct.sz = j;
   buf[j++] = '\0';
-  result = strdup(buf);
+  result = memdup(buf, j);
+  resultstruct.str = result;
   free(buf);
-  return result;
+  return resultstruct;
 }
 
 uint32_t yy_get_ip(char *orig)

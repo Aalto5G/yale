@@ -10,6 +10,11 @@
 #include <ctype.h>
 #include "yaleuint.h"
 
+struct escaped_string {
+  size_t sz;
+  char *str;
+};
+
 struct CSnippet {
   char *data;
   size_t len;
@@ -50,7 +55,7 @@ static inline void csaddstr(struct CSnippet *cs, char *str)
 struct token {
   int priority;
   yale_uint_t nsitem;
-  char *re;
+  struct escaped_string re;
 };
 
 struct ruleitem {
@@ -111,8 +116,8 @@ static inline void yale_free(struct yale *yale)
   }
   for (i = 0; i < yale->tokencnt; i++)
   {
-    free(yale->tokens[i].re);
-    yale->tokens[i].re = NULL;
+    free(yale->tokens[i].re.str);
+    yale->tokens[i].re.str = NULL;
     yale->tokens[i].nsitem = 0;
     yale->tokens[i].priority = 0;
   }
@@ -234,7 +239,7 @@ static inline void dump_python(FILE *f, struct yale *yale)
     struct token *tk = &yale->tokens[i];
     char *tkname = yale->ns[tk->nsitem].name;
     fprintf(f, "d[\"%s\"] = p.add_token(", tkname);
-    dump_string(f, tk->re);
+    dump_string(f, tk->re.str); // FIXME '\0'
     fprintf(f, ", priority=%d)\n", tk->priority);
   }
   fprintf(f, "p.finalize_tokens()\n\n");
