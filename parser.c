@@ -593,8 +593,10 @@ void gen_parser(struct ParserGen *gen)
       }
       break;
     }
+    gen->pick_thoses_id_by_nonterminal[i] = j;
     if (j == gen->pick_thoses_cnt)
     {
+      // FIXME handle counter overflow
       len = 0;
       for (j = 0; j < gen->tokencnt; j++)
       {
@@ -670,6 +672,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {\n", gen->parsername, gen->parsername);
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
+    for (x = 0; x < gen->tokencnt; x++)
+    {
+      yale_uint_t id = gen->pick_thoses_id_by_nonterminal[X];
+      if (gen->T[X][x].cb != YALE_UINT_MAX_LEGAL)
+      {
+        check_cb(gen->pick_thoses[id].ds, 0, x);
+      }
+    }
     fprints(f, "{\n");
     fprintf(f, ".re = %s_states", gen->parsername);
     for (i = 0; i < gen->tokencnt; i++)
@@ -717,6 +727,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
       else
       {
+        check_cb(gen->pick_thoses[it->value].ds, 0, it->value);
         fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
       }
       fprints(f, "},\n");

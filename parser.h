@@ -59,6 +59,7 @@ struct ParserGen {
   struct yale_hash_table stackconfigs_hash;
   struct dict *Fo[YALE_UINT_MAX_LEGAL + 1]; // 2 kB
   struct REGen re_gen;
+  yale_uint_t pick_thoses_id_by_nonterminal[YALE_UINT_MAX_LEGAL];
   struct pick_those_struct pick_thoses[YALE_UINT_MAX_LEGAL];
   struct iovec re_by_idx[YALE_UINT_MAX_LEGAL];
   int priorities[YALE_UINT_MAX_LEGAL];
