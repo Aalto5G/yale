@@ -645,7 +645,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   {
     dump_one(f, gen->parsername, &gen->pick_thoses[i]);
   }
-  fprintf(f, "const uint8_t %s_num_terminals;\n", gen->parsername); // FIXME uint8_t
+  fprintf(f, "const parser_uint_t %s_num_terminals;\n", gen->parsername);
   fprintf(f, "void(*%s_callbacks[])(const char*, size_t, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
   for (i = 0; i < gen->cbcnt; i++)
   {
@@ -654,11 +654,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
   fprints(f, "  const struct state *re;\n");
-  fprintf(f, "  //const uint8_t rhs[%d];\n", gen->tokencnt); // FIXME uint8_t
-  fprintf(f, "  const uint8_t cb[%d];\n", gen->tokencnt); // FIXME uint8_t
+  fprintf(f, "  //const parser_uint_t rhs[%d];\n", gen->tokencnt);
+  fprintf(f, "  const parser_uint_t cb[%d];\n", gen->tokencnt);
   fprints(f, "};\n");
-  fprintf(f, "const uint8_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt); // FIXME uint8_t
-  fprintf(f, "const uint8_t %s_start_state = %d;\n", gen->parsername, gen->start_state); // FIXME uint8_t
+  fprintf(f, "const parser_uint_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt);
+  fprintf(f, "const parser_uint_t %s_start_state = %d;\n", gen->parsername, gen->start_state);
   fprintf(f, "const struct reentry %s_reentries[] = {\n", gen->parsername);
   for (i = 0; i < gen->tokencnt; i++)
   {
@@ -685,7 +685,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     {
       if (gen->T[X][i].cb == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "255, "); // FIXME 255
+        fprintf(f, "PARSER_UINT_MAX, ");
       }
       else
       {
@@ -709,11 +709,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         {
           abort();
         }
-        fprintf(f, ".rhs = 255, .cb = %d", it->cb); // FIXME 255
+        fprintf(f, ".rhs = PARSER_UINT_MAX, .cb = %d", it->cb);
       }
       else if (it->cb == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, ".rhs = %d, .cb = 255", it->value); // FIXME 255
+        fprintf(f, ".rhs = %d, .cb = PARSER_UINT_MAX", it->value);
       }
       else
       {
@@ -722,7 +722,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprints(f, "},\n");
     }
     fprints(f, "};\n");
-    fprintf(f, "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);\n", gen->parsername, (int)i, gen->parsername, (int)i); // FIXME uint8_t
+    fprintf(f, "const parser_uint_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);\n", gen->parsername, (int)i, gen->parsername, (int)i);
   }
   fprintf(f, "const struct rule %s_rules[] = {\n", gen->parsername);
   for (i = 0; i < gen->rulecnt; i++)
@@ -736,13 +736,13 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "};\n");
   fprints(f, "static inline ssize_t\n");
   fprintf(f, "%s_get_saved_token(struct %s_parserctx *pctx, const struct state *restates,\n", gen->parsername, gen->parsername);
-  fprints(f, "                const char *blkoff, size_t szoff, uint8_t *state,\n" // FIXME uint8_t
-             "                const uint8_t *cbs, uint8_t cb1)//, void *baton)\n" // FIXME uint8_t
+  fprints(f, "                const char *blkoff, size_t szoff, parser_uint_t *state,\n"
+             "                const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)\n"
              "{\n"
-             "  if (pctx->saved_token != 255)\n" // FIXME 255
+             "  if (pctx->saved_token != PARSER_UINT_MAX)\n"
              "  {\n"
              "    *state = pctx->saved_token;\n"
-             "    pctx->saved_token = 255;\n" // FIXME 255
+             "    pctx->saved_token = PARSER_UINT_MAX;\n"
              "    return 0;\n"
              "  }\n");
   fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cbs, cb1);//, baton);\n", gen->parsername, gen->parsername);
@@ -754,22 +754,22 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "{\n"
              "  size_t off = 0;\n"
              "  ssize_t ret;\n"
-             "  uint8_t curstateoff;\n" // FIXME uint8_t
-             "  uint8_t curstate;\n" // FIXME uint8_t
-             "  uint8_t state;\n" // FIXME uint8_t
-             "  uint8_t ruleid;\n" // FIXME uint8_t
-             "  uint8_t i; // FIXME is 8 bits enough?\n" // FIXME uint8_t
-             "  uint8_t cb1;\n" // FIXME uint8_t
+             "  parser_uint_t curstateoff;\n"
+             "  parser_uint_t curstate;\n"
+             "  parser_uint_t state;\n"
+             "  parser_uint_t ruleid;\n"
+             "  parser_uint_t i; // FIXME is 8 bits enough?\n"
+             "  parser_uint_t cb1;\n"
              "  const struct state *restates;\n"
              "  const struct rule *rule;\n"
-             "  const uint8_t *cbs;\n"); // FIXME uint8_t
+             "  const parser_uint_t *cbs;\n");
   fprintf(f, "  void (*cb1f)(const char *, size_t, struct %s_parserctx*);\n", gen->parsername);
   fprints(f, "\n"
-             "  while (off < sz || pctx->saved_token != 255)\n" // FIXME 255
+             "  while (off < sz || pctx->saved_token != PARSER_UINT_MAX)\n"
              "  {\n"
              "    if (unlikely(pctx->stacksz == 0))\n"
              "    {\n"
-             "      if (off >= sz && pctx->saved_token == 255)\n" // FIXME 255
+             "      if (off >= sz && pctx->saved_token == PARSER_UINT_MAX)\n"
              "      {\n"
              "#ifdef EXTRA_SANITY\n");
   fprints(f, "        if (off > sz)\n"
@@ -832,18 +832,18 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "      //printf(\"Got expected token %%d\\n\", (int)state);\n"
              "      pctx->stacksz--;\n"
              "    }\n"
-             "    else if (likely(curstate != 255))\n" // FIXME 255
+             "    else if (likely(curstate != PARSER_UINT_MAX))\n"
              "    {\n");
   fprintf(f, "      curstateoff = curstate - %s_num_terminals;\n", gen->parsername);
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
   fprintf(f, "      cbs = %s_parserstatetblentries[curstateoff].cb;\n", gen->parsername);
-  fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);//, baton);\n", gen->parsername); // FIXME 255
+  fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, PARSER_UINT_MAX);//, baton);\n", gen->parsername);
   fprints(f, "      if (ret == -EAGAIN)\n"
              "      {\n"
              "        //off = sz;\n"
              "        return -EAGAIN;\n"
              "      }\n"
-             "      else if (ret < 0 || state == 255)\n" // FIXME 255
+             "      else if (ret < 0 || state == PARSER_UINT_MAX)\n"
              "      {\n"
              "        //fprintf(stderr, \"Parser error: tokenizer error, curstate=%%d, token=%%d\\n\", (int)curstate, (int)state);\n");
   fprints(f, "        //exit(1);\n"
@@ -877,7 +877,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
     }
     fprints(f, "        default:\n"
-               "          ruleid=255;\n" // FIXME 255
+               "          ruleid=PARSER_UINT_MAX;\n"
                "          break;\n"
                "        }\n"
                "        break;\n");
@@ -920,7 +920,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        pctx->saved_token = state;\n"
              "      }\n"
              "    }\n"
-             "    else // if (curstate == 255)\n" // FIXME 255
+             "    else // if (curstate == PARSER_UINT_MAX)\n"
              "    {\n");
   fprintf(f, "      cb1f = %s_callbacks[pctx->stack[pctx->stacksz - 1].cb];\n", gen->parsername);
   fprints(f, "      cb1f(NULL, 0, pctx);//, baton);\n"
@@ -929,7 +929,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  }\n"
              "  if (pctx->stacksz == 0)\n"
              "  {\n"
-             "    if (off >= sz && pctx->saved_token == 255)\n" // FIXME 255
+             "    if (off >= sz && pctx->saved_token == PARSER_UINT_MAX)\n"
              "    {\n");
   fprints(f, "#ifdef EXTRA_SANITY\n"
              "      if (off > sz)\n"
@@ -956,10 +956,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, gen->parsername, gen->max_bt);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
-  fprints(f, "  uint8_t stacksz;\n"); // FIXME uint8_t
+  fprints(f, "  parser_uint_t stacksz;\n");
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
-  fprints(f, "  uint8_t saved_token;\n"); // FIXME uint8_t
+  fprints(f, "  parser_uint_t saved_token;\n");
   if (gen->state_include_str)
   {
     fprintf(f, "  %s\n", gen->state_include_str);
@@ -969,10 +969,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprintf(f, "static inline void %s_parserctx_init(struct %s_parserctx *pctx)\n",
           gen->parsername, gen->parsername);
   fprints(f, "{\n");
-  fprints(f, "  pctx->saved_token = 255;\n"); // FIXME 255
+  fprints(f, "  pctx->saved_token = PARSER_UINT_MAX;\n");
   fprints(f, "  pctx->stacksz = 1;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
-  fprints(f, "  pctx->stack[0].cb = 255;\n"); // FIXME 255
+  fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
   fprintf(f, "  %s_init_statemachine(&pctx->rctx);\n", gen->parsername);
   fprints(f, "}\n");
   fprints(f, "\n");

@@ -1455,24 +1455,24 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt)
   fprintf(f, "struct %s_parserctx;", parsername);
   fprints(f, "\n");
   fprintf(f, "struct %s_rectx {\n", parsername);
-  fprints(f, "  uint8_t state; // 0 is initial state\n"); // FIXME uint8_t
-  fprints(f, "  uint8_t last_accept; // 255 means never accepted\n"); // FIXME uint8_t, 255
+  fprints(f, "  lexer_uint_t state; // 0 is initial state\n");
+  fprints(f, "  lexer_uint_t last_accept; // LEXER_UINT_MAX means never accepted\n");
   fprints(f, "  uint8_t backtrackstart;\n"); // FIXME uint8_t
   fprints(f, "  uint8_t backtrackend;\n"); // FIXME uint8_t
-  fprintf(f, "  uint8_t backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper); // FIXME uint8_t
+  fprintf(f, "  unsigned char backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper);
   fprints(f, "};\n");
   fprints(f, "\n");
   fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);
   fprints(f, "{\n");
   fprints(f, "  ctx->state = 0;\n");
-  fprints(f, "  ctx->last_accept = 255;\n"); // FIXME 255
+  fprints(f, "  ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "  ctx->backtrackstart = 0;\n");
   fprints(f, "  ctx->backtrackend = 0;\n");
   fprints(f, "}\n");
   fprints(f, "\n");
   fprints(f, "ssize_t\n");
-  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1);//, void *baton);\n", parsername, parsername, parsername); // FIXME uint8_t
+  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);\n", parsername, parsername, parsername);
   fprints(f, "\n");
   free(parserupper);
 }
@@ -1483,7 +1483,7 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
   size_t i;
   size_t j;
   fprints(f, "#ifdef SMALL_CODE\n");
-  fprintf(f, "const uint8_t %s_transitiontbl[][256] = {\n", parsername); // FIXME uint8_t
+  fprintf(f, "const lexer_uint_t %s_transitiontbl[][256] = {\n", parsername);
   for (i = 0; i < bufs->cnt; i++)
   {
     fprintf(f, "{");
@@ -1491,7 +1491,7 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
     {
       if (bufs->all[i]->transitions[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprints(f, "255, "); // FIXME 255
+        fprints(f, "LEXER_UINT_MAX, ");
       }
       else
       {
@@ -1519,7 +1519,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
     struct dfa_node *ds = &pick_those->ds[i];
     if (ds->acceptid == YALE_UINT_MAX_LEGAL)
     {
-      fprintf(f, "{ .accepting = %d, .acceptid = 255, .final = %d,\n", // FIXME 255
+      fprintf(f, "{ .accepting = %d, .acceptid = PARSER_UINT_MAX, .final = %d,\n",
                  (int)ds->accepting, (int)ds->final);
     }
     else
@@ -1559,7 +1559,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
     {
       if (ds->d[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprints(f, "255, "); // FIXME 255
+        fprints(f, "LEXER_UINT_MAX, ");
       }
       else
       {
@@ -1590,16 +1590,16 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "}\n");
   fprints(f, "\n");
   fprints(f, "ssize_t\n");
-  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1)//, void *baton)\n", parsername, parsername, parsername); // FIXME uint8_t
+  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)\n", parsername, parsername, parsername);
   fprints(f, "{\n");
   fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
   fprints(f, "  const struct state *st = NULL;\n");
   fprints(f, "  size_t i;\n");
-  fprints(f, "  uint8_t newstate;\n"); // FIXME uint8_t
+  fprints(f, "  lexer_uint_t newstate;\n");
   fprintf(f, "  struct %s_parserctx *pctx = CONTAINER_OF(ctx, struct %s_parserctx, rctx);\n", parsername, parsername);
-  fprints(f, "  if (ctx->state == 255)\n"); // FIXME 255
+  fprints(f, "  if (ctx->state == LEXER_UINT_MAX)\n");
   fprints(f, "  {\n");
-  fprints(f, "    *state = 255;\n"); // FIXME 255
+  fprints(f, "    *state = PARSER_UINT_MAX;\n");
   fprints(f, "    return -EINVAL;\n");
   fprints(f, "  }\n");
   fprints(f, "  //printf(\"Called: %s\\n\", buf);\n");
@@ -1609,15 +1609,15 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "    {\n");
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];\n");
-  fprints(f, "      if (unlikely(ctx->state == 255))\n"); // FIXME 255
+  fprints(f, "      if (unlikely(ctx->state == LEXER_UINT_MAX))\n");
   fprints(f, "      {\n");
-  fprints(f, "        if (ctx->last_accept == 255)\n"); // FIXME 255
+  fprints(f, "        if (ctx->last_accept == LEXER_UINT_MAX)\n");
   fprints(f, "        {\n");
-  fprints(f, "          *state = 255;\n"); // FIXME 255
+  fprints(f, "          *state = PARSER_UINT_MAX;\n");
   fprints(f, "          return -EINVAL;\n");
   fprints(f, "        }\n");
   fprints(f, "        ctx->state = ctx->last_accept;\n");
-  fprints(f, "        ctx->last_accept = 255;\n"); // FIXME 255
+  fprints(f, "        ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "        st = &stbl[ctx->state];\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
@@ -1635,7 +1635,7 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "        {\n");
   fprints(f, "          *state = st->acceptid;\n");
   fprints(f, "          ctx->state = 0;\n");
-  fprints(f, "          ctx->last_accept = 255;\n"); // FIXME 255
+  fprints(f, "          ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "          return 0;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
@@ -1703,24 +1703,24 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "      ctx->state = newstate;\n");
   fprints(f, "    }\n");
   fprints(f, "    //printf(\"New state: %d\\n\", ctx->state);\n");
-  fprints(f, "    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster\n"); // FIXME 255
+  fprints(f, "    if (unlikely(newstate == LEXER_UINT_MAX)) // use newstate here, not ctx->state, faster\n");
   fprints(f, "    {\n");
-  fprints(f, "      if (ctx->last_accept == 255)\n"); // FIXME 255
+  fprints(f, "      if (ctx->last_accept == LEXER_UINT_MAX)\n");
   fprints(f, "      {\n");
-  fprints(f, "        *state = 255;\n"); // FIXME 255
+  fprints(f, "        *state = PARSER_UINT_MAX;\n");
   fprints(f, "        //printf(\"Error\\n\");\n");
   fprints(f, "        return -EINVAL;\n");
   fprints(f, "      }\n");
   fprints(f, "      ctx->state = ctx->last_accept;\n");
-  fprints(f, "      ctx->last_accept = 255;\n"); // FIXME 255
+  fprints(f, "      ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      *state = st->acceptid;\n");
   fprints(f, "      ctx->state = 0;\n");
-  fprints(f, "      if (cbs && st->accepting && cbs[st->acceptid] != 255)\n"); // FIXME 255
+  fprints(f, "      if (cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)\n");
   fprints(f, "      {\n");
   fprints(f, "        cbtbl[cbs[st->acceptid]](buf, i, pctx);\n");
   fprints(f, "      }\n");
-  fprints(f, "      if (cb1 != 255 && st->accepting)\n"); // FIXME 255
+  fprints(f, "      if (cb1 != PARSER_UINT_MAX && st->accepting)\n");
   fprints(f, "      {\n");
   fprints(f, "        cbtbl[cb1](buf, i, pctx);\n");
   fprints(f, "      }\n");
@@ -1733,12 +1733,12 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "      {\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
-  fprints(f, "        ctx->last_accept = 255;\n"); // FIXME 255
-  fprints(f, "        if (cbs && st->accepting && cbs[st->acceptid] != 255)\n"); // FIXME 255
+  fprints(f, "        ctx->last_accept = LEXER_UINT_MAX;\n");
+  fprints(f, "        if (cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)\n");
   fprints(f, "        {\n");
   fprints(f, "          cbtbl[cbs[st->acceptid]](buf, i + 1, pctx);\n");
   fprints(f, "        }\n");
-  fprints(f, "        if (cb1 != 255 && st->accepting)\n"); // FIXME 255
+  fprints(f, "        if (cb1 != PARSER_UINT_MAX && st->accepting)\n");
   fprints(f, "        {\n");
   fprints(f, "          cbtbl[cb1](buf, i + 1, pctx);\n");
   fprints(f, "        }\n");
@@ -1751,7 +1751,7 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "    }\n");
   fprints(f, "    else\n");
   fprints(f, "    {\n");
-  fprints(f, "      if (ctx->last_accept != 255)\n"); // FIXME 255
+  fprints(f, "      if (ctx->last_accept != LEXER_UINT_MAX)\n");
   fprints(f, "      {\n");
   fprints(f, "        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?\n");
   fprintf(f, "        if (ctx->backtrackstart >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
@@ -1765,15 +1765,15 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "  }\n");
-  fprints(f, "  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)\n"); // FIXME 255
+  fprints(f, "  if (st && cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)\n");
   fprints(f, "  {\n");
   fprints(f, "    cbtbl[cbs[st->acceptid]](buf, sz, pctx);\n");
   fprints(f, "  }\n");
-  fprints(f, "  if (st && cb1 != 255 && st->accepting)\n"); // FIXME 255
+  fprints(f, "  if (st && cb1 != PARSER_UINT_MAX && st->accepting)\n");
   fprints(f, "  {\n");
   fprints(f, "    cbtbl[cb1](buf, sz, pctx);\n");
   fprints(f, "  }\n");
-  fprints(f, "  *state = 255;\n"); // FIXME 255
+  fprints(f, "  *state = PARSER_UINT_MAX;\n");
   fprints(f, "  return -EAGAIN; // Not yet\n");
   fprints(f, "}\n");
 
