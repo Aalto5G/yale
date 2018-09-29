@@ -361,19 +361,19 @@ class ParserGen(object):
     #
     print("""
 struct %s_parserctx {
-  uint8_t stacksz;
+  parser_uint_t stacksz;
   struct ruleentry stack[%d]; // WAS: uint8_t stack[...];
   struct %s_rectx rctx;
-  uint8_t saved_token;
+  parser_uint_t saved_token;
   %s
 };
 
 static inline void %s_parserctx_init(struct %s_parserctx *pctx)
 {
-  pctx->saved_token = 255;
+  pctx->saved_token = PARSER_UINT_MAX;
   pctx->stacksz = 1;
   pctx->stack[0].rhs = %d;
-  pctx->stack[0].cb = 255;
+  pctx->stack[0].cb = PARSER_UINT_MAX;
   %s_init_statemachine(&pctx->rctx);
 }
 
@@ -397,7 +397,7 @@ ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//
     #regex.dump_all(sio, parsername, re_by_idx, list_of_reidx_sets, priorities)
     rec.dump_all(sio)
     #
-    print("const uint8_t %s_num_terminals;" % (parsername,), file=sio)
+    print("const parser_uint_t %s_num_terminals;" % (parsername,), file=sio)
     print("void(*%s_callbacks[])(const char*, size_t, struct %s_parserctx*) = {" % (parsername,parsername), file=sio)
     for cb in callbacks_by_value:
       print(cb,",", file=sio)
@@ -406,13 +406,13 @@ ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//
     print("""
 struct %s_parserstatetblentry {
   const struct state *re;
-  //const uint8_t rhs[%d];
-  const uint8_t cb[%d];
+  //const parser_uint_t rhs[%d];
+  const parser_uint_t cb[%d];
 };
 """ % (parsername, len(terminals), len(terminals),), file=sio)
     #
-    print("const uint8_t %s_num_terminals = %d;" % (parsername, len(terminals),), file=sio)
-    print("const uint8_t %s_start_state = %d;" % (parsername, self.S,), file=sio)
+    print("const parser_uint_t %s_num_terminals = %d;" % (parsername, len(terminals),), file=sio)
+    print("const parser_uint_t %s_start_state = %d;" % (parsername, self.S,), file=sio)
     #
     print("const struct reentry %s_reentries[] = {" % (parsername,), file=sio)
     #
@@ -442,14 +442,14 @@ struct %s_parserstatetblentry {
       #print(".rhs = {", file=sio, end=" ")
       #for x in sorted(terminals):
       #  if Tt[X][x] == None:
-      #    print(255,",", file=sio, end=" ")
+      #    print("PARSER_UINT_MAX,", file=sio, end=" ")
       #  else:
       #    print(Tt[X][x][0],",", file=sio, end=" ")
       #print("},", file=sio)
       print(".cb = {", file=sio, end=" ")
       for x in sorted(terminals):
         if Tt[X][x] == None or Tt[X][x][1] == None:
-          print("255,", file=sio, end=" ")
+          print("PARSER_UINT_MAX,", file=sio, end=" ")
         else:
           print(callbacks_by_name[Tt[X][x][1]],",", file=sio, end=" ")
       print("},", file=sio)
@@ -463,7 +463,7 @@ struct %s_parserstatetblentry {
       for rhsitem in reversed(rhs):
         print("{", file=sio, end=" ")
         if type(rhsitem) == Action:
-          print(".rhs = 255, .cb = ", callbacks_by_name[rhsitem.cbname], file=sio, end=" ")
+          print(".rhs = PARSER_UINT_MAX, .cb = ", callbacks_by_name[rhsitem.cbname], file=sio, end=" ")
         elif type(rhsitem) == WrapCB:
           x = rhsitem.token
           sortex_reidx_set = sorted([x])
@@ -474,11 +474,11 @@ struct %s_parserstatetblentry {
           regex.check_cb(dfa, x)
           print(".rhs =", rhsitem.token, ",", ".cb = ", callbacks_by_name[rhsitem.cbname], file=sio, end=" ")
         else:
-          print(".rhs =", rhsitem, ",", ".cb = 255", file=sio, end=" ")
+          print(".rhs =", rhsitem, ",", ".cb = PARSER_UINT_MAX", file=sio, end=" ")
         print("}",",", file=sio, end=" ")
       print(file=sio)
       print("};", file=sio)
-      print("const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);" % (parsername,n,parsername,n,), file=sio)
+      print("const parser_uint_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);" % (parsername,n,parsername,n,), file=sio)
     print("const struct rule %s_rules[] = {" % (parsername,), file=sio)
     for n in range(len(rules)):
       lhs,rhs = rules[n]
@@ -492,13 +492,13 @@ struct %s_parserstatetblentry {
     print("""
 static inline ssize_t
 """+parsername+"""_get_saved_token(struct """+parsername+"""_parserctx *pctx, const struct state *restates,
-                const char *blkoff, size_t szoff, uint8_t *state,
-                const uint8_t *cbs, uint8_t cb1)//, void *baton)
+                const char *blkoff, size_t szoff, parser_uint_t *state,
+                const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)
 {
-  if (pctx->saved_token != 255)
+  if (pctx->saved_token != PARSER_UINT_MAX)
   {
     *state = pctx->saved_token;
-    pctx->saved_token = 255;
+    pctx->saved_token = PARSER_UINT_MAX;
     return 0;
   }
   return """+parsername+"""_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, """+parsername+"""_callbacks, cbs, cb1);//, baton);
@@ -510,22 +510,22 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
 {
   size_t off = 0;
   ssize_t ret;
-  uint8_t curstateoff;
-  uint8_t curstate;
-  uint8_t state;
-  uint8_t ruleid;
-  uint8_t i; // FIXME is 8 bits enough?
-  uint8_t cb1;
+  parser_uint_t curstateoff;
+  parser_uint_t curstate;
+  parser_uint_t state;
+  parser_uint_t ruleid;
+  parser_uint_t i; // FIXME is 8 bits enough?
+  parser_uint_t cb1;
   const struct state *restates;
   const struct rule *rule;
-  const uint8_t *cbs;
+  const parser_uint_t *cbs;
   void (*cb1f)(const char *, size_t, struct """+parsername+"""_parserctx*);
 
-  while (off < sz || pctx->saved_token != 255)
+  while (off < sz || pctx->saved_token != PARSER_UINT_MAX)
   {
     if (unlikely(pctx->stacksz == 0))
     {
-      if (off >= sz && pctx->saved_token == 255)
+      if (off >= sz && pctx->saved_token == PARSER_UINT_MAX)
       {
 #ifdef EXTRA_SANITY
         if (off > sz)
@@ -588,18 +588,18 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
       //printf("Got expected token %d\\n", (int)state);
       pctx->stacksz--;
     }
-    else if (likely(curstate != 255))
+    else if (likely(curstate != PARSER_UINT_MAX))
     {
       curstateoff = curstate - """+parsername+"""_num_terminals;
       restates = """+parsername+"""_parserstatetblentries[curstateoff].re;
       cbs = """+parsername+"""_parserstatetblentries[curstateoff].cb;
-      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);//, baton);
+      ret = """+parsername+"""_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, PARSER_UINT_MAX);//, baton);
       if (ret == -EAGAIN)
       {
         //off = sz;
         return -EAGAIN;
       }
-      else if (ret < 0 || state == 255)
+      else if (ret < 0 || state == PARSER_UINT_MAX)
       {
         //fprintf(stderr, "Parser error: tokenizer error, curstate=%d, token=%d\\n", (int)curstate, (int)state);
         //exit(1);
@@ -630,7 +630,7 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
           print(10*" ","ruleid=%d;" % (Tt[X][x][0],), file=sio)
           print(10*" ","break;", file=sio)
       print(8*" ","default:", file=sio)
-      print(10*" ","ruleid=255;", file=sio)
+      print(10*" ","ruleid=PARSER_UINT_MAX;", file=sio)
       print(10*" ","break;", file=sio)
       print(8*" ","}", file=sio)
       print(8*" ","break;", file=sio)
@@ -674,7 +674,7 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
         pctx->saved_token = state;
       }
     }
-    else // if (curstate == 255)
+    else // if (curstate == PARSER_UINT_MAX)
     {
       cb1f = """+parsername+"""_callbacks[pctx->stack[pctx->stacksz - 1].cb];
       cb1f(NULL, 0, pctx);//, baton);
@@ -683,7 +683,7 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
   }
   if (pctx->stacksz == 0)
   {
-    if (off >= sz && pctx->saved_token == 255)
+    if (off >= sz && pctx->saved_token == PARSER_UINT_MAX)
     {
 #ifdef EXTRA_SANITY
       if (off > sz)

@@ -41,24 +41,24 @@ class REContainer(object):
 struct """+parsername+"""_parserctx;
 
 struct """+parsername+"""_rectx {
-  uint8_t state; // 0 is initial state
-  uint8_t last_accept; // 255 means never accepted
+  lexer_uint_t state; // 0 is initial state
+  lexer_uint_t last_accept; // LEXER_UINT_MAX means never accepted
   uint8_t backtrackstart;
   uint8_t backtrackend;
-  uint8_t backtrack["""+parsername.upper()+"""_BACKTRACKLEN_PLUS_1];
+  unsigned char backtrack["""+parsername.upper()+"""_BACKTRACKLEN_PLUS_1];
 };
 
 static inline void
 """+parsername+"""_init_statemachine(struct """+parsername+"""_rectx *ctx)
 {
   ctx->state = 0;
-  ctx->last_accept = 255;
+  ctx->last_accept = LEXER_UINT_MAX;
   ctx->backtrackstart = 0;
   ctx->backtrackend = 0;
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const uint8_t *cbs, uint8_t cb1);//, void *baton);
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);
 """, file=sio)
     return
   def dump_all(self, sio):
@@ -72,16 +72,16 @@ static inline int
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const uint8_t *cbs, uint8_t cb1)//, void *baton)
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st = NULL;
   size_t i;
-  uint8_t newstate;
+  lexer_uint_t newstate;
   struct """+parsername+"""_parserctx *pctx = CONTAINER_OF(ctx, struct """+parsername+"""_parserctx, rctx);
-  if (ctx->state == 255)
+  if (ctx->state == LEXER_UINT_MAX)
   {
-    *state = 255;
+    *state = PARSER_UINT_MAX;
     return -EINVAL;
   }
   //printf("Called: %s\\n", buf);
@@ -91,15 +91,15 @@ ssize_t
     {
       st = &stbl[ctx->state];
       ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];
-      if (unlikely(ctx->state == 255))
+      if (unlikely(ctx->state == LEXER_UINT_MAX))
       {
-        if (ctx->last_accept == 255)
+        if (ctx->last_accept == LEXER_UINT_MAX)
         {
-          *state = 255;
+          *state = PARSER_UINT_MAX;
           return -EINVAL;
         }
         ctx->state = ctx->last_accept;
-        ctx->last_accept = 255;
+        ctx->last_accept = LEXER_UINT_MAX;
         st = &stbl[ctx->state];
         *state = st->acceptid;
         ctx->state = 0;
@@ -117,7 +117,7 @@ ssize_t
         {
           *state = st->acceptid;
           ctx->state = 0;
-          ctx->last_accept = 255;
+          ctx->last_accept = LEXER_UINT_MAX;
           return 0;
         }
         else
@@ -185,24 +185,24 @@ ssize_t
       ctx->state = newstate;
     }
     //printf("New state: %d\\n", ctx->state);
-    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster
+    if (unlikely(newstate == LEXER_UINT_MAX)) // use newstate here, not ctx->state, faster
     {
-      if (ctx->last_accept == 255)
+      if (ctx->last_accept == LEXER_UINT_MAX)
       {
-        *state = 255;
+        *state = PARSER_UINT_MAX;
         //printf("Error\\n");
         return -EINVAL;
       }
       ctx->state = ctx->last_accept;
-      ctx->last_accept = 255;
+      ctx->last_accept = LEXER_UINT_MAX;
       st = &stbl[ctx->state];
       *state = st->acceptid;
       ctx->state = 0;
-      if (cbs && st->accepting && cbs[st->acceptid] != 255)
+      if (cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)
       {
         cbtbl[cbs[st->acceptid]](buf, i, pctx);
       }
-      if (cb1 != 255 && st->accepting)
+      if (cb1 != PARSER_UINT_MAX && st->accepting)
       {
         cbtbl[cb1](buf, i, pctx);
       }
@@ -215,12 +215,12 @@ ssize_t
       {
         *state = st->acceptid;
         ctx->state = 0;
-        ctx->last_accept = 255;
-        if (cbs && st->accepting && cbs[st->acceptid] != 255)
+        ctx->last_accept = LEXER_UINT_MAX;
+        if (cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)
         {
           cbtbl[cbs[st->acceptid]](buf, i + 1, pctx);
         }
-        if (cb1 != 255 && st->accepting)
+        if (cb1 != PARSER_UINT_MAX && st->accepting)
         {
           cbtbl[cb1](buf, i + 1, pctx);
         }
@@ -233,7 +233,7 @@ ssize_t
     }
     else
     {
-      if (ctx->last_accept != 255)
+      if (ctx->last_accept != LEXER_UINT_MAX)
       {
         ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?
         if (ctx->backtrackstart >= """+parsername.upper()+"""_BACKTRACKLEN_PLUS_1)
@@ -247,21 +247,21 @@ ssize_t
       }
     }
   }
-  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)
+  if (st && cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)
   {
     cbtbl[cbs[st->acceptid]](buf, sz, pctx);
   }
-  if (st && cb1 != 255 && st->accepting)
+  if (st && cb1 != PARSER_UINT_MAX && st->accepting)
   {
     cbtbl[cb1](buf, sz, pctx);
   }
-  *state = 255;
+  *state = PARSER_UINT_MAX;
   return -EAGAIN; // Not yet
 }
 """, file=sio)
     dict_transitions = {}
     print("#ifdef SMALL_CODE", file=sio)
-    print("const uint8_t %s_transitiontbl[][256] = {" % (parsername,), file=sio)
+    print("const lexer_uint_t %s_transitiontbl[][256] = {" % (parsername,), file=sio)
     cur_dictid = 0
     for reidx_set in list_of_reidx_sets:
       sorted_reidx_set = list(sorted(reidx_set))
@@ -873,7 +873,7 @@ def dump_state(state):
       elif state.default:
         print(state.default.id,",",end=" ")
       else:
-        print(255,",",end=" ")
+        print("LEXER_UINT_MAX,",end=" ")
     print("},",end=" ")
     print("},")
   print("};")
