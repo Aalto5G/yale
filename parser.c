@@ -312,11 +312,12 @@ void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
     {
       abort();
     }
-    gen->stackconfigs[i].stack = parsergen_alloc(gen, sz*sizeof(uint8_t));
-    memcpy(gen->stackconfigs[i].stack, stack, sz*sizeof(uint8_t));
-    gen->stackconfigs[i].sz = sz;
-    gen->stackconfigs[i].i = i;
-    yale_hash_table_add_nogrow(&gen->stackconfigs_hash, &gen->stackconfigs[i].node, hashval);
+    gen->stackconfigs[i] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[i]));
+    gen->stackconfigs[i]->stack = parsergen_alloc(gen, sz*sizeof(uint8_t));
+    memcpy(gen->stackconfigs[i]->stack, stack, sz*sizeof(uint8_t));
+    gen->stackconfigs[i]->sz = sz;
+    gen->stackconfigs[i]->i = i;
+    yale_hash_table_add_nogrow(&gen->stackconfigs_hash, &gen->stackconfigs[i]->node, hashval);
     gen->stackconfigcnt++;
     //printf("Not found %d!\n", (int)sz);
   }
@@ -332,13 +333,14 @@ ssize_t max_stack_sz(struct ParserGen *gen)
   size_t sz;
   uint8_t a;
   gen->stackconfigcnt = 1;
-  gen->stackconfigs[0].stack = parsergen_alloc(gen, 1*sizeof(uint8_t));
-  gen->stackconfigs[0].stack[0] = gen->start_state;
-  gen->stackconfigs[0].sz = 1;
+  gen->stackconfigs[0] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[0]));
+  gen->stackconfigs[0]->stack = parsergen_alloc(gen, 1*sizeof(uint8_t));
+  gen->stackconfigs[0]->stack[0] = gen->start_state;
+  gen->stackconfigs[0]->sz = 1;
   //printf("Start state is %d, terminal? %d\n", gen->start_state, parsergen_is_terminal(gen, gen->start_state));
   for (i = 0; i < gen->stackconfigcnt; i++)
   {
-    struct stackconfig *current = &gen->stackconfigs[i];
+    struct stackconfig *current = gen->stackconfigs[i];
     if (current->sz > maxsz)
     {
       maxsz = current->sz;

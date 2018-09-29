@@ -69,7 +69,8 @@ struct ParserGen {
   struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
   uint8_t pick_those[255][255]; // 64 kB
   struct firstset_entry *Fi[8192]; // 64 kB
-  struct stackconfig stackconfigs[32768]; // 1.25 MB
+  //struct stackconfig stackconfigs[32768]; // 1.25 MB
+  struct stackconfig *stackconfigs[32768]; // 0.25 MB
   struct transitionbufs bufs; // 16 MB, this could be made to use dynamic alloc
   char userarea[64*1024*1024];
 };
