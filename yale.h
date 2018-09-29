@@ -8,6 +8,7 @@
 #include <string.h>
 #include <errno.h>
 #include <ctype.h>
+#include "yaleuint.h"
 
 struct CSnippet {
   char *data;
@@ -48,21 +49,21 @@ static inline void csaddstr(struct CSnippet *cs, char *str)
 
 struct token {
   int priority;
-  uint8_t nsitem;
+  yale_uint_t nsitem;
   char *re;
 };
 
 struct ruleitem {
   uint8_t is_action:1;
-  uint8_t value;
-  uint8_t cb;
+  yale_uint_t value;
+  yale_uint_t cb;
 };
 
 struct namespaceitem {
   char *name;
   uint8_t is_token:1;
   uint8_t is_lhs:1;
-  uint8_t val;
+  yale_uint_t val;
 };
 
 struct cb {
@@ -70,32 +71,32 @@ struct cb {
 };
 
 struct rule {
-  uint8_t lhs;
-  struct ruleitem rhs[255];
-  uint8_t itemcnt;
-  struct ruleitem rhsnoact[255];
-  uint8_t noactcnt;
+  yale_uint_t lhs;
+  struct ruleitem rhs[YALE_UINT_MAX_LEGAL];
+  yale_uint_t itemcnt;
+  struct ruleitem rhsnoact[YALE_UINT_MAX_LEGAL];
+  yale_uint_t noactcnt;
 };
 
 struct yale {
   struct CSnippet cs;
   struct CSnippet si;
-  struct token tokens[255];
-  struct namespaceitem ns[255];
-  struct cb cbs[255];
-  struct rule rules[255];
-  uint8_t tokencnt;
-  uint8_t nscnt;
-  uint8_t cbcnt;
-  uint8_t rulecnt;
+  struct token tokens[YALE_UINT_MAX_LEGAL];
+  struct namespaceitem ns[YALE_UINT_MAX_LEGAL];
+  struct cb cbs[YALE_UINT_MAX_LEGAL];
+  struct rule rules[YALE_UINT_MAX_LEGAL];
+  yale_uint_t tokencnt;
+  yale_uint_t nscnt;
+  yale_uint_t cbcnt;
+  yale_uint_t rulecnt;
   char *parsername;
-  uint8_t startns;
+  yale_uint_t startns;
   uint8_t startns_present;
 };
 
 static inline void yale_free(struct yale *yale)
 {
-  uint8_t i;
+  yale_uint_t i;
   for (i = 0; i < yale->cbcnt; i++)
   {
     free(yale->cbs[i].name);
@@ -130,15 +131,15 @@ static inline void yale_free(struct yale *yale)
 
 static inline int check_actions(struct yale *yale)
 {
-  uint8_t i, j;
+  yale_uint_t i, j;
   for (i = 0; i < yale->rulecnt; i++)
   {
     for (j = 0; j < yale->rules[i].itemcnt; j++)
     {
-      uint8_t value = yale->rules[i].rhs[j].value;
-      uint8_t cb = yale->rules[i].rhs[j].cb;
-      uint8_t act = yale->rules[i].rhs[j].is_action;
-      if (!act && !yale->ns[value].is_token && cb != 255)
+      yale_uint_t value = yale->rules[i].rhs[j].value;
+      yale_uint_t cb = yale->rules[i].rhs[j].cb;
+      yale_uint_t act = yale->rules[i].rhs[j].is_action;
+      if (!act && !yale->ns[value].is_token && cb != YALE_UINT_MAX_LEGAL)
       {
         return -EINVAL;
       }
@@ -149,7 +150,7 @@ static inline int check_actions(struct yale *yale)
 
 static inline void check_python(struct yale *yale)
 {
-  uint8_t i;
+  yale_uint_t i;
   if (!yale->startns_present)
   {
     fprintf(stderr, "Error\n");
@@ -216,7 +217,7 @@ static inline void dump_string(FILE *f, const char *str)
 
 static inline void dump_python(FILE *f, struct yale *yale)
 {
-  uint8_t i;
+  yale_uint_t i;
   char *upparsername = strdup(yale->parsername);
   size_t len = strlen(upparsername);
   for (i = 0; i < len; i++)
@@ -262,7 +263,7 @@ static inline void dump_python(FILE *f, struct yale *yale)
   for (i = 0; i < yale->rulecnt; i++)
   {
     struct rule *rl = &yale->rules[i];
-    uint8_t j;
+    yale_uint_t j;
     fprintf(f, "  ");
     fprintf(f, "(");
     fprintf(f, "d[\"%s\"], ", yale->ns[rl->lhs].name);
@@ -274,7 +275,7 @@ static inline void dump_python(FILE *f, struct yale *yale)
       {
         fprintf(f, "p.action(\"%s\"), ", yale->cbs[it->cb].name);
       }
-      else if (it->cb != 255)
+      else if (it->cb != YALE_UINT_MAX_LEGAL)
       {
         fprintf(f, "p.wrapCB(d[\"%s\"], \"%s\"), ", yale->ns[it->value].name, yale->cbs[it->cb].name);
       }

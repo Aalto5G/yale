@@ -30,14 +30,14 @@ static int fprints(FILE *f, const char *s)
 void firstset_update(struct dict *da, struct dict *db)
 {
   size_t i;
-  for (i = 0; i < 256; i++)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; i++)
   {
     bitset_update(&da->bitset[i], &db->bitset[i]);
   }
   bitset_update(&da->has, &db->has);
 }
 
-void firstset_update_one(struct dict *da, struct dict *db, uint8_t one)
+void firstset_update_one(struct dict *da, struct dict *db, yale_uint_t one)
 {
   if (!has_bitset(&db->has, one))
   {
@@ -53,7 +53,7 @@ void firstset_settoken(struct dict *da, const struct ruleitem *ri)
   {
     abort();
   }
-  if (ri->cb != 255)
+  if (ri->cb != YALE_UINT_MAX_LEGAL)
   {
     set_bitset(&da->bitset[ri->value], ri->cb);
   }
@@ -69,10 +69,10 @@ void firstset_setsingleton(struct dict *da, struct ruleitem *ri)
 int firstset_issubset(struct dict *da, struct dict *db)
 {
   size_t i;
-  for (i = 0; i < 256; /*i++*/)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
-    uint8_t wordoff = i/64;
-    uint8_t bitoff = i%64;
+    yale_uint_t wordoff = i/64;
+    yale_uint_t bitoff = i%64;
     if (da->has.bitset[wordoff] & (1ULL<<bitoff))
     {
       if (!(db->has.bitset[wordoff] & (1ULL<<bitoff)))
@@ -96,15 +96,15 @@ int firstset_issubset(struct dict *da, struct dict *db)
   return 1;
 }
 
-uint8_t get_sole_cb(struct dict *d, uint8_t x)
+yale_uint_t get_sole_cb(struct dict *d, yale_uint_t x)
 {
-  uint8_t cb = 255;
+  yale_uint_t cb = YALE_UINT_MAX_LEGAL;
   int seen = 0;
   size_t i;
-  for (i = 0; i < 256; /*i++*/)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
-    uint8_t wordoff = i/64;
-    uint8_t bitoff = i%64;
+    yale_uint_t wordoff = i/64;
+    yale_uint_t bitoff = i%64;
     if (d->bitset[x].bitset[wordoff] & (1ULL<<bitoff))
     {
       if (seen)
@@ -123,14 +123,14 @@ uint8_t get_sole_cb(struct dict *d, uint8_t x)
       i++;
     }
   }
-  if (seen && cb == 255)
+  if (seen && cb == YALE_UINT_MAX_LEGAL)
   {
     abort();
   }
-  return seen ? cb : 255;
+  return seen ? cb : YALE_UINT_MAX_LEGAL;
 }
 
-uint32_t stack_hash(const uint8_t *stack, uint8_t sz)
+uint32_t stack_hash(const yale_uint_t *stack, yale_uint_t sz)
 {
   return yalemurmur_buf(0x12345678U, stack, sz);
 }
@@ -141,7 +141,7 @@ uint32_t stack_hash_fn(struct yale_hash_list_node *node, void *ud)
   return stack_hash(cfg->stack, cfg->sz);
 }
 
-uint32_t firstset_hash(const uint8_t *rhs, size_t sz)
+uint32_t firstset_hash(const yale_uint_t *rhs, size_t sz)
 {
   return yalemurmur_buf(0x12345678U, rhs, sz);
 }
@@ -159,8 +159,8 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->nonterminalcnt = 0;
   gen->parsername = strdup(parsername);
   gen->state_include_str = NULL;
-  gen->start_state = 255;
-  gen->epsilon = 255;
+  gen->start_state = YALE_UINT_MAX_LEGAL;
+  gen->epsilon = YALE_UINT_MAX_LEGAL;
   gen->rulecnt = 0;
   gen->cbcnt = 0;
   gen->tokens_finalized = 0;
@@ -211,7 +211,7 @@ void parsergen_free(struct ParserGen *gen)
 }
 
 struct firstset_entry *firstset_lookup_hashval(
-    struct ParserGen *gen, const uint8_t *rhs, size_t rhssz, uint32_t hashval)
+    struct ParserGen *gen, const yale_uint_t *rhs, size_t rhssz, uint32_t hashval)
 {
   struct yale_hash_list_node *node;
   YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Fi_hash, node, hashval)
@@ -230,12 +230,12 @@ struct firstset_entry *firstset_lookup_hashval(
   return NULL;
 }
 
-struct firstset_entry *firstset_lookup(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
+struct firstset_entry *firstset_lookup(struct ParserGen *gen, const yale_uint_t *rhs, size_t rhssz)
 {
   return firstset_lookup_hashval(gen, rhs, rhssz, firstset_hash(rhs, rhssz));
 }
 
-void firstset_setdefault(struct ParserGen *gen, const uint8_t *rhs, size_t rhssz)
+void firstset_setdefault(struct ParserGen *gen, const yale_uint_t *rhs, size_t rhssz)
 {
   uint32_t hashval = firstset_hash(rhs, rhssz);
   if (firstset_lookup_hashval(gen, rhs, rhssz, hashval) != NULL)
@@ -288,7 +288,7 @@ struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem
   }
 }
 
-void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
+void stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_uint_t sz)
 {
   size_t i = gen->stackconfigcnt;
   uint32_t hashval = stack_hash(stack, sz);
@@ -300,7 +300,7 @@ void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
     {
       continue;
     }
-    if (memcmp(cfg->stack, stack, sz*sizeof(uint8_t)) != 0)
+    if (memcmp(cfg->stack, stack, sz*sizeof(yale_uint_t)) != 0)
     {
       continue;
     }
@@ -315,8 +315,8 @@ void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
       abort();
     }
     gen->stackconfigs[i] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[i]));
-    gen->stackconfigs[i]->stack = parsergen_alloc(gen, sz*sizeof(uint8_t));
-    memcpy(gen->stackconfigs[i]->stack, stack, sz*sizeof(uint8_t));
+    gen->stackconfigs[i]->stack = parsergen_alloc(gen, sz*sizeof(yale_uint_t));
+    memcpy(gen->stackconfigs[i]->stack, stack, sz*sizeof(yale_uint_t));
     gen->stackconfigs[i]->sz = sz;
     gen->stackconfigs[i]->i = i;
     yale_hash_table_add_nogrow(&gen->stackconfigs_hash, &gen->stackconfigs[i]->node, hashval);
@@ -325,18 +325,18 @@ void stackconfig_append(struct ParserGen *gen, const uint8_t *stack, uint8_t sz)
   }
 }
 
-int parsergen_is_terminal(struct ParserGen *gen, uint8_t x);
+int parsergen_is_terminal(struct ParserGen *gen, yale_uint_t x);
 
 ssize_t max_stack_sz(struct ParserGen *gen)
 {
   size_t maxsz = 1;
   size_t i, j;
-  uint8_t stack[255];
+  yale_uint_t stack[YALE_UINT_MAX_LEGAL];
   size_t sz;
-  uint8_t a;
+  yale_uint_t a;
   gen->stackconfigcnt = 1;
   gen->stackconfigs[0] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[0]));
-  gen->stackconfigs[0]->stack = parsergen_alloc(gen, 1*sizeof(uint8_t));
+  gen->stackconfigs[0]->stack = parsergen_alloc(gen, 1*sizeof(yale_uint_t));
   gen->stackconfigs[0]->stack[0] = gen->start_state;
   gen->stackconfigs[0]->sz = 1;
   //printf("Start state is %d, terminal? %d\n", gen->start_state, parsergen_is_terminal(gen, gen->start_state));
@@ -349,21 +349,21 @@ ssize_t max_stack_sz(struct ParserGen *gen)
     }
     if (current->sz > 0)
     {
-      uint8_t last = current->stack[current->sz-1];
-      if (parsergen_is_terminal(gen, last) || last == 255)
+      yale_uint_t last = current->stack[current->sz-1];
+      if (parsergen_is_terminal(gen, last) || last == YALE_UINT_MAX_LEGAL)
       {
         stackconfig_append(gen, current->stack, current->sz-1);
         continue;
       }
       for (a = 0; a < gen->tokencnt; a++)
       {
-        uint8_t rule = gen->T[last][a].val;
-        if (rule != 255)
+        yale_uint_t rule = gen->T[last][a].val;
+        if (rule != YALE_UINT_MAX_LEGAL)
         {
-          //printf("Rule differs from 255\n");
+          //printf("Rule differs from YALE_UINT_MAX_LEGAL\n");
           memcpy(stack, current->stack, (current->sz-1)*sizeof(*stack));
           sz = current->sz - 1;
-          if (sz + gen->rules[rule].itemcnt > 255)
+          if (sz + gen->rules[rule].itemcnt > YALE_UINT_MAX_LEGAL)
           {
             return -1;
           }
@@ -373,7 +373,7 @@ ssize_t max_stack_sz(struct ParserGen *gen)
               &gen->rules[rule].rhs[gen->rules[rule].itemcnt-j-1];
             if (it->is_action)
             {
-              stack[sz++] = 255;
+              stack[sz++] = YALE_UINT_MAX_LEGAL;
             }
             else
             {
@@ -402,7 +402,7 @@ void gen_parser(struct ParserGen *gen)
 
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
-    uint8_t rhsit = i;
+    yale_uint_t rhsit = i;
     uint32_t hashval = firstset_hash(&rhsit, 1);
     if (gen->Ficnt >= sizeof(gen->Fi)/sizeof(*gen->Fi))
     {
@@ -423,7 +423,7 @@ void gen_parser(struct ParserGen *gen)
     {
       struct firstset_entry fs =
         firstset_func(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
-      uint8_t rhs[gen->rules[i].noactcnt];
+      yale_uint_t rhs[gen->rules[i].noactcnt];
       for (j = 0; j < gen->rules[i].noactcnt; j++)
       {
         rhs[j] = gen->rules[i].rhsnoact[j].value;
@@ -438,8 +438,8 @@ void gen_parser(struct ParserGen *gen)
     }
     for (i = 0; i < gen->rulecnt; i++)
     {
-      uint8_t nonterminal = gen->rules[i].lhs;
-      uint8_t rhs[gen->rules[i].noactcnt];
+      yale_uint_t nonterminal = gen->rules[i].lhs;
+      yale_uint_t rhs[gen->rules[i].noactcnt];
       for (j = 0; j < gen->rules[i].noactcnt; j++)
       {
         rhs[j] = gen->rules[i].rhsnoact[j].value;
@@ -460,17 +460,17 @@ void gen_parser(struct ParserGen *gen)
     changed = 0;
     for (i = 0; i < gen->rulecnt; i++)
     {
-      uint8_t nonterminal = gen->rules[i].lhs;
-      uint8_t rhs[gen->rules[i].noactcnt];
+      yale_uint_t nonterminal = gen->rules[i].lhs;
+      yale_uint_t rhs[gen->rules[i].noactcnt];
       for (j = 0; j < gen->rules[i].noactcnt; j++)
       {
         rhs[j] = gen->rules[i].rhsnoact[j].value;
       }
       for (j = 0; j < gen->rules[i].noactcnt; j++)
       {
-        uint8_t rhsmid = rhs[j];
+        yale_uint_t rhsmid = rhs[j];
         struct firstset_entry firstrhsright;
-        uint8_t terminal;
+        yale_uint_t terminal;
         if (parsergen_is_terminal(gen, rhsmid))
         {
           continue;
@@ -509,9 +509,9 @@ void gen_parser(struct ParserGen *gen)
   }
   for (i = 0; i < gen->rulecnt; i++)
   {
-    uint8_t rhs[gen->rules[i].noactcnt];
-    uint8_t a;
-    uint8_t A = gen->rules[i].lhs;
+    yale_uint_t rhs[gen->rules[i].noactcnt];
+    yale_uint_t a;
+    yale_uint_t A = gen->rules[i].lhs;
     for (j = 0; j < gen->rules[i].noactcnt; j++)
     {
       rhs[j] = gen->rules[i].rhsnoact[j].value;
@@ -522,7 +522,8 @@ void gen_parser(struct ParserGen *gen)
       struct dict *fo = gen->Fo[A];
       if (has_bitset(&fi->dict.has, a))
       {
-        if (gen->T[A][a].val != 255 || gen->T[A][a].cb != 255)
+        if (gen->T[A][a].val != YALE_UINT_MAX_LEGAL ||
+            gen->T[A][a].cb != YALE_UINT_MAX_LEGAL)
         {
           abort();
         }
@@ -531,7 +532,8 @@ void gen_parser(struct ParserGen *gen)
       }
       if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
       {
-        if (gen->T[A][a].val != 255 || gen->T[A][a].cb != 255)
+        if (gen->T[A][a].val != YALE_UINT_MAX_LEGAL ||
+            gen->T[A][a].cb != YALE_UINT_MAX_LEGAL)
         {
           abort();
         }
@@ -553,12 +555,12 @@ void gen_parser(struct ParserGen *gen)
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
     size_t len = 0;
-    uint8_t buf[256];
+    yale_uint_t buf[YALE_UINT_MAX_LEGAL + 1];
     for (j = 0; j < gen->tokencnt; j++)
     {
-      if (gen->T[i][j].val != 255)
+      if (gen->T[i][j].val != YALE_UINT_MAX_LEGAL)
       {
-        if (len >= 255)
+        if (len >= YALE_UINT_MAX_LEGAL)
         {
           abort();
         }
@@ -571,7 +573,7 @@ void gen_parser(struct ParserGen *gen)
       {
         continue;
       }
-      if (memcmp(gen->pick_thoses[j].pick_those, buf, len*sizeof(uint8_t)) != 0)
+      if (memcmp(gen->pick_thoses[j].pick_those, buf, len*sizeof(yale_uint_t)) != 0)
       {
         continue;
       }
@@ -582,9 +584,9 @@ void gen_parser(struct ParserGen *gen)
       len = 0;
       for (j = 0; j < gen->tokencnt; j++)
       {
-        if (gen->T[i][j].val != 255)
+        if (gen->T[i][j].val != YALE_UINT_MAX_LEGAL)
         {
-          if (len >= 255)
+          if (len >= YALE_UINT_MAX_LEGAL)
           {
             abort();
           }
@@ -629,7 +631,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   {
     dump_one(f, gen->parsername, &gen->pick_thoses[i]);
   }
-  fprintf(f, "const uint8_t %s_num_terminals;\n", gen->parsername);
+  fprintf(f, "const uint8_t %s_num_terminals;\n", gen->parsername); // FIXME uint8_t
   fprintf(f, "void(*%s_callbacks[])(const char*, size_t, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
   for (i = 0; i < gen->cbcnt; i++)
   {
@@ -638,11 +640,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
   fprints(f, "  const struct state *re;\n");
-  fprintf(f, "  //const uint8_t rhs[%d];\n", gen->tokencnt);
-  fprintf(f, "  const uint8_t cb[%d];\n", gen->tokencnt);
+  fprintf(f, "  //const uint8_t rhs[%d];\n", gen->tokencnt); // FIXME uint8_t
+  fprintf(f, "  const uint8_t cb[%d];\n", gen->tokencnt); // FIXME uint8_t
   fprints(f, "};\n");
-  fprintf(f, "const uint8_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt);
-  fprintf(f, "const uint8_t %s_start_state = %d;\n", gen->parsername, gen->start_state);
+  fprintf(f, "const uint8_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt); // FIXME uint8_t
+  fprintf(f, "const uint8_t %s_start_state = %d;\n", gen->parsername, gen->start_state); // FIXME uint8_t
   fprintf(f, "const struct reentry %s_reentries[] = {\n", gen->parsername);
   for (i = 0; i < gen->tokencnt; i++)
   {
@@ -658,7 +660,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, ".re = %s_states", gen->parsername);
     for (i = 0; i < gen->tokencnt; i++)
     {
-      if (gen->T[X][i].val != 255)
+      if (gen->T[X][i].val != YALE_UINT_MAX_LEGAL)
       {
         fprintf(f, "_%d", (int)i);
       }
@@ -682,11 +684,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "{\n");
       if (it->is_action)
       {
-        if (it->value != 255)
+        if (it->value != YALE_UINT_MAX_LEGAL)
         {
           abort();
         }
-        fprintf(f, ".rhs = 255, .cb = %d", it->cb);
+        fprintf(f, ".rhs = %d, .cb = %d", (int)YALE_UINT_MAX_LEGAL, it->cb);
       }
       else
       {
@@ -695,7 +697,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprints(f, "},\n");
     }
     fprints(f, "};\n");
-    fprintf(f, "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);\n", gen->parsername, (int)i, gen->parsername, (int)i);
+    fprintf(f, "const uint8_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry);\n", gen->parsername, (int)i, gen->parsername, (int)i); // FIXME uint8_t
   }
   fprintf(f, "const struct rule %s_rules[] = {\n", gen->parsername);
   for (i = 0; i < gen->rulecnt; i++)
@@ -709,13 +711,13 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "};\n");
   fprints(f, "static inline ssize_t\n");
   fprintf(f, "%s_get_saved_token(struct %s_parserctx *pctx, const struct state *restates,\n", gen->parsername, gen->parsername);
-  fprints(f, "                const char *blkoff, size_t szoff, uint8_t *state,\n"
-             "                const uint8_t *cbs, uint8_t cb1)//, void *baton)\n"
+  fprints(f, "                const char *blkoff, size_t szoff, uint8_t *state,\n" // FIXME uint8_t
+             "                const uint8_t *cbs, uint8_t cb1)//, void *baton)\n" // FIXME uint8_t
              "{\n"
-             "  if (pctx->saved_token != 255)\n"
+             "  if (pctx->saved_token != 255)\n" // FIXME 255
              "  {\n"
              "    *state = pctx->saved_token;\n"
-             "    pctx->saved_token = 255;\n"
+             "    pctx->saved_token = 255;\n" // FIXME 255
              "    return 0;\n"
              "  }\n");
   fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cbs, cb1);//, baton);\n", gen->parsername, gen->parsername);
@@ -727,22 +729,22 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "{\n"
              "  size_t off = 0;\n"
              "  ssize_t ret;\n"
-             "  uint8_t curstateoff;\n"
-             "  uint8_t curstate;\n"
-             "  uint8_t state;\n"
-             "  uint8_t ruleid;\n"
-             "  uint8_t i; // FIXME is 8 bits enough?\n"
-             "  uint8_t cb1;\n"
+             "  uint8_t curstateoff;\n" // FIXME uint8_t
+             "  uint8_t curstate;\n" // FIXME uint8_t
+             "  uint8_t state;\n" // FIXME uint8_t
+             "  uint8_t ruleid;\n" // FIXME uint8_t
+             "  uint8_t i; // FIXME is 8 bits enough?\n" // FIXME uint8_t
+             "  uint8_t cb1;\n" // FIXME uint8_t
              "  const struct state *restates;\n"
              "  const struct rule *rule;\n"
-             "  const uint8_t *cbs;\n");
+             "  const uint8_t *cbs;\n"); // FIXME uint8_t
   fprintf(f, "  void (*cb1f)(const char *, size_t, struct %s_parserctx*);\n", gen->parsername);
   fprints(f, "\n"
-             "  while (off < sz || pctx->saved_token != 255)\n"
+             "  while (off < sz || pctx->saved_token != 255)\n" // FIXME 255
              "  {\n"
              "    if (unlikely(pctx->stacksz == 0))\n"
              "    {\n"
-             "      if (off >= sz && pctx->saved_token == 255)\n"
+             "      if (off >= sz && pctx->saved_token == 255)\n" // FIXME 255
              "      {\n"
              "#ifdef EXTRA_SANITY\n");
   fprints(f, "        if (off > sz)\n"
@@ -805,18 +807,18 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "      //printf(\"Got expected token %%d\\n\", (int)state);\n"
              "      pctx->stacksz--;\n"
              "    }\n"
-             "    else if (likely(curstate != 255))\n"
+             "    else if (likely(curstate != 255))\n" // FIXME 255
              "    {\n");
   fprintf(f, "      curstateoff = curstate - %s_num_terminals;\n", gen->parsername);
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
   fprintf(f, "      cbs = %s_parserstatetblentries[curstateoff].cb;\n", gen->parsername);
-  fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);//, baton);\n", gen->parsername);
+  fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, 255);//, baton);\n", gen->parsername); // FIXME 255
   fprints(f, "      if (ret == -EAGAIN)\n"
              "      {\n"
              "        //off = sz;\n"
              "        return -EAGAIN;\n"
              "      }\n"
-             "      else if (ret < 0 || state == 255)\n"
+             "      else if (ret < 0 || state == 255)\n" // FIXME 255
              "      {\n"
              "        //fprintf(stderr, \"Parser error: tokenizer error, curstate=%%d, token=%%d\\n\", (int)curstate, (int)state);\n");
   fprints(f, "        //exit(1);\n"
@@ -842,7 +844,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
                "        {\n");
     for (x = 0; x < gen->tokencnt; x++)
     {
-      if (gen->T[X][x].val != 255)
+      if (gen->T[X][x].val != YALE_UINT_MAX_LEGAL)
       {
         fprintf(f, "        case %d:\n", (int)x);
         fprintf(f, "          ruleid=%d;\n", (int)gen->T[X][x].val);
@@ -850,7 +852,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
     }
     fprints(f, "        default:\n"
-               "          ruleid=255;\n"
+               "          ruleid=255;\n" // FIXME 255
                "          break;\n"
                "        }\n"
                "        break;\n");
@@ -893,7 +895,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        pctx->saved_token = state;\n"
              "      }\n"
              "    }\n"
-             "    else // if (curstate == 255)\n"
+             "    else // if (curstate == 255)\n" // FIXME 255
              "    {\n");
   fprintf(f, "      cb1f = %s_callbacks[pctx->stack[pctx->stacksz - 1].cb];\n", gen->parsername);
   fprints(f, "      cb1f(NULL, 0, pctx);//, baton);\n"
@@ -902,7 +904,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  }\n"
              "  if (pctx->stacksz == 0)\n"
              "  {\n"
-             "    if (off >= sz && pctx->saved_token == 255)\n"
+             "    if (off >= sz && pctx->saved_token == 255)\n" // FIXME 255
              "    {\n");
   fprints(f, "#ifdef EXTRA_SANITY\n"
              "      if (off > sz)\n"
@@ -929,10 +931,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, gen->parsername, gen->max_bt);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
-  fprints(f, "  uint8_t stacksz;\n");
+  fprints(f, "  uint8_t stacksz;\n"); // FIXME uint8_t
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
-  fprints(f, "  uint8_t saved_token;\n");
+  fprints(f, "  uint8_t saved_token;\n"); // FIXME uint8_t
   if (gen->state_include_str)
   {
     fprintf(f, "  %s\n", gen->state_include_str);
@@ -942,10 +944,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprintf(f, "static inline void %s_parserctx_init(struct %s_parserctx *pctx)\n",
           gen->parsername, gen->parsername);
   fprints(f, "{\n");
-  fprints(f, "  pctx->saved_token = 255;\n");
+  fprints(f, "  pctx->saved_token = 255;\n"); // FIXME 255
   fprints(f, "  pctx->stacksz = 1;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
-  fprints(f, "  pctx->stack[0].cb = 255;\n");
+  fprints(f, "  pctx->stack[0].cb = 255;\n"); // FIXME 255
   fprintf(f, "  %s_init_statemachine(&pctx->rctx);\n", gen->parsername);
   fprints(f, "}\n");
   fprints(f, "\n");
@@ -961,9 +963,9 @@ void parsergen_state_include(struct ParserGen *gen, char *stateinclude)
   gen->state_include_str = strdup(stateinclude);
 }
 
-void parsergen_set_start_state(struct ParserGen *gen, uint8_t start_state)
+void parsergen_set_start_state(struct ParserGen *gen, yale_uint_t start_state)
 {
-  if (gen->start_state != 255 || start_state == 255)
+  if (gen->start_state != YALE_UINT_MAX_LEGAL || start_state == YALE_UINT_MAX_LEGAL)
   {
     abort();
   }
@@ -977,13 +979,13 @@ void *memdup(void *base, size_t sz)
   return result;
 }
 
-uint8_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio)
+yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio)
 {
   if (gen->tokens_finalized)
   {
     abort();
   }
-  if (gen->tokencnt >= 255)
+  if (gen->tokencnt >= YALE_UINT_MAX_LEGAL)
   {
     abort();
   }
@@ -1002,20 +1004,20 @@ void parsergen_finalize_tokens(struct ParserGen *gen)
   gen->tokens_finalized = 1;
 }
 
-uint8_t parsergen_add_nonterminal(struct ParserGen *gen)
+yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen)
 {
   if (!gen->tokens_finalized)
   {
     abort();
   }
-  if (gen->tokencnt + gen->nonterminalcnt >= 255)
+  if (gen->tokencnt + gen->nonterminalcnt >= YALE_UINT_MAX_LEGAL)
   {
     abort();
   }
   return gen->tokencnt + (gen->nonterminalcnt++);
 }
 
-int parsergen_is_terminal(struct ParserGen *gen, uint8_t x)
+int parsergen_is_terminal(struct ParserGen *gen, yale_uint_t x)
 {
   if (!gen->tokens_finalized)
   {
@@ -1037,10 +1039,10 @@ int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs)
   return parsergen_is_terminal(gen, rhs->value);
 }
 
-void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, uint8_t rulecnt, const struct namespaceitem *ns)
+void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_uint_t rulecnt, const struct namespaceitem *ns)
 {
-  uint8_t i;
-  uint8_t j;
+  yale_uint_t i;
+  yale_uint_t j;
   gen->rulecnt = rulecnt;
   for (i = 0; i < rulecnt; i++)
   {
@@ -1049,7 +1051,7 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, uint8_
     {
       if (gen->rules[i].rhs[j].is_action)
       {
-        if (gen->rules[i].rhs[j].value != 255)
+        if (gen->rules[i].rhs[j].value != YALE_UINT_MAX_LEGAL)
         {
           abort();
         }
@@ -1073,9 +1075,9 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, uint8_
   }
 }
 
-void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, uint8_t cbcnt)
+void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t cbcnt)
 {
-  uint8_t i;
+  yale_uint_t i;
   gen->cbcnt = cbcnt;
   for (i = 0; i < cbcnt; i++)
   {

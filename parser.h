@@ -6,68 +6,70 @@
 #include <sys/uio.h>
 
 struct dict {
-  struct bitset bitset[256];
+  struct bitset bitset[YALE_UINT_MAX_LEGAL + 1];
   struct bitset has;
 };
 
 struct REGenEntry {
   struct bitset key;
   struct dfa_node *dfas;
-  uint8_t dfacnt;
+  yale_uint_t dfacnt;
 };
 
 struct REGen {
-  struct REGenEntry entries[255];
+  struct REGenEntry entries[YALE_UINT_MAX_LEGAL];
 };
 
 struct LookupTblEntry {
-  uint8_t val;
-  uint8_t cb;
+  yale_uint_t val;
+  yale_uint_t cb;
 };
 
 struct firstset_entry {
   struct yale_hash_list_node node;
-  uint8_t rhs[256]; // 0.25 KB
-  uint8_t rhssz;
+  yale_uint_t rhs[YALE_UINT_MAX_LEGAL]; // 0.25 KB
+  yale_uint_t rhssz;
   struct dict dict; // 8 KB
 };
 
 struct stackconfig {
   struct yale_hash_list_node node;
-  uint8_t *stack;
-  uint8_t sz;
+  yale_uint_t *stack;
+  yale_uint_t sz;
   size_t i;
 };
 
 struct ParserGen {
-  uint8_t tokencnt;
-  uint8_t nonterminalcnt;
+  yale_uint_t tokencnt;
+  yale_uint_t nonterminalcnt;
   char *parsername;
-  uint8_t start_state;
-  uint8_t epsilon;
+  yale_uint_t start_state;
+  yale_uint_t epsilon;
   char *state_include_str;
   size_t Ficnt;
-  uint8_t pick_thoses_cnt;
-  uint8_t max_stack_size;
-  uint8_t max_bt;
+  yale_uint_t pick_thoses_cnt;
+  yale_uint_t max_stack_size;
+  yale_uint_t max_bt;
   size_t stackconfigcnt;
   char *userareaptr;
   int tokens_finalized;
-  uint8_t rulecnt;
-  uint8_t cbcnt;
+  yale_uint_t rulecnt;
+  yale_uint_t cbcnt;
   struct yale_hash_table Fi_hash;
   struct yale_hash_table stackconfigs_hash;
-  struct dict *Fo[256]; // 2 kB
+  struct dict *Fo[YALE_UINT_MAX_LEGAL + 1]; // 2 kB
   struct REGen re_gen;
-  struct pick_those_struct pick_thoses[255];
-  struct iovec re_by_idx[255];
-  int priorities[255];
-  struct rule rules[255]; // 382 kB
-  struct cb cbs[255];
-  struct nfa_node ns[255]; // 2 MB
-  struct dfa_node ds[255];
-  struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
-  uint8_t pick_those[255][255]; // 64 kB
+  struct pick_those_struct pick_thoses[YALE_UINT_MAX_LEGAL];
+  struct iovec re_by_idx[YALE_UINT_MAX_LEGAL];
+  int priorities[YALE_UINT_MAX_LEGAL];
+  struct rule rules[YALE_UINT_MAX_LEGAL]; // 382 kB
+  struct cb cbs[YALE_UINT_MAX_LEGAL];
+  struct nfa_node ns[YALE_UINT_MAX_LEGAL]; // 2 MB
+  struct dfa_node ds[YALE_UINT_MAX_LEGAL];
+  struct LookupTblEntry T[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
+    // val==YALE_UINT_MAX_LEGAL: invalid
+    // cb==YALE_UINT_MAX_LEGAL: no callback
+  yale_uint_t pick_those[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL]; // 64 kB
   struct firstset_entry *Fi[8192]; // 64 kB
   //struct stackconfig stackconfigs[32768]; // 1.25 MB
   struct stackconfig *stackconfigs[32768]; // 0.25 MB
@@ -83,17 +85,17 @@ void gen_parser(struct ParserGen *gen);
 
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude);
 
-void parsergen_set_start_state(struct ParserGen *gen, uint8_t start_state);
+void parsergen_set_start_state(struct ParserGen *gen, yale_uint_t start_state);
 
-uint8_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio);
+yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio);
 
 void parsergen_finalize_tokens(struct ParserGen *gen);
 
-uint8_t parsergen_add_nonterminal(struct ParserGen *gen);
+yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen);
 
-void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, uint8_t rulecnt, const struct namespaceitem *ns);
+void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_uint_t rulecnt, const struct namespaceitem *ns);
 
-void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, uint8_t cbcnt);
+void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t cbcnt);
 
 ssize_t max_stack_sz(struct ParserGen *gen);
 

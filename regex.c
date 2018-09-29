@@ -61,8 +61,8 @@ static inline void free_re(struct re *re)
   printf("[");
   for (i = 0; i < 256; i++)
   {
-    uint8_t wordoff = i/64;
-    uint8_t bitoff = i%64;
+    yale_uint_t wordoff = i/64;
+    yale_uint_t bitoff = i%64;
     if (re->u.lit.bitmask.bitset[wordoff] & 1ULL<<bitoff)
     {
       printf("%c", (char)(unsigned char)i);
@@ -111,24 +111,24 @@ void nfa_init(struct nfa_node *n, int accepting, int taintid)
   n->taintid = taintid;
 }
 
-void nfa_connect(struct nfa_node *n, char ch, uint8_t node2)
+void nfa_connect(struct nfa_node *n, char ch, yale_uint_t node2)
 {
-  uint8_t wordoff = node2/64;
-  uint8_t bitoff = node2%64;
+  yale_uint_t wordoff = node2/64;
+  yale_uint_t bitoff = node2%64;
   n->d[(unsigned char)ch].bitset[wordoff] |= (1ULL<<bitoff);
 }
 
-void nfa_connect_epsilon(struct nfa_node *n, uint8_t node2)
+void nfa_connect_epsilon(struct nfa_node *n, yale_uint_t node2)
 {
-  uint8_t wordoff = node2/64;
-  uint8_t bitoff = node2%64;
+  yale_uint_t wordoff = node2/64;
+  yale_uint_t bitoff = node2%64;
   n->epsilon.bitset[wordoff] |= (1ULL<<bitoff);
 }
 
-void nfa_connect_default(struct nfa_node *n, uint8_t node2)
+void nfa_connect_default(struct nfa_node *n, yale_uint_t node2)
 {
-  uint8_t wordoff = node2/64;
-  uint8_t bitoff = node2%64;
+  yale_uint_t wordoff = node2/64;
+  yale_uint_t bitoff = node2%64;
   n->defaults.bitset[wordoff] |= (1ULL<<bitoff);
 }
 
@@ -139,15 +139,15 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
   struct bitset closure = nodes;
   struct bitset taintidset = {};
   struct bitset acceptidset = {};
-  uint8_t stack[256];
-  uint8_t nidx;
+  yale_uint_t stack[YALE_UINT_MAX_LEGAL + 1];
+  yale_uint_t nidx;
   size_t stacksz = 0;
   size_t i;
-  uint16_t taintcnt = 0;
-  for (i = 0; i < 256; /*i++*/)
+  size_t taintcnt = 0;
+  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
-    uint8_t wordoff = i/64;
-    uint8_t bitoff = i%64;
+    yale_uint_t wordoff = i/64;
+    yale_uint_t bitoff = i%64;
     if (nodes.bitset[wordoff] & (1ULL<<bitoff))
     {
       if (stacksz >= sizeof(stack)/sizeof(*stack))
@@ -174,10 +174,10 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     struct nfa_node *n;
     nidx = stack[--stacksz];
     n = &ns[nidx];
-    for (i = 0; i < 256; /*i++*/)
+    for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
     {
-      uint8_t wordoff = i/64;
-      uint8_t bitoff = i%64;
+      yale_uint_t wordoff = i/64;
+      yale_uint_t bitoff = i%64;
       if (n->epsilon.bitset[wordoff] & (1ULL<<bitoff))
       {
         if (!(closure.bitset[wordoff] & (1ULL<<bitoff)))
@@ -200,17 +200,17 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
       }
     }
   }
-  for (i = 0; i < 256; /*i++*/)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
-    uint8_t wordoff = i/64;
-    uint8_t bitoff = i%64;
+    yale_uint_t wordoff = i/64;
+    yale_uint_t bitoff = i%64;
     if (closure.bitset[wordoff] & (1ULL<<bitoff))
     {
       struct nfa_node *n = &ns[i];
-      if (n->taintid != 255)
+      if (n->taintid != YALE_UINT_MAX_LEGAL)
       {
-        uint8_t wordoff2 = n->taintid/64;
-        uint8_t bitoff2 = n->taintid%64;
+        yale_uint_t wordoff2 = n->taintid/64;
+        yale_uint_t bitoff2 = n->taintid%64;
         if (!(taintidset.bitset[wordoff2] & (1ULL<<bitoff2)))
         {
           taintidset.bitset[wordoff2] |= (1ULL<<bitoff2);
@@ -239,18 +239,20 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
 void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acceptidset)
 {
 #if 0
-  uint16_t i;
+#else
+  size_t i;
 #endif
   memset(n, 0, sizeof(*n));
-  memset(n->d, 0xff, 256*sizeof(*n->d));
 #if 0
+  memset(n->d, 0xff, 256*sizeof(*n->d)); // Doesn't work if YALE_UINT_MAX_LEGAL not all ones
+#else
   for (i = 0; i < 256; i++)
   {
-    n->d[i] = 255;
+    n->d[i] = YALE_UINT_MAX_LEGAL;
   }
 #endif
-  n->default_tr = 255;
-  n->acceptid = 255;
+  n->default_tr = YALE_UINT_MAX_LEGAL;
+  n->acceptid = YALE_UINT_MAX_LEGAL;
   if (accepting && bitset_empty(acceptidset))
   {
     printf("Accepting yet acceptidset empty\n");
@@ -268,9 +270,9 @@ void dfa_init_empty(struct dfa_node *n)
   dfa_init(n, 0, 0, &acceptidset);
 }
 
-void dfa_connect(struct dfa_node *n, char ch, uint8_t node2)
+void dfa_connect(struct dfa_node *n, char ch, yale_uint_t node2)
 {
-  if (n->d[(unsigned char)ch] != 255 || node2 == 255)
+  if (n->d[(unsigned char)ch] != YALE_UINT_MAX_LEGAL || node2 == YALE_UINT_MAX_LEGAL)
   {
     printf("node2 %u\n", (unsigned)node2);
     printf("already connected %u\n", (unsigned)n->d[(unsigned char)ch]);
@@ -279,10 +281,10 @@ void dfa_connect(struct dfa_node *n, char ch, uint8_t node2)
   n->d[(unsigned char)ch] = node2;
 }
 
-void dfa_connect_default(struct dfa_node *n, uint8_t node2)
+void dfa_connect_default(struct dfa_node *n, yale_uint_t node2)
 {
   printf("connecting default\n");
-  if (n->default_tr != 255 || node2 == 255)
+  if (n->default_tr != YALE_UINT_MAX_LEGAL || node2 == YALE_UINT_MAX_LEGAL)
   {
     printf("default conflict\n");
     printf("node2 %u\n", (unsigned)node2);
@@ -293,7 +295,7 @@ void dfa_connect_default(struct dfa_node *n, uint8_t node2)
 }
 
 void
-check_recurse_acceptid_is(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
+check_recurse_acceptid_is(struct dfa_node *ds, yale_uint_t state, yale_uint_t acceptid)
 {
   struct bitset tovisit = {};
   struct bitset visited = {};
@@ -301,7 +303,7 @@ check_recurse_acceptid_is(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
   set_bitset(&tovisit, state);
   while (!bitset_empty(&tovisit))
   {
-    uint8_t queued = pick_rm_first(&tovisit);
+    yale_uint_t queued = pick_rm_first(&tovisit);
     struct dfa_node *node = &ds[queued];
     if (has_bitset(&visited, queued))
     {
@@ -314,7 +316,7 @@ check_recurse_acceptid_is(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
     }
     for (i = 0; i < 256; i++)
     {
-      if (node->d[i] != 255)
+      if (node->d[i] != YALE_UINT_MAX_LEGAL)
       {
         if (!has_bitset(&visited, node->d[i]))
         {
@@ -322,7 +324,7 @@ check_recurse_acceptid_is(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
         }
       }
     }
-    if (node->default_tr != 255)
+    if (node->default_tr != YALE_UINT_MAX_LEGAL)
     {
       if (!has_bitset(&visited, node->default_tr))
       {
@@ -333,7 +335,7 @@ check_recurse_acceptid_is(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
 }
 
 void
-check_recurse_acceptid_is_not(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
+check_recurse_acceptid_is_not(struct dfa_node *ds, yale_uint_t state, yale_uint_t acceptid)
 {
   struct bitset tovisit = {};
   struct bitset visited = {};
@@ -341,7 +343,7 @@ check_recurse_acceptid_is_not(struct dfa_node *ds, uint8_t state, uint8_t accept
   set_bitset(&tovisit, state);
   while (!bitset_empty(&tovisit))
   {
-    uint8_t queued = pick_rm_first(&tovisit);
+    yale_uint_t queued = pick_rm_first(&tovisit);
     struct dfa_node *node = &ds[queued];
     if (has_bitset(&visited, queued))
     {
@@ -354,7 +356,7 @@ check_recurse_acceptid_is_not(struct dfa_node *ds, uint8_t state, uint8_t accept
     }
     for (i = 0; i < 256; i++)
     {
-      if (node->d[i] != 255)
+      if (node->d[i] != YALE_UINT_MAX_LEGAL)
       {
         if (!has_bitset(&visited, node->d[i]))
         {
@@ -362,7 +364,7 @@ check_recurse_acceptid_is_not(struct dfa_node *ds, uint8_t state, uint8_t accept
         }
       }
     }
-    if (node->default_tr != 255)
+    if (node->default_tr != YALE_UINT_MAX_LEGAL)
     {
       if (!has_bitset(&visited, node->default_tr))
       {
@@ -372,7 +374,7 @@ check_recurse_acceptid_is_not(struct dfa_node *ds, uint8_t state, uint8_t accept
   }
 }
 
-void check_cb_first(struct dfa_node *ds, uint8_t acceptid, uint8_t state)
+void check_cb_first(struct dfa_node *ds, yale_uint_t acceptid, yale_uint_t state)
 {
   if (ds[state].accepting && ds[state].acceptid == acceptid)
   {
@@ -384,24 +386,24 @@ void check_cb_first(struct dfa_node *ds, uint8_t acceptid, uint8_t state)
   }
 }
 
-void check_cb(struct dfa_node *ds, uint8_t state, uint8_t acceptid)
+void check_cb(struct dfa_node *ds, yale_uint_t state, yale_uint_t acceptid)
 {
   size_t i;
   for (i = 0; i < 256; i++)
   {
-    if (ds[state].d[i] != 255)
+    if (ds[state].d[i] != YALE_UINT_MAX_LEGAL)
     {
       check_cb_first(ds, acceptid, ds[state].d[i]);
     }
   }
-  if (ds[state].default_tr != 255)
+  if (ds[state].default_tr != YALE_UINT_MAX_LEGAL)
   {
     check_cb_first(ds, acceptid, ds[state].default_tr);
   }
 }
 
 // FIXME this algorithm requires thorough review
-ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
+ssize_t state_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound)
 {
   struct bitset tovisit = {};
   struct bitset visited = {};
@@ -411,7 +413,7 @@ ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
   set_bitset(&tovisit, state);
   while (!bitset_empty(&tovisit))
   {
-    uint8_t queued = pick_rm_first(&tovisit);
+    yale_uint_t queued = pick_rm_first(&tovisit);
     struct dfa_node *node = &ds[queued];
     //printf("queued %d\n", (int)queued);
     if (node->algo_tmp > bound)
@@ -425,7 +427,7 @@ ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
     set_bitset(&visited, queued);
     for (i = 0; i < 256; i++)
     {
-      if (node->d[i] != 255)
+      if (node->d[i] != YALE_UINT_MAX_LEGAL)
       {
         if (ds[node->d[i]].accepting)
         {
@@ -439,7 +441,7 @@ ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
         }
       }
     }
-    if (node->default_tr != 255)
+    if (node->default_tr != YALE_UINT_MAX_LEGAL)
     {
       if (!has_bitset(&visited, node->default_tr) ||
           ds[node->default_tr].algo_tmp < node->algo_tmp + 1)
@@ -452,7 +454,7 @@ ssize_t state_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
   return max_backtrack;
 }
 
-void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state, int *priorities)
+void __attribute__((noinline)) set_accepting(struct dfa_node *ds, yale_uint_t state, int *priorities)
 {
   struct bitset tovisit = {};
   struct bitset visited = {};
@@ -460,12 +462,12 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state,
   int seen = 0;
   int priority;
   size_t count_thisprio = 0;
-  uint8_t acceptid = 0;
-  uint8_t wordoff, bitoff;
+  yale_uint_t acceptid = 0;
+  yale_uint_t wordoff, bitoff;
   set_bitset(&tovisit, state);
   while (!bitset_empty(&tovisit))
   {
-    uint8_t queued = pick_rm_first(&tovisit);
+    yale_uint_t queued = pick_rm_first(&tovisit);
     //printf("QUEUED %d\n", (int)queued);
     if (has_bitset(&visited, queued))
     {
@@ -476,7 +478,7 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state,
     {
       seen = 0;
       //printf("Setting seen to 0\n");
-      for (i = 0; i < 256; /*i++*/)
+      for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
       {
         wordoff = i/64;
         bitoff = i%64;
@@ -527,7 +529,7 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state,
     }
     for (i = 0; i < 256; i++)
     {
-      if (ds[queued].d[i] != 255)
+      if (ds[queued].d[i] != YALE_UINT_MAX_LEGAL)
       {
         if (!has_bitset(&visited, ds[queued].d[i]))
         {
@@ -535,7 +537,7 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state,
         }
       }
     }
-    if (ds[queued].default_tr != 255)
+    if (ds[queued].default_tr != YALE_UINT_MAX_LEGAL)
     {
       if (!has_bitset(&visited, ds[queued].default_tr))
       {
@@ -545,7 +547,7 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, uint8_t state,
   }
 }
 
-ssize_t maximal_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
+ssize_t maximal_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound)
 {
   struct bitset tovisit = {};
   struct bitset visited = {};
@@ -555,7 +557,7 @@ ssize_t maximal_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
   set_bitset(&tovisit, state);
   while (!bitset_empty(&tovisit))
   {
-    uint8_t queued = pick_rm_first(&tovisit);
+    yale_uint_t queued = pick_rm_first(&tovisit);
     //printf("QUEUED %d\n", (int)queued);
     if (has_bitset(&visited, queued))
     {
@@ -576,7 +578,7 @@ ssize_t maximal_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
     }
     for (i = 0; i < 256; i++)
     {
-      if (ds[queued].d[i] != 255)
+      if (ds[queued].d[i] != YALE_UINT_MAX_LEGAL)
       {
         if (!has_bitset(&visited, ds[queued].d[i]))
         {
@@ -584,7 +586,7 @@ ssize_t maximal_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
         }
       }
     }
-    if (ds[queued].default_tr != 255)
+    if (ds[queued].default_tr != YALE_UINT_MAX_LEGAL)
     {
       if (!has_bitset(&visited, ds[queued].default_tr))
       {
@@ -596,10 +598,10 @@ ssize_t maximal_backtrack(struct dfa_node *ds, uint8_t state, size_t bound)
 }
 
 
-void dfaviz(struct dfa_node *ds, uint8_t cnt)
+void dfaviz(struct dfa_node *ds, yale_uint_t cnt)
 {
-  uint8_t i;
-  uint16_t j;
+  yale_uint_t i;
+  size_t j;
   printf("digraph fsm {\n");
   for (i = 0; i < cnt; i++)
   {
@@ -613,7 +615,7 @@ void dfaviz(struct dfa_node *ds, uint8_t cnt)
   {
     for (j = 0; j < 256; j++)
     {
-      if (ds[i].d[j] != 255)
+      if (ds[i].d[j] != YALE_UINT_MAX_LEGAL)
       {
         printf("n%d -> n%d [label=\"%c\"];\n", i, ds[i].d[j], (unsigned char)j);
       }
@@ -622,11 +624,11 @@ void dfaviz(struct dfa_node *ds, uint8_t cnt)
   printf("}\n");
 }
 
-void nfaviz(struct nfa_node *ns, uint8_t cnt)
+void nfaviz(struct nfa_node *ns, yale_uint_t cnt)
 {
-  uint8_t i;
-  uint16_t j;
-  uint16_t k;
+  yale_uint_t i;
+  size_t j;
+  size_t k;
   printf("digraph fsm {\n");
   for (i = 0; i < cnt; i++)
   {
@@ -639,13 +641,13 @@ void nfaviz(struct nfa_node *ns, uint8_t cnt)
     for (j = 0; j < 256; j++)
     {
       struct bitset *bs = &ns[i].d[j];
-      for (k = 0; k < 256; k++)
+      for (k = 0; k < YALE_UINT_MAX_LEGAL + 1; k++)
       {
-        uint8_t wordoff = k/64;
-        uint8_t bitoff = k%64;
+        yale_uint_t wordoff = k/64;
+        yale_uint_t bitoff = k%64;
         if (bs->bitset[wordoff] & (1ULL<<bitoff))
         {
-          printf("n%d -> n%d [label=\"%c\"];\n", i, k, (unsigned char)j);
+          printf("n%zu -> n%zu [label=\"%c\"];\n", (size_t)i, k, (unsigned char)j);
         }
       }
     }
@@ -653,7 +655,7 @@ void nfaviz(struct nfa_node *ns, uint8_t cnt)
   printf("}\n");
 }
 
-uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
+yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
 {
   struct bitset initial = {};
   struct bitset dfabegin = {};
@@ -661,20 +663,20 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
   struct bitset acceptidset = {};
   struct bitset defaults = {};
   const struct bitset defaults_empty = {};
-  uint8_t wordoff = begin/64;
-  uint8_t bitoff = begin%64;
-  uint8_t curdfanode = 0;
-  uint8_t dfanodeid, dfanodeid2;
+  yale_uint_t wordoff = begin/64;
+  yale_uint_t bitoff = begin%64;
+  yale_uint_t curdfanode = 0;
+  yale_uint_t dfanodeid, dfanodeid2;
   int accepting = 0;
-  struct bitset queue[256];
+  struct bitset queue[YALE_UINT_MAX_LEGAL + 1];
   size_t queuesz;
   struct bitset_hash d = {};
-  uint16_t i, j;
+  size_t i, j;
 
   initial.bitset[wordoff] |= (1ULL<<bitoff);
 
   epsilonclosure(ns, initial, &dfabegin, &tainted, &acceptidset);
-  for (i = 0; i < 256; /*i++*/)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
     wordoff = i/64;
     bitoff = i%64;
@@ -712,7 +714,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
     struct bitset defaultsec;
     //printf("Iter\n");
     defaults = defaults_empty;
-    for (i = 0; i < 256; /*i++*/) // for nn in nns
+    for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/) // for nn in nns
     {
       wordoff = i/64;
       bitoff = i%64;
@@ -738,7 +740,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
     epsilonclosure(ns, defaults, &defaultsec, &tainted, &acceptidset);
     if (!bitset_empty(&defaultsec))
     {
-      dfanodeid = 255;
+      dfanodeid = YALE_UINT_MAX_LEGAL;
       for (i = 0; i < d.tblsz; i++)
       {
         if (bitset_equal(&d.tbl[i].key, &defaultsec))
@@ -747,10 +749,10 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
           break;
         }
       }
-      if (dfanodeid == 255)
+      if (dfanodeid == YALE_UINT_MAX_LEGAL)
       {
         accepting = 0;
-        for (i = 0; i < 256; /*i++*/)
+        for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
         {
           wordoff = i/64;
           bitoff = i%64;
@@ -771,7 +773,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
             i++;
           }
         }
-        if (curdfanode >= 255)
+        if (curdfanode >= YALE_UINT_MAX_LEGAL)
         {
           abort();
         }
@@ -786,7 +788,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
         queue[queuesz++] = defaultsec;
       }
 
-      dfanodeid2 = 255;
+      dfanodeid2 = YALE_UINT_MAX_LEGAL;
       for (i = 0; i < d.tblsz; i++)
       {
         if (bitset_equal(&d.tbl[i].key, &nns))
@@ -795,7 +797,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
           break;
         }
       }
-      if (dfanodeid2 == 255)
+      if (dfanodeid2 == YALE_UINT_MAX_LEGAL)
       {
         abort(); // FIXME fails
       }
@@ -812,7 +814,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
       bitset_update(&d2[i], &defaults);
       epsilonclosure(ns, d2[i], &ec, &tainted, &acceptidset);
 
-      dfanodeid = 255;
+      dfanodeid = YALE_UINT_MAX_LEGAL;
       for (j = 0; j < d.tblsz; j++)
       {
         if (bitset_equal(&d.tbl[j].key, &ec))
@@ -821,10 +823,10 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
           break;
         }
       }
-      if (dfanodeid == 255)
+      if (dfanodeid == YALE_UINT_MAX_LEGAL)
       {
         accepting = 0;
-        for (j = 0; j < 256; /*j++*/)
+        for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
         {
           wordoff = j/64;
           bitoff = j%64;
@@ -845,7 +847,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
             j++;
           }
         }
-        if (curdfanode >= 255)
+        if (curdfanode >= YALE_UINT_MAX_LEGAL)
         {
           abort();
         }
@@ -860,7 +862,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
         queue[queuesz++] = ec;
       }
 
-      dfanodeid2 = 255;
+      dfanodeid2 = YALE_UINT_MAX_LEGAL;
       for (j = 0; j < d.tblsz; j++)
       {
         if (bitset_equal(&d.tbl[j].key, &nns))
@@ -869,7 +871,7 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
           break;
         }
       }
-      if (dfanodeid2 == 255)
+      if (dfanodeid2 == YALE_UINT_MAX_LEGAL)
       {
         abort();
       }
@@ -880,12 +882,12 @@ uint8_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, uint8_t begin)
   {
     for (j = 0; j < 256; j++)
     {
-      if (ds[i].d[j] != 255)
+      if (ds[i].d[j] != YALE_UINT_MAX_LEGAL)
       {
         break;
       }
     }
-    if (j == 256 && ds[i].default_tr == 255)
+    if (j == 256 && ds[i].default_tr == YALE_UINT_MAX_LEGAL)
     {
       ds[i].final = 1;
     }
@@ -897,8 +899,8 @@ struct re *parse_re(const char *re, size_t resz, size_t *remainderstart);
 
 static inline void set_char(uint64_t bitmask[4], unsigned char ch)
 {
-  uint8_t wordoff = ch/64;
-  uint8_t bitoff = ch%64;
+  yale_uint_t wordoff = ch/64;
+  yale_uint_t bitoff = ch%64;
   bitmask[wordoff] |= 1ULL<<bitoff;
 }
 
@@ -1072,8 +1074,8 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
   printf("[");
   for (i = 0; i < 256; i++)
   {
-    uint8_t wordoff = i/64;
-    uint8_t bitoff = i%64;
+    yale_uint_t wordoff = i/64;
+    yale_uint_t bitoff = i%64;
     if (bitmask[wordoff] & 1ULL<<bitoff)
     {
       printf("%c", (char)(unsigned char)i);
@@ -1124,8 +1126,8 @@ struct re *parse_atom(const char *re, size_t resz, size_t *remainderstart)
   else
   {
     unsigned char uch = re[0];
-    uint8_t wordoff = uch/64;
-    uint8_t bitoff = uch%64;
+    yale_uint_t wordoff = uch/64;
+    yale_uint_t bitoff = uch%64;
     result = alloc_re();
     result->type = LITERALS;
     memset(&result->u.lit, 0, sizeof(result->u.lit));
@@ -1228,12 +1230,12 @@ struct re *parse_re(const char *re, size_t resz, size_t *remainderstart)
   }
 }
 
-struct re *parse_res(struct iovec *regexps, uint8_t *pick_those, size_t resz)
+struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz)
 {
   struct re **res;
   struct re *result;
   size_t i;
-  uint8_t *pick_those2 = malloc(sizeof(*pick_those2)*resz);
+  yale_uint_t *pick_those2 = malloc(sizeof(*pick_those2)*resz);
   memcpy(pick_those2, pick_those, sizeof(*pick_those2)*resz);
   res = malloc(sizeof(*res)*resz);
   result = alloc_re();
@@ -1255,16 +1257,16 @@ struct re *parse_res(struct iovec *regexps, uint8_t *pick_those, size_t resz)
 }
 
 void gennfa(struct re *regexp,
-            struct nfa_node *ns, uint8_t *ncnt,
-            uint8_t begin, uint8_t end,
-            uint8_t taintid)
+            struct nfa_node *ns, yale_uint_t *ncnt,
+            yale_uint_t begin, yale_uint_t end,
+            yale_uint_t taintid)
 {
   switch (regexp->type)
   {
     case STAR:
     {
-      uint8_t begin1 = (*ncnt)++;
-      uint8_t end1 = (*ncnt)++;
+      yale_uint_t begin1 = (*ncnt)++;
+      yale_uint_t end1 = (*ncnt)++;
       nfa_init(&ns[begin1], 0, taintid);
       nfa_init(&ns[end1], 0, taintid);
       gennfa(regexp->u.star.re, ns, ncnt, begin1, end1, taintid);
@@ -1283,9 +1285,9 @@ void gennfa(struct re *regexp,
       size_t i;
       for (i = 0; i < 256; i++)
       {
-        uint8_t wordoff = i/64;
-        uint8_t bitoff = i%64;
-        if (regexp->u.lit.bitmask.bitset[wordoff] & 1ULL<<bitoff)
+        yale_uint_t wordoff = i/64;
+        yale_uint_t bitoff = i%64;
+        if (regexp->u.lit.bitmask.bitset[wordoff] & (1ULL<<bitoff))
         {
           nfa_connect(&ns[begin], (unsigned char)i, end);
         }
@@ -1309,7 +1311,7 @@ void gennfa(struct re *regexp,
     }
     case CONCAT:
     {
-      uint8_t middle = (*ncnt)++;
+      yale_uint_t middle = (*ncnt)++;
       nfa_init(&ns[middle], 0, taintid);
       gennfa(regexp->u.cat.re1, ns, ncnt, begin, middle, taintid);
       gennfa(regexp->u.cat.re2, ns, ncnt, middle, end, taintid);
@@ -1319,31 +1321,31 @@ void gennfa(struct re *regexp,
 }
 
 void gennfa_main(struct re *regexp,
-                 struct nfa_node *ns, uint8_t *ncnt,
-                 uint8_t taintid)
+                 struct nfa_node *ns, yale_uint_t *ncnt,
+                 yale_uint_t taintid)
 {
-  uint8_t begin = (*ncnt)++;
-  uint8_t end = (*ncnt)++;
-  nfa_init(&ns[begin], 0, 255);
-  nfa_init(&ns[end], 1, 255);
+  yale_uint_t begin = (*ncnt)++;
+  yale_uint_t end = (*ncnt)++;
+  nfa_init(&ns[begin], 0, YALE_UINT_MAX_LEGAL);
+  nfa_init(&ns[end], 1, YALE_UINT_MAX_LEGAL);
   gennfa(regexp, ns, ncnt, begin, end, taintid);
 }
 
 void gennfa_alternmulti(struct re *regexp,
-                        struct nfa_node *ns, uint8_t *ncnt)
+                        struct nfa_node *ns, yale_uint_t *ncnt)
 {
-  uint8_t begin = (*ncnt)++;
+  yale_uint_t begin = (*ncnt)++;
   size_t i;
-  nfa_init(&ns[begin], 0, 255);
+  nfa_init(&ns[begin], 0, YALE_UINT_MAX_LEGAL);
   for (i = 0; i < regexp->u.altmulti.resz; i++)
   {
-    uint8_t end = (*ncnt)++;
+    yale_uint_t end = (*ncnt)++;
     nfa_init(&ns[end], 1, regexp->u.altmulti.pick_those[i]);
     gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, regexp->u.altmulti.pick_those[i]);
   }
 }
 
-uint32_t transition_hash(const uint8_t *transitions)
+uint32_t transition_hash(const yale_uint_t *transitions)
 {
   return yalemurmur_buf(0x12345678U, transitions, 256*sizeof(*transitions));
 }
@@ -1354,7 +1356,7 @@ uint32_t transition_hash_fn(struct yale_hash_list_node *node, void *ud)
 }
 
 size_t
-get_transid(const uint8_t *transitions, struct transitionbufs *bufs,
+get_transid(const yale_uint_t *transitions, struct transitionbufs *bufs,
             void *(*alloc)(void*, size_t), void *alloc_ud)
 {
   uint32_t hashval;
@@ -1383,14 +1385,14 @@ get_transid(const uint8_t *transitions, struct transitionbufs *bufs,
 }
 
 void
-perf_trans(uint8_t *transitions, struct transitionbufs *bufs,
+perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
            void *(*alloc)(void*, size_t), void *alloc_ud)
 {
   size_t i;
   memset(bufs, 0, sizeof(*bufs));
   for (i = 0; i < MAX_TRANS; i++)
   {
-    transitions[0] = i&256;
+    transitions[0] = i&0xFF;
     transitions[1] = i>>8;
     get_transid(transitions, bufs, alloc, alloc_ud);
   }
@@ -1400,10 +1402,10 @@ void
 pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities)
 {
-  uint8_t ncnt;
+  yale_uint_t ncnt;
   struct re *re;
   size_t i;
-  for (i = 0; i < 255; i++)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
   {
     dfa_init_empty(&dsglobal[i]);
   }
@@ -1425,7 +1427,7 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
   for (i = 0; i < cnt; i++)
   {
     struct dfa_node *ds = pick_thoses[i].ds;
-    uint8_t dscnt = pick_thoses[i].dscnt;
+    yale_uint_t dscnt = pick_thoses[i].dscnt;
     for (j = 0; j < dscnt; j++)
     {
       ds[j].transitions_id = get_transid(ds[j].d, bufs, alloc, alloc_ud);
@@ -1453,24 +1455,24 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt)
   fprintf(f, "struct %s_parserctx;", parsername);
   fprints(f, "\n");
   fprintf(f, "struct %s_rectx {\n", parsername);
-  fprints(f, "  uint8_t state; // 0 is initial state\n");
-  fprints(f, "  uint8_t last_accept; // 255 means never accepted\n");
-  fprints(f, "  uint8_t backtrackstart;\n");
-  fprints(f, "  uint8_t backtrackend;\n");
-  fprintf(f, "  uint8_t backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper);
+  fprints(f, "  uint8_t state; // 0 is initial state\n"); // FIXME uint8_t
+  fprints(f, "  uint8_t last_accept; // 255 means never accepted\n"); // FIXME uint8_t, 255
+  fprints(f, "  uint8_t backtrackstart;\n"); // FIXME uint8_t
+  fprints(f, "  uint8_t backtrackend;\n"); // FIXME uint8_t
+  fprintf(f, "  uint8_t backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper); // FIXME uint8_t
   fprints(f, "};\n");
   fprints(f, "\n");
   fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);
   fprints(f, "{\n");
   fprints(f, "  ctx->state = 0;\n");
-  fprints(f, "  ctx->last_accept = 255;\n");
+  fprints(f, "  ctx->last_accept = 255;\n"); // FIXME 255
   fprints(f, "  ctx->backtrackstart = 0;\n");
   fprints(f, "  ctx->backtrackend = 0;\n");
   fprints(f, "}\n");
   fprints(f, "\n");
   fprints(f, "ssize_t\n");
-  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1);//, void *baton);\n", parsername, parsername, parsername);
+  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1);//, void *baton);\n", parsername, parsername, parsername); // FIXME uint8_t
   fprints(f, "\n");
   free(parserupper);
 }
@@ -1481,15 +1483,15 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
   size_t i;
   size_t j;
   fprints(f, "#ifdef SMALL_CODE\n");
-  fprintf(f, "const uint8_t %s_transitiontbl[][256] = {\n", parsername);
+  fprintf(f, "const uint8_t %s_transitiontbl[][256] = {\n", parsername); // FIXME uint8_t
   for (i = 0; i < bufs->cnt; i++)
   {
     fprintf(f, "{");
     for (j = 0; j < 256; j++)
     {
-      if (bufs->all[i]->transitions[j] == 255)
+      if (bufs->all[i]->transitions[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprints(f, "255, ");
+        fprints(f, "255, "); // FIXME 255
       }
       else
       {
@@ -1547,9 +1549,9 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
     fprints(f, ".transitions = {");
     for (j = 0; j < 256; j++)
     {
-      if (ds->d[j] == 255)
+      if (ds->d[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprints(f, "255, ");
+        fprints(f, "255, "); // FIXME 255
       }
       else
       {
@@ -1580,16 +1582,16 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "}\n");
   fprints(f, "\n");
   fprints(f, "ssize_t\n");
-  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1)//, void *baton)\n", parsername, parsername, parsername);
+  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, uint8_t *state, void(*cbtbl[])(const char*, size_t, struct %s_parserctx*), const uint8_t *cbs, uint8_t cb1)//, void *baton)\n", parsername, parsername, parsername); // FIXME uint8_t
   fprints(f, "{\n");
   fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
   fprints(f, "  const struct state *st = NULL;\n");
   fprints(f, "  size_t i;\n");
-  fprints(f, "  uint8_t newstate;\n");
+  fprints(f, "  uint8_t newstate;\n"); // FIXME uint8_t
   fprintf(f, "  struct %s_parserctx *pctx = CONTAINER_OF(ctx, struct %s_parserctx, rctx);\n", parsername, parsername);
-  fprints(f, "  if (ctx->state == 255)\n");
+  fprints(f, "  if (ctx->state == 255)\n"); // FIXME 255
   fprints(f, "  {\n");
-  fprints(f, "    *state = 255;\n");
+  fprints(f, "    *state = 255;\n"); // FIXME 255
   fprints(f, "    return -EINVAL;\n");
   fprints(f, "  }\n");
   fprints(f, "  //printf(\"Called: %s\\n\", buf);\n");
@@ -1599,15 +1601,15 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "    {\n");
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];\n");
-  fprints(f, "      if (unlikely(ctx->state == 255))\n");
+  fprints(f, "      if (unlikely(ctx->state == 255))\n"); // FIXME 255
   fprints(f, "      {\n");
-  fprints(f, "        if (ctx->last_accept == 255)\n");
+  fprints(f, "        if (ctx->last_accept == 255)\n"); // FIXME 255
   fprints(f, "        {\n");
-  fprints(f, "          *state = 255;\n");
+  fprints(f, "          *state = 255;\n"); // FIXME 255
   fprints(f, "          return -EINVAL;\n");
   fprints(f, "        }\n");
   fprints(f, "        ctx->state = ctx->last_accept;\n");
-  fprints(f, "        ctx->last_accept = 255;\n");
+  fprints(f, "        ctx->last_accept = 255;\n"); // FIXME 255
   fprints(f, "        st = &stbl[ctx->state];\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
@@ -1625,7 +1627,7 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "        {\n");
   fprints(f, "          *state = st->acceptid;\n");
   fprints(f, "          ctx->state = 0;\n");
-  fprints(f, "          ctx->last_accept = 255;\n");
+  fprints(f, "          ctx->last_accept = 255;\n"); // FIXME 255
   fprints(f, "          return 0;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
@@ -1693,24 +1695,24 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "      ctx->state = newstate;\n");
   fprints(f, "    }\n");
   fprints(f, "    //printf(\"New state: %d\\n\", ctx->state);\n");
-  fprints(f, "    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster\n");
+  fprints(f, "    if (unlikely(newstate == 255)) // use newstate here, not ctx->state, faster\n"); // FIXME 255
   fprints(f, "    {\n");
-  fprints(f, "      if (ctx->last_accept == 255)\n");
+  fprints(f, "      if (ctx->last_accept == 255)\n"); // FIXME 255
   fprints(f, "      {\n");
-  fprints(f, "        *state = 255;\n");
+  fprints(f, "        *state = 255;\n"); // FIXME 255
   fprints(f, "        //printf(\"Error\\n\");\n");
   fprints(f, "        return -EINVAL;\n");
   fprints(f, "      }\n");
   fprints(f, "      ctx->state = ctx->last_accept;\n");
-  fprints(f, "      ctx->last_accept = 255;\n");
+  fprints(f, "      ctx->last_accept = 255;\n"); // FIXME 255
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      *state = st->acceptid;\n");
   fprints(f, "      ctx->state = 0;\n");
-  fprints(f, "      if (cbs && st->accepting && cbs[st->acceptid] != 255)\n");
+  fprints(f, "      if (cbs && st->accepting && cbs[st->acceptid] != 255)\n"); // FIXME 255
   fprints(f, "      {\n");
   fprints(f, "        cbtbl[cbs[st->acceptid]](buf, i, pctx);\n");
   fprints(f, "      }\n");
-  fprints(f, "      if (cb1 != 255 && st->accepting)\n");
+  fprints(f, "      if (cb1 != 255 && st->accepting)\n"); // FIXME 255
   fprints(f, "      {\n");
   fprints(f, "        cbtbl[cb1](buf, i, pctx);\n");
   fprints(f, "      }\n");
@@ -1723,12 +1725,12 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "      {\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
-  fprints(f, "        ctx->last_accept = 255;\n");
-  fprints(f, "        if (cbs && st->accepting && cbs[st->acceptid] != 255)\n");
+  fprints(f, "        ctx->last_accept = 255;\n"); // FIXME 255
+  fprints(f, "        if (cbs && st->accepting && cbs[st->acceptid] != 255)\n"); // FIXME 255
   fprints(f, "        {\n");
   fprints(f, "          cbtbl[cbs[st->acceptid]](buf, i + 1, pctx);\n");
   fprints(f, "        }\n");
-  fprints(f, "        if (cb1 != 255 && st->accepting)\n");
+  fprints(f, "        if (cb1 != 255 && st->accepting)\n"); // FIXME 255
   fprints(f, "        {\n");
   fprints(f, "          cbtbl[cb1](buf, i + 1, pctx);\n");
   fprints(f, "        }\n");
@@ -1741,7 +1743,7 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "    }\n");
   fprints(f, "    else\n");
   fprints(f, "    {\n");
-  fprints(f, "      if (ctx->last_accept != 255)\n");
+  fprints(f, "      if (ctx->last_accept != 255)\n"); // FIXME 255
   fprints(f, "      {\n");
   fprints(f, "        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?\n");
   fprintf(f, "        if (ctx->backtrackstart >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
@@ -1755,15 +1757,15 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "  }\n");
-  fprints(f, "  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)\n");
+  fprints(f, "  if (st && cbs && st->accepting && cbs[st->acceptid] != 255)\n"); // FIXME 255
   fprints(f, "  {\n");
   fprints(f, "    cbtbl[cbs[st->acceptid]](buf, sz, pctx);\n");
   fprints(f, "  }\n");
-  fprints(f, "  if (st && cb1 != 255 && st->accepting)\n");
+  fprints(f, "  if (st && cb1 != 255 && st->accepting)\n"); // FIXME 255
   fprints(f, "  {\n");
   fprints(f, "    cbtbl[cb1](buf, sz, pctx);\n");
   fprints(f, "  }\n");
-  fprints(f, "  *state = 255;\n");
+  fprints(f, "  *state = 255;\n"); // FIXME 255
   fprints(f, "  return -EAGAIN; // Not yet\n");
   fprints(f, "}\n");
 

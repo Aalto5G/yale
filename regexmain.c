@@ -8,8 +8,8 @@
 #include <ctype.h>
 #include "regex.h"
 
-struct nfa_node ns[255];
-struct dfa_node ds[255];
+struct nfa_node ns[YALE_UINT_MAX_LEGAL];
+struct dfa_node ds[YALE_UINT_MAX_LEGAL];
 struct transitionbufs bufs;
 
 void *malloc_fn(void *ud, size_t sz)
@@ -22,11 +22,11 @@ int main(int argc, char **argv)
   size_t i;
 #if 0
   size_t j, k;
-  uint8_t dscnt;
-  uint8_t ncnt;
+  yale_uint_t dscnt;
+  yale_uint_t ncnt;
   struct re *re;
   const char *res[3] = {"ab","abcd","abce"};
-  uint8_t pick_those[3] = {0,1,2};
+  yale_uint_t pick_those[3] = {0,1,2};
 #endif
   const char re0[] = "[Hh][Oo][Ss][Tt]";
   const char re1[] = "\r?\n";
@@ -72,18 +72,18 @@ int main(int argc, char **argv)
     0,
     0,
   };
-  uint8_t pick_those0[] = {0};
-  uint8_t pick_those1[] = {0,1,5};
-  uint8_t pick_those2[] = {0,5};
-  uint8_t pick_those3[] = {1};
-  uint8_t pick_those4[] = {1,8};
-  uint8_t pick_those5[] = {2};
-  uint8_t pick_those6[] = {3};
-  uint8_t pick_those7[] = {4};
-  uint8_t pick_those8[] = {5};
-  uint8_t pick_those9[] = {6};
-  uint8_t pick_those10[] = {7};
-  uint8_t pick_those11[] = {8};
+  yale_uint_t pick_those0[] = {0};
+  yale_uint_t pick_those1[] = {0,1,5};
+  yale_uint_t pick_those2[] = {0,5};
+  yale_uint_t pick_those3[] = {1};
+  yale_uint_t pick_those4[] = {1,8};
+  yale_uint_t pick_those5[] = {2};
+  yale_uint_t pick_those6[] = {3};
+  yale_uint_t pick_those7[] = {4};
+  yale_uint_t pick_those8[] = {5};
+  yale_uint_t pick_those9[] = {6};
+  yale_uint_t pick_those10[] = {7};
+  yale_uint_t pick_those11[] = {8};
   struct pick_those_struct pick_thoses[] = {
     {.pick_those=pick_those0, .len=sizeof(pick_those0)/sizeof(*pick_those0)},
     {.pick_those=pick_those1, .len=sizeof(pick_those1)/sizeof(*pick_those1)},
@@ -101,16 +101,16 @@ int main(int argc, char **argv)
   ssize_t maxbt = 0;
   FILE *f;
 
-  //uint8_t transitions[256] = {};
+  //yale_uint_t transitions[256] = {};
   //perf_trans(transitions, &bufs);
 
 #if 0
-  for (i = 0; i < 255; i++)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
   {
     dfa_init_empty(&ds[i]);
   }
 
-  nfa_init(&ns[0], 0, 255);
+  nfa_init(&ns[0], 0, YALE_UINT_MAX_LEGAL);
   nfa_init(&ns[1], 0, 0);
   nfa_init(&ns[2], 0, 1);
   nfa_init(&ns[3], 0, 2);
@@ -141,7 +141,7 @@ int main(int argc, char **argv)
   dfaviz(ds, dscnt);
   printf("\n\n\n\n");
 
-  for (i = 0; i < 255; i++)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
   {
     dfa_init_empty(&ds[i]);
   }
@@ -162,7 +162,7 @@ int main(int argc, char **argv)
   dfaviz(ds, dscnt);
   printf("\n\n\n\n");
 
-  for (i = 0; i < 255; i++)
+  for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
   {
     dfa_init_empty(&ds[i]);
   }
@@ -188,7 +188,7 @@ int main(int argc, char **argv)
     for (j = 0; j < sizeof(pick_thoses)/sizeof(*pick_thoses); j++)
     //for (j = 0; j < 1; j++)
     {
-      for (i = 0; i < 255; i++)
+      for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
       {
         dfa_init_empty(&ds[i]);
       }

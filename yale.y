@@ -120,7 +120,7 @@ yalerule:
   TOKEN maybe_prio FREEFORM_TOKEN EQUALS STRING_LITERAL SEMICOLON
 {
   struct token *tk;
-  uint8_t i;
+  yale_uint_t i;
   if (yale->tokencnt >= sizeof(yale->tokens)/sizeof(*yale->tokens))
   {
     printf("1\n");
@@ -142,7 +142,7 @@ yalerule:
   }
   if (i == yale->nscnt)
   {
-    if (i == 255)
+    if (i == YALE_UINT_MAX_LEGAL)
     {
       printf("1.2\n");
       YYABORT;
@@ -159,7 +159,7 @@ yalerule:
 | FREEFORM_TOKEN EQUALS
 {
   struct rule *rule;
-  uint8_t i;
+  yale_uint_t i;
   if (yale->rulecnt >= sizeof(yale->rules)/sizeof(*yale->rules))
   {
     printf("3\n");
@@ -183,7 +183,7 @@ yalerule:
   }
   if (i == yale->nscnt)
   {
-    if (i == 255)
+    if (i == YALE_UINT_MAX_LEGAL)
     {
       printf("3.2\n");
       YYABORT;
@@ -232,7 +232,7 @@ maybe_minus:
 directive_continued:
 MAIN EQUALS FREEFORM_TOKEN SEMICOLON
 {
-  uint8_t i;
+  yale_uint_t i;
   for (i = 0; i < yale->nscnt; i++)
   {
     if (strcmp(yale->ns[i].name, $3) == 0)
@@ -249,7 +249,7 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
   }
   if (i == yale->nscnt)
   {
-    if (i == 255)
+    if (i == YALE_UINT_MAX_LEGAL)
     {
       printf("M.2\n");
       YYABORT;
@@ -340,14 +340,14 @@ ACTION maybe_token_ltgt
   struct rule *rule;
   struct ruleitem *it;
   rule = &yale->rules[yale->rulecnt - 1];
-  if (rule->itemcnt == 255)
+  if (rule->itemcnt == YALE_UINT_MAX_LEGAL)
   {
     printf("7\n");
     YYABORT;
   }
   it = &rule->rhs[rule->itemcnt++];
   it->is_action = 1;
-  it->value = 255;
+  it->value = YALE_UINT_MAX_LEGAL;
   it->cb = $2;
 }
 | FREEFORM_TOKEN maybe_token_ltgt
@@ -355,9 +355,9 @@ ACTION maybe_token_ltgt
   struct rule *rule;
   struct ruleitem *it;
   struct ruleitem *it2;
-  uint8_t i;
+  yale_uint_t i;
   rule = &yale->rules[yale->rulecnt - 1];
-  if (rule->itemcnt == 255 || rule->noactcnt == 255)
+  if (rule->itemcnt == YALE_UINT_MAX_LEGAL || rule->noactcnt == YALE_UINT_MAX_LEGAL)
   {
     printf("7\n");
     YYABORT;
@@ -374,7 +374,7 @@ ACTION maybe_token_ltgt
   {
     it->value = i;
     it->cb = $2;
-    if ($2 != 255 && yale->ns[i].is_lhs)
+    if ($2 != YALE_UINT_MAX_LEGAL && yale->ns[i].is_lhs)
     {
       printf("7.1\n");
       YYABORT;
@@ -382,7 +382,7 @@ ACTION maybe_token_ltgt
   }
   else
   {
-    if (i == 255)
+    if (i == YALE_UINT_MAX_LEGAL)
     {
       printf("7.2\n");
       YYABORT;
@@ -413,7 +413,7 @@ maybe_uint_ltgt:
 
 maybe_token_ltgt:
 {
-  $$ = 255;
+  $$ = YALE_UINT_MAX_LEGAL;
 }
 | LT token_ltgtexp GT
 {
@@ -424,11 +424,11 @@ maybe_token_ltgt:
 token_ltgtexp:
 VAL EQUALSEQUALS valstr_literal
 {
-  $$ = 255;
+  $$ = YALE_UINT_MAX_LEGAL;
 }
 | CB EQUALS FREEFORM_TOKEN
 {
-  uint8_t i;
+  yale_uint_t i;
   for (i = 0; i < yale->cbcnt; i++)
   {
     if (strcmp(yale->cbs[i].name, $3) == 0)
@@ -439,7 +439,7 @@ VAL EQUALSEQUALS valstr_literal
   }
   if (i == yale->cbcnt)
   {
-    if (i == 255)
+    if (i == YALE_UINT_MAX_LEGAL)
     {
       printf("9\n");
       YYABORT;
