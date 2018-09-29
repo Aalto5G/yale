@@ -596,7 +596,11 @@ void gen_parser(struct ParserGen *gen)
     gen->pick_thoses_id_by_nonterminal[i] = j;
     if (j == gen->pick_thoses_cnt)
     {
-      // FIXME handle counter overflow
+      if (j >= sizeof(gen->pick_thoses)/sizeof(*gen->pick_thoses) ||
+          j >= sizeof(gen->pick_those)/sizeof(*gen->pick_those))
+      {
+        abort();
+      }
       len = 0;
       for (j = 0; j < gen->tokencnt; j++)
       {
