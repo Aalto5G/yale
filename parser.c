@@ -683,7 +683,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprints(f, ".cb = {\n");
     for (i = 0; i < gen->tokencnt; i++)
     {
-      fprintf(f, "%d, ", gen->T[X][i].cb);
+      if (gen->T[X][i].cb == YALE_UINT_MAX_LEGAL)
+      {
+        fprintf(f, "255, "); // FIXME 255
+      }
+      else
+      {
+        fprintf(f, "%d, ", gen->T[X][i].cb);
+      }
     }
     fprints(f, "},\n");
     fprints(f, "},\n");
@@ -702,7 +709,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         {
           abort();
         }
-        fprintf(f, ".rhs = %d, .cb = %d", (int)YALE_UINT_MAX_LEGAL, it->cb);
+        fprintf(f, ".rhs = 255, .cb = %d", it->cb); // FIXME 255
+      }
+      else if (it->cb == YALE_UINT_MAX_LEGAL)
+      {
+        fprintf(f, ".rhs = %d, .cb = 255", it->value); // FIXME 255
       }
       else
       {

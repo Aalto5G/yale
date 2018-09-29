@@ -1517,8 +1517,16 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
   for (i = 0; i < pick_those->dscnt; i++)
   {
     struct dfa_node *ds = &pick_those->ds[i];
-    fprintf(f, "{ .accepting = %d, .acceptid = %d, .final = %d,\n",
-               (int)ds->accepting, (int)ds->acceptid, (int)ds->final);
+    if (ds->acceptid == YALE_UINT_MAX_LEGAL)
+    {
+      fprintf(f, "{ .accepting = %d, .acceptid = 255, .final = %d,\n", // FIXME 255
+                 (int)ds->accepting, (int)ds->final);
+    }
+    else
+    {
+      fprintf(f, "{ .accepting = %d, .acceptid = %d, .final = %d,\n",
+                 (int)ds->accepting, (int)ds->acceptid, (int)ds->final);
+    }
     fprints(f, ".fastpathbitmask = {");
     if (ds->accepting && !ds->final)
     {
