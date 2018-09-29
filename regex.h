@@ -20,7 +20,7 @@ struct emptystr {
 };
 
 struct literals {
-  struct bitset bitmask; // FIXME use custom bitmask of 256 bits?
+  struct charbitset bitmask;
 };
 
 struct concat {

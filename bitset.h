@@ -10,6 +10,10 @@ struct bitset {
   uint64_t bitset[(YALE_UINT_MAX_LEGAL+1+63)/64];
 };
 
+struct charbitset {
+  uint64_t bitset[4];
+};
+
 static inline int myffsll(long long int i)
 {
   int res = ffsll(i);
