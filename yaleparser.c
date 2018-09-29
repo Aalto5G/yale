@@ -15,8 +15,8 @@ int main(int argc, char **argv)
   char hnamebuf[1024] = {0};
   char hdefbuf[1024] = {0};
   size_t len;
-  int c;
-  int h;
+  int c = 0;
+  int h = 0;
   size_t iters = 1;
 
   if (argc != 3)
