@@ -62,9 +62,9 @@ struct ParserGen {
   struct pick_those_struct pick_thoses[255];
   struct iovec re_by_idx[255];
   int priorities[255];
-  struct rule rules[255];
+  struct rule rules[255]; // 382 kB
   struct cb cbs[255];
-  struct nfa_node ns[255];
+  struct nfa_node ns[255]; // 2 MB
   struct dfa_node ds[255];
   struct LookupTblEntry T[255][255]; // val==255: invalid, cb==255: no callback
   uint8_t pick_those[255][255]; // 64 kB
