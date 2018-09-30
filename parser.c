@@ -397,6 +397,34 @@ ssize_t max_stack_sz(struct ParserGen *gen)
           stackconfig_append(gen, stack, sz);
         }
       }
+      for (a = YALE_UINT_MAX_LEGAL - 1; a < YALE_UINT_MAX_LEGAL; a++)
+      {
+        yale_uint_t rule = gen->T[last][a].val;
+        if (rule != YALE_UINT_MAX_LEGAL)
+        {
+          //printf("Rule differs from YALE_UINT_MAX_LEGAL\n");
+          memcpy(stack, current->stack, (current->sz-1)*sizeof(*stack));
+          sz = current->sz - 1;
+          if (sz + gen->rules[rule].itemcnt > YALE_UINT_MAX_LEGAL)
+          {
+            return -1;
+          }
+          for (j = 0; j < gen->rules[rule].itemcnt; j++)
+          {
+            struct ruleitem *it =
+              &gen->rules[rule].rhs[gen->rules[rule].itemcnt-j-1];
+            if (it->is_action)
+            {
+              stack[sz++] = YALE_UINT_MAX_LEGAL;
+            }
+            else
+            {
+              stack[sz++] = it->value;
+            }
+          }
+          stackconfig_append(gen, stack, sz);
+        }
+      }
     }
   }
   return maxsz;
@@ -502,6 +530,17 @@ void gen_parser(struct ParserGen *gen)
             }
           }
         }
+        for (terminal = YALE_UINT_MAX_LEGAL - 1; terminal < YALE_UINT_MAX_LEGAL; terminal++)
+        {
+          if (has_bitset(&firstrhsright.dict.has, terminal))
+          {
+            if (!has_bitset(&gen->Fo[rhsmid]->has, terminal))
+            {
+              changed = 1;
+              firstset_update_one(gen->Fo[rhsmid], &firstrhsright.dict, terminal);
+            }
+          }
+        }
         if (has_bitset(&firstrhsright.dict.has, gen->epsilon))
         {
           if (!firstset_issubset(gen->Fo[nonterminal], gen->Fo[rhsmid]))
@@ -531,6 +570,31 @@ void gen_parser(struct ParserGen *gen)
       rhs[j] = gen->rules[i].rhsnoact[j].value;
     }
     for (a = 0; a < gen->tokencnt; a++)
+    {
+      struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
+      struct dict *fo = gen->Fo[A];
+      if (has_bitset(&fi->dict.has, a))
+      {
+        if (gen->T[A][a].val != YALE_UINT_MAX_LEGAL ||
+            gen->T[A][a].cb != YALE_UINT_MAX_LEGAL)
+        {
+          abort();
+        }
+        gen->T[A][a].val = i;
+        gen->T[A][a].cb = get_sole_cb(&fi->dict, a);
+      }
+      if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
+      {
+        if (gen->T[A][a].val != YALE_UINT_MAX_LEGAL ||
+            gen->T[A][a].cb != YALE_UINT_MAX_LEGAL)
+        {
+          abort();
+        }
+        gen->T[A][a].val = i;
+        gen->T[A][a].cb = get_sole_cb(fo, a);
+      }
+    }
+    for (a = YALE_UINT_MAX_LEGAL - 1; a < YALE_UINT_MAX_LEGAL; a++)
     {
       struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
       struct dict *fo = gen->Fo[A];
