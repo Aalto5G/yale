@@ -17,12 +17,26 @@ void print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *p
 {
   const char *ubuf = buf;
   size_t i;
-  putchar('<');
+  if (start)
+  {
+    putchar('<');
+  }
+  else
+  {
+    putchar('[');
+  }
   for (i = 0; i < siz; i++)
   {
     myPutchar(ubuf[i]);
   }
-  putchar('>');
+  if (start)
+  {
+    putchar('>');
+  }
+  else
+  {
+    putchar(']');
+  }
   putchar('\n');
 }
 
@@ -59,6 +73,19 @@ int main(int argc, char **argv)
   {
     lenprefix_parserctx_init(&pctx);
     consumed = lenprefix_parse_block(&pctx, lenprefix, sizeof(lenprefix)-1);
+    if (consumed != -EAGAIN)
+    {
+      printf("Consumed %zd expected -EAGAIN\n", consumed);
+      abort();
+    }
+  }
+
+  printf("----------------\n");
+
+  lenprefix_parserctx_init(&pctx);
+  for (i = 0; i < sizeof(lenprefix)-1; i++)
+  {
+    consumed = lenprefix_parse_block(&pctx, lenprefix+i, 1);
     if (consumed != -EAGAIN)
     {
       printf("Consumed %zd expected -EAGAIN\n", consumed);
