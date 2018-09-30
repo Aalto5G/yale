@@ -825,15 +825,26 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
       else if (it->cb == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, ".rhs = %d, .cb = PARSER_UINT_MAX", it->value);
+        if (it->value == YALE_UINT_MAX_LEGAL-1)
+        {
+          fprintf(f, ".rhs = PARSER_UINT_MAX-1, .cb = PARSER_UINT_MAX");
+        }
+        else
+        {
+          fprintf(f, ".rhs = %d, .cb = PARSER_UINT_MAX", it->value);
+        }
       }
       else
       {
-        if (it->value != YALE_UINT_MAX_LEGAL-1)
+        if (it->value == YALE_UINT_MAX_LEGAL-1)
+        {
+          fprintf(f, ".rhs = PARSER_UINT_MAX-1, .cb = %d", it->cb);
+        }
+        else
         {
           check_cb(gen->pick_thoses[it->value].ds, 0, it->value);
+          fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
         }
-        fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
       }
       fprints(f, "},\n");
     }
@@ -907,7 +918,26 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      }\n"
              "    }\n"
              "    curstate = pctx->stack[pctx->stacksz - 1].rhs;\n");
-  fprintf(f, "    if (curstate < %s_num_terminals)\n", gen->parsername);
+  fprints(f, "    if (curstate == PARSER_UINT_MAX - 1)\n");
+  fprints(f, "    {\n");
+  fprints(f, "      parser_uint_t bytes_cb = pctx->stack[pctx->stacksz - 1].cb;\n");
+  fprintf(f, "      ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
+  fprintf(f, "      if (bytes_cb != PARSER_UINT_MAX)\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+  fprintf(f, "        pctx->bytes_start = 0;\n");
+  fprintf(f, "      }\n");
+  fprintf(f, "      pctx->bytes_sz -= ret;\n");
+  fprintf(f, "      off += ret;\n");
+  fprintf(f, "      if (pctx->bytes_sz)\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        //off = sz;\n");
+  fprintf(f, "        return -EAGAIN;\n");
+  fprintf(f, "      }\n");
+  fprintf(f, "      pctx->bytes_start = 1;\n");
+  fprints(f, "      pctx->stacksz--;\n");
+  fprints(f, "    }\n");
+  fprintf(f, "    else if (curstate < %s_num_terminals)\n", gen->parsername);
   fprints(f, "    {\n");
   fprintf(f, "      restates = %s_reentries[curstate].re;\n", gen->parsername);
   fprints(f, "      cb1 = pctx->stack[pctx->stacksz - 1].cb;\n");
