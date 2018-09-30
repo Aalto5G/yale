@@ -1131,7 +1131,7 @@ int parsergen_is_terminal(struct ParserGen *gen, yale_uint_t x)
   {
     abort();
   }
-  return x < gen->tokencnt;
+  return x < gen->tokencnt || x == YALE_UINT_MAX_LEGAL - 1;
 }
 
 int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs)
@@ -1143,6 +1143,10 @@ int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs)
   if (rhs->is_action)
   {
     return 0;
+  }
+  if (rhs->is_bytes)
+  {
+    return 1; // Let's consider bytes as terminal
   }
   return parsergen_is_terminal(gen, rhs->value);
 }
@@ -1181,6 +1185,13 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
       if (gen->rules[i].rhsnoact[j].is_action)
       {
         abort();
+      }
+      else if (gen->rules[i].rhsnoact[j].is_bytes)
+      {
+        if (gen->rules[i].rhsnoact[j].value != YALE_UINT_MAX_LEGAL - 1)
+        {
+          abort();
+        }
       }
       else
       {

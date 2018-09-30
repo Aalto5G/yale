@@ -1,0 +1,19 @@
+token uint16zero = "\x00\x00" ;
+token uint16one = "\x00\x01" ;
+token uint16any = "..?" ;
+
+msgser =
+| msg msgser
+;
+
+msg = 
+uint16zero uint16any<cb=szbe> bytes<cb=print>
+| uint16one uint16any<cb=szbe> bytecontainer
+;
+
+bytecontainer =
+bytes<cb=print>
+;
+
+directive main = msgser ;
+directive parsername = lenprefix ;
