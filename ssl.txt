@@ -67,3 +67,4 @@ directive entry = sslhandshakedata ;
 directive entry = extensions ;
 directive entry = sniext ;
 directive main = tlsmsg ;
+directive parsername = tls ;
