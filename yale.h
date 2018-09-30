@@ -181,9 +181,8 @@ static inline void check_python(struct yale *yale)
   }
 }
 
-static inline void dump_string(FILE *f, const char *str)
+static inline void dump_string_len(FILE *f, const char *str, size_t len)
 {
-  size_t len = strlen(str);
   size_t i;
   putc('"', f);
   for (i = 0; i < len; i++)
@@ -220,6 +219,12 @@ static inline void dump_string(FILE *f, const char *str)
   putc('"', f);
 }
 
+static inline void dump_string(FILE *f, const char *str)
+{
+  size_t len = strlen(str);
+  dump_string_len(f, str, len);
+}
+
 static inline void dump_python(FILE *f, struct yale *yale)
 {
   yale_uint_t i;
@@ -239,7 +244,7 @@ static inline void dump_python(FILE *f, struct yale *yale)
     struct token *tk = &yale->tokens[i];
     char *tkname = yale->ns[tk->nsitem].name;
     fprintf(f, "d[\"%s\"] = p.add_token(", tkname);
-    dump_string(f, tk->re.str); // FIXME '\0'
+    dump_string_len(f, tk->re.str, tk->re.sz);
     fprintf(f, ", priority=%d)\n", tk->priority);
   }
   fprintf(f, "p.finalize_tokens()\n\n");
