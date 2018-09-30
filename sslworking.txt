@@ -3,8 +3,8 @@ token<prio=1> uint8one = "\x01" ;
 token<prio=1> uint8start = "\x16" ;
 token uint8any = "." ;
 token<prio=1> uint16zero = "\x00\x00" ;
-token uint16any = ".." ;
-token uint24any = "..." ;
+token uint16any = "..?" ;
+token uint24any = "..?.?" ;
 token<prio=1> uint16versaccept = "\0x03[\x01\x02\x03]" ;
 
 tlsmsg = 
@@ -17,12 +17,12 @@ uint16versaccept tlsdata
 ;
 
 tlsdata = 
-uint16any /* $1 */ bytes<feed=sslhandshake>
+uint16any<cb=szbe> bytes<feed=sslhandshake>
 ;
 
 sni = 
-uint8zero uint16any /* $2 */ bytes<cb=print>
-| uint8any uint16any /* $2 */ bytes
+uint8zero uint16any<cb=szbe> bytes<cb=print>
+| uint8any uint16any<cb=szbe> bytes
 ;
 
 maybe_sniext2 = 
@@ -32,7 +32,7 @@ maybe_sniext2 =
 sniext2 = sni maybe_sniext2
 ;
 
-sniext = uint16any /* $1 */ bytes<reinit_feed=sniext2>
+sniext = uint16any<cb=szbe> bytes<reinit_feed=sniext2>
 ;
 
 extensions = 
@@ -40,27 +40,27 @@ extensions =
 ;
 
 extension = 
-uint16zero uint16any /* $2 */ bytes<reinit_feed=sniext>
-| uint16any uint16any /* $2 */ bytes
+uint16zero uint16any<cb=szbe> bytes<reinit_feed=sniext>
+| uint16any uint16any<cb=szbe> bytes
 ;
 
 sslhandshakedata2 = 
-/* 32 */ bytes
-uint8any
-/* $2 */ bytes
-uint16any
-/* $4 */ bytes
-uint8any
-/* $6 */ bytes
-uint16any
-/* $8 */ bytes<reinit_feed=extensions>
+bytes
+uint8any<cb=szbe>
+bytes
+uint16any<cb=szbe>
+bytes
+uint8any<cb=szbe>
+bytes
+uint16any<cb=szbe>
+bytes<reinit_feed=extensions>
 ;
 
 sslhandshakedata = 
-uint16versaccept sslhandshakedata2 ;
+uint16versaccept action<cb=szset32> sslhandshakedata2 ;
 
 sslhandshake = 
-uint8one uint24any /* $2 */ bytes<feed=sslhandshakedata>
+uint8one uint24any<cb=szbe> bytes<feed=sslhandshakedata>
 ;
 
 directive entry = sslhandshake ;
