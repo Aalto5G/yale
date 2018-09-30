@@ -1135,12 +1135,12 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, gen->parsername, gen->max_bt);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
-  fprints(f, "  parser_uint_t stacksz;\n");
   fprints(f, "  uint64_t bytes_sz;\n");
+  fprints(f, "  parser_uint_t stacksz;\n");
+  fprints(f, "  parser_uint_t saved_token;\n");
   fprints(f, "  uint8_t bytes_start;\n");
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
-  fprints(f, "  parser_uint_t saved_token;\n");
   if (gen->state_include_str)
   {
     fprintf(f, "  %s\n", gen->state_include_str);
