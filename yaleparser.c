@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     snprintf(cnamebuf, sizeof(cnamebuf), "/dev/null");
     snprintf(hnamebuf, sizeof(hnamebuf), "/dev/null");
   }
-  snprintf(hdefbuf, sizeof(hnamebuf), "_%sCPARSER_H_", yale.parsername);
+  snprintf(hdefbuf, sizeof(hdefbuf), "_%sCPARSER_H_", yale.parsername);
   len = strlen(hdefbuf);
   for (i = 0; i < len; i++)
   {
