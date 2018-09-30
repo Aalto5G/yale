@@ -1152,6 +1152,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "{\n");
   fprints(f, "  pctx->saved_token = PARSER_UINT_MAX;\n");
   fprints(f, "  pctx->bytes_start = 1;\n");
+  fprints(f, "  pctx->bytes_sz = 0;\n");
   fprints(f, "  pctx->stacksz = 1;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
   fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
