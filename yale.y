@@ -145,7 +145,7 @@ yalerule:
   }
   if (i == yale->nscnt)
   {
-    if (i == YALE_UINT_MAX_LEGAL)
+    if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
       printf("1.2\n");
       YYABORT;
@@ -186,7 +186,7 @@ yalerule:
   }
   if (i == yale->nscnt)
   {
-    if (i == YALE_UINT_MAX_LEGAL)
+    if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
       printf("3.2\n");
       YYABORT;
@@ -252,7 +252,7 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
   }
   if (i == yale->nscnt)
   {
-    if (i == YALE_UINT_MAX_LEGAL)
+    if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
       printf("M.2\n");
       YYABORT;
@@ -386,7 +386,7 @@ ACTION maybe_token_ltgt
   }
   else
   {
-    if (i == YALE_UINT_MAX_LEGAL)
+    if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
       printf("7.2\n");
       YYABORT;
@@ -418,7 +418,7 @@ ACTION maybe_token_ltgt
   it = &rule->rhs[rule->itemcnt++];
   it->is_action = 0;
   it->is_bytes = 1;
-  it->value = YALE_UINT_MAX_LEGAL;
+  it->value = YALE_UINT_MAX_LEGAL-1;
   it->cb = $2;
 
   it2 = &rule->rhsnoact[rule->noactcnt++];
