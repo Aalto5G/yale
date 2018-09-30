@@ -1090,7 +1090,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      {\n"
              "        pctx->stack[pctx->stacksz++] = rule->rhs[i];\n"
              "      }\n");
-  fprintf(f, "      if (rule->rhssz && pctx->stack[pctx->stacksz-1].rhs < %s_num_terminals)\n", gen->parsername);
+  fprintf(f, "      if (rule->rhssz && (pctx->stack[pctx->stacksz-1].rhs < %s_num_terminals || pctx->stack[pctx->stacksz-1].rhs == PARSER_UINT_MAX-1))\n", gen->parsername);
   fprints(f, "      {\n"
              "        pctx->stacksz--; // Has to be correct token so let's process immediately\n"
              "      }\n"

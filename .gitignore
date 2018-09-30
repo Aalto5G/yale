@@ -13,6 +13,8 @@ perf.data.old
 /httpparser.h
 /httpcparser.c
 /httpcparser.h
+/lenprefixcparser.c
+/lenprefixcparser.h
 /YALE.LEX.INTERMEDIATE
 /YALE.TAB.INTERMEDIATE
 /intermediatestore/
@@ -21,6 +23,7 @@ perf.data.old
 /httpmainprint
 /httpcmain
 /httpcmainprint
+/lenprefixcmain
 /yaletopy
 /http.py
 /regexmain

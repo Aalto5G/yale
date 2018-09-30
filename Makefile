@@ -9,7 +9,7 @@ YACCSRC := yale.y
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -47,6 +47,9 @@ httpcmain: httpcmain.o httpcparser.o Makefile
 httpcmainprint: httpcmainprint.o httpcparser.o Makefile
 	$(CC) $(CFLAGS) -o httpcmainprint httpcmainprint.o httpcparser.o
 
+lenprefixcmain: lenprefixcmain.o lenprefixcparser.o Makefile
+	$(CC) $(CFLAGS) -o lenprefixcmain lenprefixcmain.o lenprefixcparser.o
+
 regexmain: regexmain.o regex.o Makefile
 	$(CC) $(CFLAGS) -o regexmain regexmain.o regex.o
 
@@ -68,6 +71,12 @@ httpparser.h: http.py parser.py regex.py Makefile
 
 httpparser.c: http.py parser.py regex.py Makefile
 	python http.py c
+
+lenprefixcparser.h: yaleparser lenprefix.txt Makefile
+	./yaleparser lenprefix.txt h
+
+lenprefixcparser.c: yaleparser lenprefix.txt Makefile
+	./yaleparser lenprefix.txt c
 
 httpcparser.h: yaleparser httppaper.txt Makefile
 	./yaleparser httppaper.txt h
@@ -114,6 +123,8 @@ clean:
 	rm -f yale.tab.h
 	rm -f httpcparser.c
 	rm -f httpcparser.h
+	rm -f lenprefixcparser.c
+	rm -f lenprefixcparser.h
 	rm -f httpparser.c
 	rm -f httpparser.h
 	rm -f http.py
@@ -123,3 +134,5 @@ distclean: clean
 	rm -f yaletopy
 	rm -f httpmain
 	rm -f httpmainprint
+	rm -f httpcmain
+	rm -f httpcmainprint

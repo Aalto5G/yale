@@ -1,3 +1,7 @@
+%{
+#include "lenprefixcommon.h"
+%}
+
 token uint16zero = "\x00\x00" ;
 token uint16one = "\x00\x01" ;
 token uint16any = "..?" ;
