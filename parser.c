@@ -645,6 +645,11 @@ void gen_parser(struct ParserGen *gen)
         buf[len++] = j;
       }
     }
+    if (len == 0 && gen->T[i][YALE_UINT_MAX_LEGAL-1].val != YALE_UINT_MAX_LEGAL)
+    {
+      //printf("Omitting empty states vector due to bytes token\n");
+      continue;
+    }
     for (j = 0; j < gen->pick_thoses_cnt; j++)
     {
       if (gen->pick_thoses[j].len != len)
