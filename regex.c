@@ -352,6 +352,7 @@ check_recurse_acceptid_is_not(struct dfa_node *ds, yale_uint_t state, yale_uint_
     set_bitset(&visited, queued);
     if (ds[queued].accepting && ds[queued].acceptid == acceptid)
     {
+      printf("Recurse acceptid is not fail, acceptid=%d\n", acceptid);
       abort(); // FIXME error handling
     }
     for (i = 0; i < 256; i++)
@@ -617,7 +618,7 @@ void dfaviz(struct dfa_node *ds, yale_uint_t cnt)
     {
       if (ds[i].d[j] != YALE_UINT_MAX_LEGAL)
       {
-        printf("n%d -> n%d [label=\"%c\"];\n", i, ds[i].d[j], (unsigned char)j);
+        printf("n%d -> n%d [label=\"%d\"];\n", i, ds[i].d[j], (int)(unsigned char)j);
       }
     }
   }
