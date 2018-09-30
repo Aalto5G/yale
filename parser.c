@@ -652,7 +652,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     dump_one(f, gen->parsername, &gen->pick_thoses[i]);
   }
   fprintf(f, "const parser_uint_t %s_num_terminals;\n", gen->parsername);
-  fprintf(f, "void(*%s_callbacks[])(const char*, size_t, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
+  fprintf(f, "void(*%s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
   for (i = 0; i < gen->cbcnt; i++)
   {
     fprintf(f, "%s, ", gen->cbs[i].name);
@@ -778,7 +778,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  const struct state *restates;\n"
              "  const struct rule *rule;\n"
              "  const parser_uint_t *cbs;\n");
-  fprintf(f, "  void (*cb1f)(const char *, size_t, struct %s_parserctx*);\n", gen->parsername);
+  fprintf(f, "  void (*cb1f)(const char *, size_t, int, struct %s_parserctx*);\n", gen->parsername);
   fprints(f, "\n"
              "  while (off < sz || pctx->saved_token != PARSER_UINT_MAX)\n"
              "  {\n"
@@ -938,7 +938,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    else // if (curstate == PARSER_UINT_MAX)\n"
              "    {\n");
   fprintf(f, "      cb1f = %s_callbacks[pctx->stack[pctx->stacksz - 1].cb];\n", gen->parsername);
-  fprints(f, "      cb1f(NULL, 0, pctx);//, baton);\n"
+  fprints(f, "      cb1f(NULL, 0, 0, pctx);//, baton);\n"
              "      pctx->stacksz--;\n"
              "    }\n"
              "  }\n"

@@ -58,7 +58,7 @@ static inline void
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, int, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);
 """, file=sio)
     return
   def dump_all(self, sio):
@@ -72,17 +72,22 @@ static inline int
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, int, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st = NULL;
   size_t i;
+  int start = 0;
   lexer_uint_t newstate;
   struct """+parsername+"""_parserctx *pctx = CONTAINER_OF(ctx, struct """+parsername+"""_parserctx, rctx);
   if (ctx->state == LEXER_UINT_MAX)
   {
     *state = PARSER_UINT_MAX;
     return -EINVAL;
+  }
+  if (ctx->state == 0)
+  {
+    start = 1;
   }
   //printf("Called: %s\\n", buf);
   if (unlikely(ctx->backtrackstart != ctx->backtrackend))
@@ -200,11 +205,11 @@ ssize_t
       ctx->state = 0;
       if (cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)
       {
-        cbtbl[cbs[st->acceptid]](buf, i, pctx);
+        cbtbl[cbs[st->acceptid]](buf, i, start, pctx);
       }
       if (cb1 != PARSER_UINT_MAX && st->accepting)
       {
-        cbtbl[cb1](buf, i, pctx);
+        cbtbl[cb1](buf, i, start, pctx);
       }
       return i;
     }
@@ -218,11 +223,11 @@ ssize_t
         ctx->last_accept = LEXER_UINT_MAX;
         if (cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)
         {
-          cbtbl[cbs[st->acceptid]](buf, i + 1, pctx);
+          cbtbl[cbs[st->acceptid]](buf, i + 1, start, pctx);
         }
         if (cb1 != PARSER_UINT_MAX && st->accepting)
         {
-          cbtbl[cb1](buf, i + 1, pctx);
+          cbtbl[cb1](buf, i + 1, start, pctx);
         }
         return i + 1;
       }
@@ -249,11 +254,11 @@ ssize_t
   }
   if (st && cbs && st->accepting && cbs[st->acceptid] != PARSER_UINT_MAX)
   {
-    cbtbl[cbs[st->acceptid]](buf, sz, pctx);
+    cbtbl[cbs[st->acceptid]](buf, sz, start, pctx);
   }
   if (st && cb1 != PARSER_UINT_MAX && st->accepting)
   {
-    cbtbl[cb1](buf, sz, pctx);
+    cbtbl[cb1](buf, sz, start, pctx);
   }
   *state = PARSER_UINT_MAX;
   return -EAGAIN; // Not yet

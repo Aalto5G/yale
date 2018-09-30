@@ -17,7 +17,7 @@ static inline void myPutchar(char ch)
 }
 #endif
 
-void print(const char *buf, size_t siz, void *btn)
+void print(const char *buf, size_t siz, int start, void *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;
@@ -31,7 +31,7 @@ void print(const char *buf, size_t siz, void *btn)
   putchar('\n');
 #endif
 }
-void printsp(const char *buf, size_t siz, void *btn)
+void printsp(const char *buf, size_t siz, int start, void *btn)
 {
 #ifdef DO_PRINT
   putchar('<');
