@@ -55,13 +55,22 @@ regexmain: regexmain.o regex.o Makefile
 
 httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile
+httpmainprint.d: httpparser.h Makefile
+httpmainprint.o: httpparser.h Makefile
 httpparser.d: httpparser.h Makefile
 httpparser.o: httpparser.h Makefile
 
 httpcmain.d: httpcparser.h Makefile
 httpcmain.o: httpcparser.h Makefile
+httpcmainprint.d: httpcparser.h Makefile
+httpcmainprint.o: httpcparser.h Makefile
 httpcparser.d: httpcparser.h Makefile
 httpcparser.o: httpcparser.h Makefile
+
+lenprefixcmain.d: lenprefixcparser.h Makefile
+lenprefixcmain.o: lenprefixcparser.h Makefile
+lenprefixcparser.d: lenprefixcparser.h Makefile
+lenprefixcparser.o: lenprefixcparser.h Makefile
 
 http.py: yaletopy httppaper.txt
 	./yaletopy httppaper.txt http.py
