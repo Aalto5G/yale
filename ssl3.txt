@@ -13,7 +13,7 @@ stateinclude %{
 token uint8any = "." ;
 token uint16any = "..?" ;
 token uint24any = "..?.?" ;
-token uint16versaccept = "\0x03[\x01\x02\x03]" ;
+token uint16versaccept = "\x03[\x01\x02\x03]" ;
 
 sslhandshakedata2 = 
 bytes

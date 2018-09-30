@@ -189,9 +189,9 @@ int main(int argc, char **argv)
   {
     ssl1_parserctx_init(&pctx);
     consumed = ssl1_parse_block(&pctx, withsni, sizeof(withsni));
-    if (consumed != -EAGAIN)
+    if (consumed != -EAGAIN && consumed != sizeof(withsni))
     {
-      printf("Consumed %zd expected -EAGAIN\n", consumed);
+      printf("Consumed %zd expected -EAGAIN/%d\n", consumed, (int)sizeof(withsni));
       abort();
     }
   }
@@ -202,9 +202,17 @@ int main(int argc, char **argv)
   for (i = 0; i < sizeof(withsni); i++)
   {
     consumed = ssl1_parse_block(&pctx, withsni+i, 1);
-    if (consumed != -EAGAIN)
+    if (i == sizeof(withsni) - 1)
     {
-      printf("Consumed %zd expected -EAGAIN\n", consumed);
+      if (consumed != 1 && consumed != -EAGAIN)
+      {
+        printf("Consumed %zd expected -EAGAIN/1 i=%d\n", consumed, (int)i);
+        abort();
+      }
+    }
+    else if (consumed != -EAGAIN)
+    {
+      printf("Consumed %zd expected -EAGAIN i=%d\n", consumed, (int)i);
       abort();
     }
   }
