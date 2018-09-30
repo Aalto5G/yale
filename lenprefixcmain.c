@@ -43,6 +43,10 @@ void print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *p
 void szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   size_t i;
+  if (start)
+  {
+    pctx->bytes_sz = 0;
+  }
   for (i = 0; i < siz; i++)
   {
     pctx->bytes_sz <<= 8;
