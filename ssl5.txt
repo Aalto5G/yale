@@ -1,0 +1,19 @@
+%{
+#include "sslcommon.h"
+%}
+
+hdrinclude %{
+#include "ssl6cparser.h"
+%};
+
+stateinclude %{
+  struct ssl6_parserctx ssl6;
+%};
+
+token uint16any = "..?" ;
+
+sniext = uint16any<cb=szbe5> bytes<cb=feed5>
+;
+
+directive main = sniext ;
+directive parsername = ssl5 ;

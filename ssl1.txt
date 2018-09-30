@@ -1,0 +1,31 @@
+%{
+#include "sslcommon.h"
+%}
+
+hdrinclude %{
+#include "ssl2cparser.h"
+%};
+
+stateinclude %{
+  struct ssl2_parserctx ssl2;
+%};
+
+
+token uint8start = "\x16" ;
+token uint16any = "..?" ;
+token uint16versaccept = "\0x03[\x01\x02\x03]" ;
+
+tlsmsg = 
+uint8start tlsversdata
+;
+
+tlsversdata = 
+uint16versaccept tlsdata
+;
+
+tlsdata = 
+uint16any<cb=szbe1> bytes<cb=feed1>
+;
+
+directive main = tlsmsg ;
+directive parsername = ssl1 ;

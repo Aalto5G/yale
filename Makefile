@@ -2,14 +2,14 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -93,6 +93,64 @@ httpcparser.h: yaleparser httppaper.txt Makefile
 httpcparser.c: yaleparser httppaper.txt Makefile
 	./yaleparser httppaper.txt c
 
+# ------ Begin SSL --------
+
+sslcmain.d: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+sslcmain.o: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl1cparser.d: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl1cparser.o: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl2cparser.d: ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl2cparser.o: ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl3cparser.d: ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl3cparser.o: ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl4cparser.d: ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl4cparser.o: ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+ssl5cparser.d: ssl5cparser.h ssl6cparser.h Makefile
+ssl5cparser.o: ssl5cparser.h ssl6cparser.h Makefile
+ssl6cparser.d: ssl6cparser.h Makefile
+ssl6cparser.o: ssl6cparser.h Makefile
+
+ssl1cparser.h: yaleparser ssl1.txt Makefile
+	./yaleparser ssl1.txt h
+
+ssl1cparser.c: yaleparser ssl1.txt Makefile
+	./yaleparser ssl1.txt c
+
+ssl2cparser.h: yaleparser ssl2.txt Makefile
+	./yaleparser ssl2.txt h
+
+ssl2cparser.c: yaleparser ssl2.txt Makefile
+	./yaleparser ssl2.txt c
+
+ssl3cparser.h: yaleparser ssl3.txt Makefile
+	./yaleparser ssl3.txt h
+
+ssl3cparser.c: yaleparser ssl3.txt Makefile
+	./yaleparser ssl3.txt c
+
+ssl4cparser.h: yaleparser ssl4.txt Makefile
+	./yaleparser ssl4.txt h
+
+ssl4cparser.c: yaleparser ssl4.txt Makefile
+	./yaleparser ssl4.txt c
+
+ssl5cparser.h: yaleparser ssl5.txt Makefile
+	./yaleparser ssl5.txt h
+
+ssl5cparser.c: yaleparser ssl5.txt Makefile
+	./yaleparser ssl5.txt c
+
+ssl6cparser.h: yaleparser ssl6.txt Makefile
+	./yaleparser ssl6.txt h
+
+ssl6cparser.c: yaleparser ssl6.txt Makefile
+	./yaleparser ssl6.txt c
+
+sslcmain: sslcmain.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
+	$(CC) $(CFLAGS) -o sslcmain sslcmain.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
+
+# ------ End SSL --------
+
 yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o Makefile
 	$(CC) $(CFLAGS) -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
 
@@ -136,6 +194,18 @@ clean:
 	rm -f lenprefixcparser.h
 	rm -f httpparser.c
 	rm -f httpparser.h
+	rm -f ssl1cparser.c
+	rm -f ssl1cparser.h
+	rm -f ssl2cparser.c
+	rm -f ssl2cparser.h
+	rm -f ssl3cparser.c
+	rm -f ssl3cparser.h
+	rm -f ssl4cparser.c
+	rm -f ssl4cparser.h
+	rm -f ssl5cparser.c
+	rm -f ssl5cparser.h
+	rm -f ssl6cparser.c
+	rm -f ssl6cparser.h
 	rm -f http.py
 
 distclean: clean
@@ -145,3 +215,7 @@ distclean: clean
 	rm -f httpmainprint
 	rm -f httpcmain
 	rm -f httpcmainprint
+	rm -f sslcmain
+	rm -f lenprefixcmain
+	rm -f yaleparser
+	rm -f regexmain

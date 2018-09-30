@@ -28,3 +28,15 @@ perf.data.old
 /http.py
 /regexmain
 /yaleparser
+/ssl1cparser.c
+/ssl1cparser.h
+/ssl2cparser.c
+/ssl2cparser.h
+/ssl3cparser.c
+/ssl3cparser.h
+/ssl4cparser.c
+/ssl4cparser.h
+/ssl5cparser.c
+/ssl5cparser.h
+/ssl6cparser.c
+/ssl6cparser.h

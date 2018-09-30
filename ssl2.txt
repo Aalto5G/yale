@@ -1,0 +1,21 @@
+%{
+#include "sslcommon.h"
+%}
+
+hdrinclude %{
+#include "ssl3cparser.h"
+%};
+
+stateinclude %{
+  struct ssl3_parserctx ssl3;
+%};
+
+token uint8one = "\x01" ;
+token uint24any = "..?.?" ;
+
+sslhandshake = 
+uint8one uint24any<cb=szbe2> bytes<cb=feed2>
+;
+
+directive main = sslhandshake ;
+directive parsername = ssl2 ;

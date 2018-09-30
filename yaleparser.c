@@ -122,6 +122,10 @@ int main(int argc, char **argv)
       f = fopen(hnamebuf, "w");
       fprintf(f, "#ifndef %s\n", hdefbuf);
       fprintf(f, "#define %s\n", hdefbuf);
+      if (yale.hs.data)
+      {
+        fprintf(f, "%s", yale.hs.data);
+      }
       parsergen_dump_headers(&gen, f);
       fprintf(f, "#endif\n");
       fclose(f);

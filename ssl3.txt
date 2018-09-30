@@ -1,0 +1,34 @@
+%{
+#include "sslcommon.h"
+%}
+
+hdrinclude %{
+#include "ssl4cparser.h"
+%};
+
+stateinclude %{
+  struct ssl4_parserctx ssl4;
+%};
+
+token uint8any = "." ;
+token uint16any = "..?" ;
+token uint24any = "..?.?" ;
+token uint16versaccept = "\0x03[\x01\x02\x03]" ;
+
+sslhandshakedata2 = 
+bytes
+uint8any<cb=szbe3>
+bytes
+uint16any<cb=szbe3>
+bytes
+uint8any<cb=szbe3>
+bytes
+uint16any<cb=szbe3>
+bytes<cb=feed3>
+;
+
+sslhandshakedata = 
+uint16versaccept action<cb=szset32_3> sslhandshakedata2 ;
+
+directive main = sslhandshakedata ;
+directive parsername = ssl3 ;
