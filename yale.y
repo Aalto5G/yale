@@ -106,6 +106,8 @@ int yaleyywrap(yyscan_t scanner)
 %type<i> maybe_minus
 %type<i> token_ltgtexp
 %type<i> maybe_token_ltgt
+%type<i> bytes_ltgtexp
+%type<i> maybe_bytes_ltgt
 %type<str> STRING_LITERAL
 %type<s> FREEFORM_TOKEN
 %type<s> C_LITERAL
@@ -348,6 +350,7 @@ ACTION maybe_token_ltgt
   }
   it = &rule->rhs[rule->itemcnt++];
   it->is_action = 1;
+  it->is_bytes = 0;
   it->value = YALE_UINT_MAX_LEGAL;
   it->cb = $2;
 }
@@ -389,6 +392,8 @@ ACTION maybe_token_ltgt
       YYABORT;
     }
     yale->ns[i].name = strdup($1);
+    it->is_action = 0;
+    it->is_bytes = 0;
     it->value = i;
     it->cb = $2;
     yale->nscnt++;
@@ -399,6 +404,26 @@ ACTION maybe_token_ltgt
 }
 | uint_token
 | BYTES maybe_bytes_ltgt
+{
+  struct rule *rule;
+  struct ruleitem *it;
+  struct ruleitem *it2;
+
+  rule = &yale->rules[yale->rulecnt - 1];
+  if (rule->itemcnt == YALE_UINT_MAX_LEGAL)
+  {
+    printf("7\n");
+    YYABORT;
+  }
+  it = &rule->rhs[rule->itemcnt++];
+  it->is_action = 0;
+  it->is_bytes = 1;
+  it->value = YALE_UINT_MAX_LEGAL;
+  it->cb = $2;
+
+  it2 = &rule->rhsnoact[rule->noactcnt++];
+  *it2 = *it;
+}
 | group
 | option
 ;
@@ -470,7 +495,13 @@ PERIOD
 ;
 
 maybe_bytes_ltgt:
+{
+  $$ = YALE_UINT_MAX_LEGAL;
+}
 | LT bytes_ltgtexp GT
+{
+  $$ = $2;
+}
 ;
 
 bytes_ltgtexp:
@@ -484,7 +515,26 @@ bytes_ltgtexp:
 }
 | CB EQUALS FREEFORM_TOKEN
 {
-  free($3);
+  yale_uint_t i;
+  for (i = 0; i < yale->cbcnt; i++)
+  {
+    if (strcmp(yale->cbs[i].name, $3) == 0)
+    {
+      free($3);
+      break;
+    }
+  }
+  if (i == yale->cbcnt)
+  {
+    if (i == YALE_UINT_MAX_LEGAL)
+    {
+      printf("9\n");
+      YYABORT;
+    }
+    yale->cbs[i].name = $3;
+    yale->cbcnt++;
+  }
+  $$ = i;
 }
 ;
 

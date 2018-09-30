@@ -60,6 +60,7 @@ struct token {
 
 struct ruleitem {
   uint8_t is_action:1;
+  uint8_t is_bytes:1;
   yale_uint_t value;
   yale_uint_t cb;
 };
@@ -144,7 +145,8 @@ static inline int check_actions(struct yale *yale)
       yale_uint_t value = yale->rules[i].rhs[j].value;
       yale_uint_t cb = yale->rules[i].rhs[j].cb;
       yale_uint_t act = yale->rules[i].rhs[j].is_action;
-      if (!act && !yale->ns[value].is_token && cb != YALE_UINT_MAX_LEGAL)
+      yale_uint_t byt = yale->rules[i].rhs[j].is_bytes;
+      if (!act && !byt && !yale->ns[value].is_token && cb != YALE_UINT_MAX_LEGAL)
       {
         return -EINVAL;
       }
@@ -158,7 +160,7 @@ static inline void check_python(struct yale *yale)
   yale_uint_t i;
   if (!yale->startns_present)
   {
-    fprintf(stderr, "Error\n");
+    fprintf(stderr, "Error 1\n");
     exit(1);
   }
   for (i = 0; i < yale->nscnt; i++)
@@ -168,14 +170,14 @@ static inline void check_python(struct yale *yale)
     {
       if (nsit->is_lhs)
       {
-        fprintf(stderr, "Error\n");
+        fprintf(stderr, "Error 2\n");
         exit(1);
       }
       continue;
     }
     if (!nsit->is_lhs)
     {
-      fprintf(stderr, "Error\n");
+      fprintf(stderr, "Error 3\n");
       exit(1);
     }
   }
@@ -255,14 +257,14 @@ static inline void dump_python(FILE *f, struct yale *yale)
     {
       if (nsit->is_lhs)
       {
-        fprintf(stderr, "Error\n");
+        fprintf(stderr, "Error 4\n");
         exit(1);
       }
       continue;
     }
     if (!nsit->is_lhs)
     {
-      fprintf(stderr, "Error\n");
+      fprintf(stderr, "Error 5\n");
       exit(1);
     }
     fprintf(f, "d[\"%s\"] = p.add_nonterminal()\n", nsit->name);
