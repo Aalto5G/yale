@@ -40,3 +40,4 @@ perf.data.old
 /ssl5cparser.h
 /ssl6cparser.c
 /ssl6cparser.h
+/sslcmain
