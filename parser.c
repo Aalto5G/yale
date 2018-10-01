@@ -1135,7 +1135,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, gen->parsername, gen->max_bt);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
-  fprints(f, "  uint64_t bytes_sz;\n");
+  fprintf(f, "  %s bytes_sz;\n", gen->bytes_size_type ? gen->bytes_size_type : "uint64_t");
   fprints(f, "  parser_uint_t stacksz;\n");
   fprints(f, "  parser_uint_t saved_token;\n");
   fprints(f, "  uint8_t bytes_start;\n");
@@ -1309,4 +1309,9 @@ void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t c
   {
     gen->cbs[i] = cbs[i];
   }
+}
+
+void parsergen_set_bytessizetype(struct ParserGen *gen, char *type)
+{
+  gen->bytes_size_type = type;
 }

@@ -22,5 +22,6 @@ uint16zero uint16any<cb=szbe4> bytes<cb=feed4>
 | uint16any uint16any<cb=szbe4> bytes
 ;
 
+directive bytessizetype = uint16_t ;
 directive main = extensions ;
 directive parsername = ssl4 ;

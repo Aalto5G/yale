@@ -97,6 +97,7 @@ struct yale {
   yale_uint_t cbcnt;
   yale_uint_t rulecnt;
   char *parsername;
+  char *bytessizetype;
   yale_uint_t startns;
   uint8_t startns_present;
 };
@@ -135,6 +136,8 @@ static inline void yale_free(struct yale *yale)
   yale->si.data = NULL;
   free(yale->parsername);
   yale->parsername = NULL;
+  free(yale->bytessizetype);
+  yale->bytessizetype = NULL;
   memset(yale, 0, sizeof(*yale));
 }
 

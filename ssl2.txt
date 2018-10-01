@@ -17,5 +17,6 @@ sslhandshake =
 uint8one uint24any<cb=szbe2> bytes<cb=feed2>
 ;
 
+directive bytessizetype = uint32_t ;
 directive main = sslhandshake ;
 directive parsername = ssl2 ;

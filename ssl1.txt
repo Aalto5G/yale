@@ -27,5 +27,6 @@ tlsdata =
 uint16any<cb=szbe1> bytes<cb=feed1>
 ;
 
+directive bytessizetype = uint16_t ;
 directive main = tlsmsg ;
 directive parsername = ssl1 ;

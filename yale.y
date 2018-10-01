@@ -54,6 +54,7 @@ int yaleyywrap(yyscan_t scanner)
 %token PERCENTC_LITERAL
 %token STATEINCLUDE
 %token HDRINCLUDE
+%token BYTESSIZETYPE
 
 %token TOKEN
 %token ACTION
@@ -277,6 +278,10 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
 | PARSERNAME EQUALS FREEFORM_TOKEN SEMICOLON
 {
   yale->parsername = $3;
+}
+| BYTESSIZETYPE EQUALS FREEFORM_TOKEN SEMICOLON
+{
+  yale->bytessizetype = $3;
 }
 ;
 

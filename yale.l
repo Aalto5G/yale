@@ -36,6 +36,7 @@ struct CSnippet cSnippet = {
 };
 %}
 
+bytessizetype return BYTESSIZETYPE;
 stateinclude return STATEINCLUDE;
 hdrinclude return HDRINCLUDE;
 action    return ACTION;

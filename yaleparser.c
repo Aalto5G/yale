@@ -80,6 +80,10 @@ int main(int argc, char **argv)
   for (iter = 0; iter < iters; iter++)
   {
     parsergen_init(&gen, yale.parsername);
+    if (yale.bytessizetype)
+    {
+      parsergen_set_bytessizetype(&gen, yale.bytessizetype);
+    }
     for (i = 0; i < yale.tokencnt; i++)
     {
       yale.ns[yale.tokens[i].nsitem].val =

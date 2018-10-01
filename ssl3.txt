@@ -30,5 +30,6 @@ bytes<cb=feed3>
 sslhandshakedata = 
 uint16versaccept action<cb=szset32_3> sslhandshakedata2 ;
 
+directive bytessizetype = uint16_t ;
 directive main = sslhandshakedata ;
 directive parsername = ssl3 ;
