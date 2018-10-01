@@ -35,5 +35,6 @@ reqLine =
 reqHdrs = | headerField crlf reqHdrs ;
 reqWithHdrs = reqLine reqHdrs crlf ;
 
+directive bytessizetype = void ;
 directive main = reqWithHdrs;
 directive parsername = http;

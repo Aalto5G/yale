@@ -923,26 +923,33 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      }\n"
              "    }\n"
              "    curstate = pctx->stack[pctx->stacksz - 1].rhs;\n");
-  fprints(f, "    if (curstate == PARSER_UINT_MAX - 1)\n");
-  fprints(f, "    {\n");
-  fprints(f, "      parser_uint_t bytes_cb = pctx->stack[pctx->stacksz - 1].cb;\n");
-  fprintf(f, "      ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
-  fprintf(f, "      if (bytes_cb != PARSER_UINT_MAX)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
-  fprintf(f, "        pctx->bytes_start = 0;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      pctx->bytes_sz -= ret;\n");
-  fprintf(f, "      off += ret;\n");
-  fprintf(f, "      if (pctx->bytes_sz)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        //off = sz;\n");
-  fprintf(f, "        return -EAGAIN;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      pctx->bytes_start = 1;\n");
-  fprints(f, "      pctx->stacksz--;\n");
-  fprints(f, "    }\n");
-  fprintf(f, "    else if (curstate < %s_num_terminals)\n", gen->parsername);
+  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
+  {
+    fprints(f, "    if (curstate == PARSER_UINT_MAX - 1)\n");
+    fprints(f, "    {\n");
+    fprints(f, "      parser_uint_t bytes_cb = pctx->stack[pctx->stacksz - 1].cb;\n");
+    fprintf(f, "      ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
+    fprintf(f, "      if (bytes_cb != PARSER_UINT_MAX)\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprintf(f, "        pctx->bytes_start = 0;\n");
+    fprintf(f, "      }\n");
+    fprintf(f, "      pctx->bytes_sz -= ret;\n");
+    fprintf(f, "      off += ret;\n");
+    fprintf(f, "      if (pctx->bytes_sz)\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        //off = sz;\n");
+    fprintf(f, "        return -EAGAIN;\n");
+    fprintf(f, "      }\n");
+    fprintf(f, "      pctx->bytes_start = 1;\n");
+    fprints(f, "      pctx->stacksz--;\n");
+    fprints(f, "    }\n");
+    fprintf(f, "    else if (curstate < %s_num_terminals)\n", gen->parsername);
+  }
+  else
+  {
+    fprintf(f, "    if (curstate < %s_num_terminals)\n", gen->parsername);
+  }
   fprints(f, "    {\n");
   fprintf(f, "      restates = %s_reentries[curstate].re;\n", gen->parsername);
   fprints(f, "      cb1 = pctx->stack[pctx->stacksz - 1].cb;\n");
@@ -990,22 +997,29 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      cbs = %s_parserstatetblentries[curstateoff].cb;\n", gen->parsername);
   fprintf(f, "      if (%s_parserstatetblentries[curstateoff].is_bytes)\n", gen->parsername);
   fprintf(f, "      {\n");
-  fprintf(f, "        parser_uint_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parsername);
-  fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
-  fprintf(f, "        if (bytes_cb != PARSER_UINT_MAX)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
-  fprintf(f, "          pctx->bytes_start = 0;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        pctx->bytes_sz -= ret;\n");
-  fprintf(f, "        off += ret;\n");
-  fprintf(f, "        if (pctx->bytes_sz)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          //off = sz;\n");
-  fprintf(f, "          return -EAGAIN;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        pctx->bytes_start = 1;\n");
-  fprintf(f, "        state = PARSER_UINT_MAX-1;\n");
+  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
+  {
+    fprintf(f, "        parser_uint_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parsername);
+    fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
+    fprintf(f, "        if (bytes_cb != PARSER_UINT_MAX)\n");
+    fprintf(f, "        {\n");
+    fprintf(f, "          %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprintf(f, "          pctx->bytes_start = 0;\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "        pctx->bytes_sz -= ret;\n");
+    fprintf(f, "        off += ret;\n");
+    fprintf(f, "        if (pctx->bytes_sz)\n");
+    fprintf(f, "        {\n");
+    fprintf(f, "          //off = sz;\n");
+    fprintf(f, "          return -EAGAIN;\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "        pctx->bytes_start = 1;\n");
+    fprintf(f, "        state = PARSER_UINT_MAX-1;\n");
+  }
+  else
+  {
+    fprintf(f, "        abort();\n");
+  }
   fprintf(f, "      }\n");
   fprintf(f, "      else\n");
   fprintf(f, "      {\n");
@@ -1135,7 +1149,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, gen->parsername, gen->max_bt);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
-  fprintf(f, "  %s bytes_sz;\n", gen->bytes_size_type ? gen->bytes_size_type : "uint64_t");
+  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
+  {
+    fprintf(f, "  %s bytes_sz;\n", gen->bytes_size_type ? gen->bytes_size_type : "uint64_t");
+  }
   fprints(f, "  parser_uint_t stacksz;\n");
   fprints(f, "  parser_uint_t saved_token;\n");
   fprints(f, "  uint8_t bytes_start;\n");
@@ -1152,7 +1169,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "{\n");
   fprints(f, "  pctx->saved_token = PARSER_UINT_MAX;\n");
   fprints(f, "  pctx->bytes_start = 1;\n");
-  fprints(f, "  pctx->bytes_sz = 0;\n");
+  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
+  {
+    fprints(f, "  pctx->bytes_sz = 0;\n");
+  }
   fprints(f, "  pctx->stacksz = 1;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
   fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
