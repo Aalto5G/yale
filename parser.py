@@ -398,7 +398,7 @@ ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//
     rec.dump_all(sio)
     #
     print("const parser_uint_t %s_num_terminals;" % (parsername,), file=sio)
-    print("void(*%s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {" % (parsername,parsername), file=sio)
+    print("ssize_t(*%s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {" % (parsername,parsername), file=sio)
     for cb in callbacks_by_value:
       print(cb,",", file=sio)
     print("};", file=sio)
@@ -519,7 +519,7 @@ ssize_t """+parsername+"""_parse_block(struct """+parsername+"""_parserctx *pctx
   const struct state *restates;
   const struct rule *rule;
   const parser_uint_t *cbs;
-  void (*cb1f)(const char *, size_t, int, struct """+parsername+"""_parserctx*);
+  ssize_t (*cb1f)(const char *, size_t, int, struct """+parsername+"""_parserctx*);
 
   while (off < sz || pctx->saved_token != PARSER_UINT_MAX)
   {

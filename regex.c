@@ -1477,7 +1477,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt)
   fprints(f, "}\n");
   fprints(f, "\n");
   fprints(f, "ssize_t\n");
-  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);\n", parsername, parsername, parsername);
+  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);\n", parsername, parsername, parsername);
   fprints(f, "\n");
   free(parserupper);
 }
@@ -1595,7 +1595,7 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "}\n");
   fprints(f, "\n");
   fprints(f, "ssize_t\n");
-  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)\n", parsername, parsername, parsername);
+  fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)\n", parsername, parsername, parsername);
   fprints(f, "{\n");
   fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
   fprints(f, "  const struct state *st = NULL;\n");

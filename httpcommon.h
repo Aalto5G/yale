@@ -2,11 +2,12 @@
 #define _HTTPCOMMON_H_
 
 #include <stddef.h>
+#include <unistd.h>
 
 //void print(const char *buf, size_t siz, void *btn);
 //void printsp(const char *buf, size_t siz, void *btn);
 struct http_parserctx;
-void print(const char *buf, size_t siz, int start, struct http_parserctx *btn);
-void printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn);
+ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn);
+ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn);
 
 #endif

@@ -1,4 +1,5 @@
 #include "lenprefixcparser.h"
+#include "lenprefixcommon.h"
 #include <sys/time.h>
 
 static inline void myPutchar(char ch)
@@ -13,7 +14,7 @@ static inline void myPutchar(char ch)
   }
 }
 
-void print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+ssize_t print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -38,9 +39,10 @@ void print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *p
     putchar(']');
   }
   putchar('\n');
+  return -EAGAIN;
 }
 
-void szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+ssize_t szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   size_t i;
   if (start)
@@ -52,6 +54,7 @@ void szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pc
     pctx->bytes_sz <<= 8;
     pctx->bytes_sz |= (unsigned char)buf[i];
   }
+  return -EAGAIN;
 }
 
 int main(int argc, char **argv)

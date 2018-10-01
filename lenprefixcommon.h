@@ -2,9 +2,10 @@
 #define _LENPREFIXCOMMON_H_
 
 #include <stddef.h>
+#include <unistd.h>
 
 struct lenprefix_parserctx;
-void print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *btn);
-void szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *btn);
+ssize_t print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *btn);
+ssize_t szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *btn);
 
 #endif

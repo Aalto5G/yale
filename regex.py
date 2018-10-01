@@ -58,7 +58,7 @@ static inline void
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, int, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1);//, void *baton);
 """, file=sio)
     return
   def dump_all(self, sio):
@@ -72,7 +72,7 @@ static inline int
 }
 
 ssize_t
-"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, void(*cbtbl[])(const char*, size_t, int, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)
+"""+parsername+"""_feed_statemachine(struct """+parsername+"""_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct """+parsername+"""_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)
 {
   const unsigned char *ubuf = (unsigned char*)buf;
   const struct state *st = NULL;

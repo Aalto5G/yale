@@ -1,4 +1,5 @@
 #include "httpcparser.h"
+#include "httpcommon.h"
 #include <sys/time.h>
 
 #undef DO_PRINT
@@ -17,7 +18,7 @@ static inline void myPutchar(char ch)
 }
 #endif
 
-void print(const char *buf, size_t siz, int start, void *btn)
+ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;
@@ -30,8 +31,9 @@ void print(const char *buf, size_t siz, int start, void *btn)
   putchar('>');
   putchar('\n');
 #endif
+  return -EAGAIN;
 }
-void printsp(const char *buf, size_t siz, int start, void *btn)
+ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn)
 {
 #ifdef DO_PRINT
   putchar('<');
@@ -39,6 +41,7 @@ void printsp(const char *buf, size_t siz, int start, void *btn)
   putchar('>');
   putchar('\n');
 #endif
+  return -EAGAIN;
 }
 
 int main(int argc, char **argv)
