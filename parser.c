@@ -931,7 +931,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "      ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
     fprintf(f, "      if (bytes_cb != PARSER_UINT_MAX)\n");
     fprintf(f, "      {\n");
-    fprintf(f, "        %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprintf(f, "        ssize_t cbr = %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprints(f, "        if (cbr != ret && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+    fprints(f, "        {\n");
+    fprints(f, "          return cbr;");
+    fprints(f, "        }\n");
     fprintf(f, "        pctx->bytes_start = 0;\n");
     fprintf(f, "      }\n");
     fprintf(f, "      pctx->bytes_sz -= ret;\n");
@@ -1003,7 +1007,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
     fprintf(f, "        if (bytes_cb != PARSER_UINT_MAX)\n");
     fprintf(f, "        {\n");
-    fprintf(f, "          %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprintf(f, "          ssize_t cbr = %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprints(f, "          if (cbr != ret && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+    fprints(f, "          {\n");
+    fprints(f, "            return cbr;");
+    fprints(f, "          }\n");
     fprintf(f, "          pctx->bytes_start = 0;\n");
     fprintf(f, "        }\n");
     fprintf(f, "        pctx->bytes_sz -= ret;\n");
@@ -1116,7 +1124,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    else // if (curstate == PARSER_UINT_MAX)\n"
              "    {\n");
   fprintf(f, "      cb1f = %s_callbacks[pctx->stack[pctx->stacksz - 1].cb];\n", gen->parsername);
-  fprints(f, "      cb1f(NULL, 0, 0, pctx);//, baton);\n"
+  fprints(f, "      ssize_t cbr = cb1f(NULL, 0, 0, pctx);//, baton);\n"
+             "      if (cbr != 0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n"
+             "      {\n"
+             "        return cbr;\n"
+             "      }\n"
              "      pctx->stacksz--;\n"
              "    }\n"
              "  }\n"
