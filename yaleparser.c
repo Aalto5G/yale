@@ -113,6 +113,10 @@ int main(int argc, char **argv)
     {
       parsergen_state_include(&gen, yale.si.data);
     }
+    if (yale.ii.data != NULL)
+    {
+      parsergen_init_include(&gen, yale.ii.data);
+    }
     if (!yale.startns_present)
     {
       abort();

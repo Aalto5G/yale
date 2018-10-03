@@ -2,13 +2,7 @@
 #include "sslcommon.h"
 %}
 
-hdrinclude %{
-#include "ssl6cparser.h"
-%};
-
-stateinclude %{
-  struct ssl6_parserctx ssl6;
-%};
+parserinclude ssl6 ssl6 ;
 
 token uint16any = "..?" ;
 

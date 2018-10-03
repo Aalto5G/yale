@@ -88,6 +88,7 @@ struct yale {
   struct CSnippet cs;
   struct CSnippet hs;
   struct CSnippet si;
+  struct CSnippet ii;
   struct token tokens[YALE_UINT_MAX_LEGAL];
   struct namespaceitem ns[YALE_UINT_MAX_LEGAL];
   struct cb cbs[YALE_UINT_MAX_LEGAL];
@@ -134,6 +135,8 @@ static inline void yale_free(struct yale *yale)
   yale->hs.data = NULL;
   free(yale->si.data);
   yale->si.data = NULL;
+  free(yale->ii.data);
+  yale->ii.data = NULL;
   free(yale->parsername);
   yale->parsername = NULL;
   free(yale->bytessizetype);

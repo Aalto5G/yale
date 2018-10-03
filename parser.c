@@ -162,6 +162,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->nonterminalcnt = 0;
   gen->parsername = strdup(parsername);
   gen->state_include_str = NULL;
+  gen->init_include_str = NULL;
   gen->start_state = YALE_UINT_MAX_LEGAL;
   gen->epsilon = YALE_UINT_MAX_LEGAL;
   gen->rulecnt = 0;
@@ -210,6 +211,7 @@ void parsergen_free(struct ParserGen *gen)
     gen->pick_thoses[i].ds = NULL;
   }
   free(gen->state_include_str);
+  free(gen->init_include_str);
   free(gen->parsername);
   transitionbufs_fini(&gen->bufs);
   YALE_HASH_TABLE_FOR_EACH_SAFE(&gen->Fi_hash, bucket, n, x)
@@ -1189,6 +1191,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
   fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
   fprintf(f, "  %s_init_statemachine(&pctx->rctx);\n", gen->parsername);
+  if (gen->init_include_str)
+  {
+    fprintf(f, "  %s\n", gen->init_include_str);
+  }
   fprints(f, "}\n");
   fprints(f, "\n");
   fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//, void *baton);\n", gen->parsername, gen->parsername);
@@ -1201,6 +1207,15 @@ void parsergen_state_include(struct ParserGen *gen, char *stateinclude)
     abort();
   }
   gen->state_include_str = strdup(stateinclude);
+}
+
+void parsergen_init_include(struct ParserGen *gen, char *initinclude)
+{
+  if (gen->init_include_str != NULL || initinclude == NULL)
+  {
+    abort();
+  }
+  gen->init_include_str = strdup(initinclude);
 }
 
 void parsergen_set_start_state(struct ParserGen *gen, yale_uint_t start_state)

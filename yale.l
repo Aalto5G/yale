@@ -38,6 +38,8 @@ struct CSnippet cSnippet = {
 
 bytessizetype return BYTESSIZETYPE;
 stateinclude return STATEINCLUDE;
+parserinclude return PARSERINCLUDE;
+initinclude return INITINCLUDE;
 hdrinclude return HDRINCLUDE;
 action    return ACTION;
 token     return TOKEN;

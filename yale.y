@@ -53,6 +53,8 @@ int yaleyywrap(yyscan_t scanner)
 %token C_LITERAL
 %token PERCENTC_LITERAL
 %token STATEINCLUDE
+%token PARSERINCLUDE
+%token INITINCLUDE
 %token HDRINCLUDE
 %token BYTESSIZETYPE
 
@@ -204,6 +206,29 @@ elements SEMICOLON
 {
   csaddstr(&yale->si, $2);
   free($2);
+}
+| INITINCLUDE PERCENTC_LITERAL SEMICOLON
+{
+  csaddstr(&yale->ii, $2);
+  free($2);
+}
+| PARSERINCLUDE FREEFORM_TOKEN FREEFORM_TOKEN SEMICOLON
+{
+  csaddstr(&yale->hs, "\n#include \"");
+  csaddstr(&yale->hs, $2);
+  csaddstr(&yale->hs, "cparser.h\"\n");
+  csaddstr(&yale->si, "\nstruct ");
+  csaddstr(&yale->si, $2);
+  csaddstr(&yale->si, "_parserctx ");
+  csaddstr(&yale->si, $3);
+  csaddstr(&yale->si, ";\n");
+  csaddstr(&yale->ii, "\n");
+  csaddstr(&yale->ii, $2);
+  csaddstr(&yale->ii, "_parserctx_init(&pctx->");
+  csaddstr(&yale->ii, $3);
+  csaddstr(&yale->ii, ");\n");
+  free($2);
+  free($3);
 }
 | DIRECTIVE directive_continued
 | HDRINCLUDE PERCENTC_LITERAL SEMICOLON

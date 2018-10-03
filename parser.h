@@ -46,6 +46,7 @@ struct ParserGen {
   yale_uint_t start_state;
   yale_uint_t epsilon;
   char *state_include_str;
+  char *init_include_str;
   char *bytes_size_type;
   size_t Ficnt;
   yale_uint_t pick_thoses_cnt;
@@ -86,6 +87,8 @@ void parsergen_free(struct ParserGen *gen);
 void gen_parser(struct ParserGen *gen);
 
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude);
+
+void parsergen_init_include(struct ParserGen *gen, char *initinclude);
 
 void parsergen_set_bytessizetype(struct ParserGen *gen, char *type);
 

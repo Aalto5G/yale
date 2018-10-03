@@ -2,13 +2,7 @@
 #include "sslcommon.h"
 %}
 
-hdrinclude %{
-#include "ssl5cparser.h"
-%};
-
-stateinclude %{
-  struct ssl5_parserctx ssl5;
-%};
+parserinclude ssl5 ssl5 ;
 
 token<prio=1> uint16zero = "\x00\x00" ;
 token uint16any = "..?" ;

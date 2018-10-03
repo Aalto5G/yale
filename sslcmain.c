@@ -166,11 +166,6 @@ int main(int argc, char **argv)
   for (i = 0; i < 1000 * 1000; i++)
   {
     ssl1_parserctx_init(&pctx);
-    ssl2_parserctx_init(&pctx.ssl2);
-    ssl3_parserctx_init(&pctx.ssl2.ssl3);
-    ssl4_parserctx_init(&pctx.ssl2.ssl3.ssl4);
-    ssl5_parserctx_init(&pctx.ssl2.ssl3.ssl4.ssl5);
-    ssl6_parserctx_init(&pctx.ssl2.ssl3.ssl4.ssl5.ssl6);
     consumed = ssl1_parse_block(&pctx, withsni, sizeof(withsni));
     if (consumed != -EAGAIN && consumed != sizeof(withsni))
     {
