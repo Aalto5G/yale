@@ -7,9 +7,7 @@ parserinclude ssl3 ssl3 ;
 token uint8one = "\x01" ;
 token uint24any = "..?.?" ;
 
-sslhandshake = 
-uint8one uint24any<cb=szbe2> bytes<cb=feed2>
-;
+sslhandshake = uint8one uint24any<cb=szbe2> bytes<cb=feed2> ;
 
 directive bytessizetype = uint32_t ;
 directive main = sslhandshake ;

@@ -6,8 +6,7 @@ parserinclude ssl6 ssl6 ;
 
 token uint16any = "..?" ;
 
-sniext = uint16any<cb=szbe5> bytes<cb=feed5>
-;
+sniext = uint16any<cb=szbe5> bytes<cb=feed5> ;
 
 directive bytessizetype = uint16_t ;
 directive main = sniext ;

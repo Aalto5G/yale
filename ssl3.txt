@@ -8,20 +8,9 @@ token uint8any = "." ;
 token uint16any = "..?" ;
 token uint16versaccept = "\x03[\x01\x02\x03]" ;
 
-sslhandshakedata2 = 
-bytes
-uint8any<cb=szbe3>
-bytes
-uint16any<cb=szbe3>
-bytes
-uint8any<cb=szbe3>
-bytes
-uint16any<cb=szbe3>
-bytes<cb=feed3>
-;
-
-sslhandshakedata = 
-uint16versaccept action<cb=szset32_3> sslhandshakedata2 ;
+sslhandshakedata = uint16versaccept action<cb=szset32_3> bytes
+uint8any<cb=szbe3> bytes uint16any<cb=szbe3> bytes
+uint8any<cb=szbe3> bytes uint16any<cb=szbe3> bytes<cb=feed3> ;
 
 directive bytessizetype = uint16_t ;
 directive main = sslhandshakedata ;

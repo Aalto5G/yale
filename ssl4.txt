@@ -8,13 +8,10 @@ token<prio=1> uint16zero = "\x00\x00" ;
 token uint16any = "..?" ;
 
 extensions = 
-| extension extensions
-;
+| extension extensions ;
 
-extension = 
-uint16zero uint16any<cb=szbe4> bytes<cb=feed4>
-| uint16any uint16any<cb=szbe4> bytes
-;
+extension = uint16zero uint16any<cb=szbe4> bytes<cb=feed4>
+| uint16any uint16any<cb=szbe4> bytes ;
 
 directive bytessizetype = uint16_t ;
 directive main = extensions ;

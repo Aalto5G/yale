@@ -6,17 +6,13 @@ token<prio=1> uint8zero = "\x00" ;
 token uint8any = "." ;
 token uint16any = "..?" ;
 
-sni = 
-uint8zero uint16any<cb=szbe6> bytes<cb=print6>
-| uint8any uint16any<cb=szbe6> bytes
-;
+sni = uint8zero uint16any<cb=szbe6> bytes<cb=print6>
+| uint8any uint16any<cb=szbe6> bytes ;
 
-maybe_sniext2 = 
-| sni maybe_sniext2
-;
+maybe_sniext2 =
+| sni maybe_sniext2 ;
 
-sniext2 = sni maybe_sniext2
-;
+sniext2 = sni maybe_sniext2 ;
 
 directive bytessizetype = uint16_t ;
 directive main = sniext2 ;

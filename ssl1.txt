@@ -8,18 +8,9 @@ token uint8start = "\x16" ;
 token uint16any = "..?" ;
 token uint16versaccept = "\x03[\x01\x02\x03]" ;
 
-tlsmsg = 
-uint8start tlsversdata
-;
-
-tlsversdata = 
-uint16versaccept tlsdata
-;
-
-tlsdata = 
-uint16any<cb=szbe1> bytes<cb=feed1>
-;
+tlsmsgs =
+| uint8start uint16versaccept uint16any<cb=szbe1> bytes<cb=feed1> tlsmsgs ;
 
 directive bytessizetype = uint16_t ;
-directive main = tlsmsg ;
+directive main = tlsmsgs ;
 directive parsername = ssl1 ;
