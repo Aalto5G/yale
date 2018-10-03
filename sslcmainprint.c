@@ -125,8 +125,43 @@ ssize_t szbe6(const char *buf, size_t siz, int start, struct ssl6_parserctx *pct
   return -EAGAIN;
 }
 
+static inline void myPutchar(char ch)
+{
+  if (ch >= 0x20 && ch <= 0x7E)
+  {
+    putchar(ch);
+  }
+  else
+  {
+    printf("\\x%.2x", (unsigned)(unsigned char)ch);
+  }
+}
+
 ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *pctx)
 {
+  const char *ubuf = buf;
+  size_t i;
+  if (start)
+  {
+    putchar('<');
+  }
+  else
+  {
+    putchar('[');
+  }
+  for (i = 0; i < siz; i++)
+  {
+    myPutchar(ubuf[i]);
+  }
+  if (start)
+  {
+    putchar('>');
+  }
+  else
+  {
+    putchar(']');
+  }
+  putchar('\n');
   return -EAGAIN;
 }
 
@@ -156,14 +191,11 @@ int main(int argc, char **argv)
 ,0x04,0x01,0x04,0x02,0x04,0x03,0x03,0x01,0x03,0x02,0x03,0x03,0x02,0x01,0x02,0x02
 ,0x02,0x03
   };
-  double us;
-  struct timeval tv1, tv2;
 
   printf("sz: %zu\n", sizeof(pctx));
 
 
-  gettimeofday(&tv1, NULL);
-  for (i = 0; i < 1000 * 1000; i++)
+  for (i = 0; i < 1; i++)
   {
     ssl1_parserctx_init(&pctx);
     ssl2_parserctx_init(&pctx.ssl2);
@@ -178,10 +210,32 @@ int main(int argc, char **argv)
       abort();
     }
   }
-  gettimeofday(&tv2, NULL);
-  us = (tv2.tv_sec - tv1.tv_sec)/1e0 + (tv2.tv_usec - tv1.tv_usec)/1e6;
-  printf("%g us\n", us);
-  printf("%g Gbps\n", sizeof(withsni)*8/us/1e3);
+
+  printf("----------------\n");
+
+  ssl1_parserctx_init(&pctx);
+  ssl2_parserctx_init(&pctx.ssl2);
+  ssl3_parserctx_init(&pctx.ssl2.ssl3);
+  ssl4_parserctx_init(&pctx.ssl2.ssl3.ssl4);
+  ssl5_parserctx_init(&pctx.ssl2.ssl3.ssl4.ssl5);
+  ssl6_parserctx_init(&pctx.ssl2.ssl3.ssl4.ssl5.ssl6);
+  for (i = 0; i < sizeof(withsni); i++)
+  {
+    consumed = ssl1_parse_block(&pctx, withsni+i, 1);
+    if (i == sizeof(withsni) - 1)
+    {
+      if (consumed != 1 && consumed != -EAGAIN)
+      {
+        printf("Consumed %zd expected -EAGAIN/1 i=%d\n", consumed, (int)i);
+        abort();
+      }
+    }
+    else if (consumed != -EAGAIN)
+    {
+      printf("Consumed %zd expected -EAGAIN i=%d\n", consumed, (int)i);
+      abort();
+    }
+  }
 
   return 0;
 }

@@ -2,7 +2,7 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -97,6 +97,8 @@ httpcparser.c: yaleparser httppaper.txt Makefile
 
 sslcmain.d: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
 sslcmain.o: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+sslcmainprint.d: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
+sslcmainprint.o: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
 ssl1cparser.d: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
 ssl1cparser.o: ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
 ssl2cparser.d: ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h Makefile
@@ -148,6 +150,9 @@ ssl6cparser.c: yaleparser ssl6.txt Makefile
 
 sslcmain: sslcmain.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
 	$(CC) $(CFLAGS) -o sslcmain sslcmain.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
+
+sslcmainprint: sslcmainprint.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
+	$(CC) $(CFLAGS) -o sslcmainprint sslcmainprint.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
 
 # ------ End SSL --------
 
