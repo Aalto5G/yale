@@ -15,3 +15,4 @@ uint8any<cb=szbe3> bytes uint16any<cb=szbe3> bytes<cb=feed3> ;
 directive bytessizetype = uint16_t ;
 directive main = sslhandshakedata ;
 directive parsername = ssl3 ;
+directive nofastpath ;

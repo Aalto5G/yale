@@ -241,6 +241,6 @@ void
 dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those);
 
 void
-dump_chead(FILE *f, const char *parsername);
+dump_chead(FILE *f, const char *parsername, int nofastpath);
 
 #endif

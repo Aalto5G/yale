@@ -101,6 +101,7 @@ struct yale {
   char *bytessizetype;
   yale_uint_t startns;
   uint8_t startns_present;
+  uint8_t nofastpath;
 };
 
 static inline void yale_free(struct yale *yale)

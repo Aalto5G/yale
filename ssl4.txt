@@ -14,3 +14,4 @@ extensions =
 directive bytessizetype = uint16_t ;
 directive main = extensions ;
 directive parsername = ssl4 ;
+directive nofastpath ;

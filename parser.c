@@ -716,7 +716,7 @@ void gen_parser(struct ParserGen *gen)
 void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
 {
   size_t i, j, X, x;
-  dump_chead(f, gen->parsername);
+  dump_chead(f, gen->parsername, gen->nofastpath);
   dump_collected(f, gen->parsername, &gen->bufs);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
@@ -1379,4 +1379,9 @@ void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t c
 void parsergen_set_bytessizetype(struct ParserGen *gen, char *type)
 {
   gen->bytes_size_type = type;
+}
+
+void parsergen_nofastpath(struct ParserGen *gen)
+{
+  gen->nofastpath = 1;
 }

@@ -49,6 +49,7 @@ struct ParserGen {
   char *init_include_str;
   char *bytes_size_type;
   size_t Ficnt;
+  uint8_t nofastpath;
   yale_uint_t pick_thoses_cnt;
   yale_uint_t max_stack_size;
   yale_uint_t max_bt;
@@ -89,6 +90,8 @@ void gen_parser(struct ParserGen *gen);
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude);
 
 void parsergen_init_include(struct ParserGen *gen, char *initinclude);
+
+void parsergen_nofastpath(struct ParserGen *gen);
 
 void parsergen_set_bytessizetype(struct ParserGen *gen, char *type);
 

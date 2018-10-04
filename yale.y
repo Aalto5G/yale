@@ -62,6 +62,7 @@ int yaleyywrap(yyscan_t scanner)
 %token ACTION
 %token PRIO
 %token DIRECTIVE
+%token NOFASTPATH
 %token MAIN
 %token ENTRY
 
@@ -307,6 +308,10 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
 | BYTESSIZETYPE EQUALS FREEFORM_TOKEN SEMICOLON
 {
   yale->bytessizetype = $3;
+}
+| NOFASTPATH SEMICOLON
+{
+  yale->nofastpath = 1;
 }
 ;
 

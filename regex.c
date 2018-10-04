@@ -1579,7 +1579,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
 }
 
 void
-dump_chead(FILE *f, const char *parsername)
+dump_chead(FILE *f, const char *parsername, int nofastpath)
 {
   char *parserupper = strdup(parsername);
   size_t len = strlen(parsername);
@@ -1660,55 +1660,58 @@ dump_chead(FILE *f, const char *parsername)
   fprints(f, "  for (i = 0; i < sz; i++)\n");
   fprints(f, "  {\n");
   fprints(f, "    st = &stbl[ctx->state];\n");
-  fprintf(f, "    if (%s_is_fastpath(st, ubuf[i]))\n", parsername);
-  fprints(f, "    {\n");
-  fprints(f, "      ctx->last_accept = ctx->state;\n");
-  fprints(f, "      while (i + 8 < sz) // FIXME test this thoroughly, all branches!\n");
-  fprints(f, "      {\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+1]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 0;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+2]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 1;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+3]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 2;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+4]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 3;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+5]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 4;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+6]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 5;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+7]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 6;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+8]))\n", parsername);
-  fprints(f, "        {\n");
-  fprints(f, "          i += 7;\n");
-  fprints(f, "          break;\n");
-  fprints(f, "        }\n");
-  fprints(f, "        i += 8;\n");
-  fprints(f, "      }\n");
-  fprints(f, "      continue;\n");
-  fprints(f, "    }\n");
+  if (!nofastpath)
+  {
+    fprintf(f, "    if (%s_is_fastpath(st, ubuf[i]))\n", parsername);
+    fprints(f, "    {\n");
+    fprints(f, "      ctx->last_accept = ctx->state;\n");
+    fprints(f, "      while (i + 8 < sz) // FIXME test this thoroughly, all branches!\n");
+    fprints(f, "      {\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+1]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 0;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+2]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 1;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+3]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 2;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+4]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 3;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+5]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 4;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+6]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 5;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+7]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 6;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprintf(f, "        if (!%s_is_fastpath(st, ubuf[i+8]))\n", parsername);
+    fprints(f, "        {\n");
+    fprints(f, "          i += 7;\n");
+    fprints(f, "          break;\n");
+    fprints(f, "        }\n");
+    fprints(f, "        i += 8;\n");
+    fprints(f, "      }\n");
+    fprints(f, "      continue;\n");
+    fprints(f, "    }\n");
+  }
   fprints(f, "    newstate = st->transitions[ubuf[i]];\n");
   fprints(f, "    if (newstate != ctx->state) // Improves perf a lot\n");
   fprints(f, "    {\n");

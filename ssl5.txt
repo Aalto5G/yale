@@ -11,3 +11,4 @@ sniext = uint16any<cb=szbe5> bytes<cb=feed5> ;
 directive bytessizetype = uint16_t ;
 directive main = sniext ;
 directive parsername = ssl5 ;
+directive nofastpath ;

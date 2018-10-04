@@ -245,7 +245,7 @@ int main(int argc, char **argv)
     fclose(f);
     f = fopen("httpparser2.c", "w");
     fprintf(f, "#include \"httpparser2.h\"\n");
-    dump_chead(f, "http");
+    dump_chead(f, "http", 0);
     dump_collected(f, "http", &bufs);
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
     {

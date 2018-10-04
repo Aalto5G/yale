@@ -17,3 +17,4 @@ sniext2 = sni maybe_sniext2 ;
 directive bytessizetype = uint16_t ;
 directive main = sniext2 ;
 directive parsername = ssl6 ;
+directive nofastpath ;
