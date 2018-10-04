@@ -9,6 +9,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+enum yale_flags {
+  YALE_FLAG_START = (1<<0),
+  YALE_FLAG_END = (1<<1),
+  YALE_FLAG_ACTION = (1<<2),
+};
+
 typedef uint8_t lexer_uint_t;
 typedef uint8_t parser_uint_t;
 #define LEXER_UINT_MAX UINT8_MAX

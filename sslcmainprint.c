@@ -3,10 +3,10 @@
 #include "ssl1cparser.h"
 #include <sys/time.h>
 
-ssize_t szbe1(const char *buf, size_t siz, int start, struct ssl1_parserctx *pctx)
+ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {
   size_t i;
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     pctx->bytes_sz = 0;
   }
@@ -17,15 +17,15 @@ ssize_t szbe1(const char *buf, size_t siz, int start, struct ssl1_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed1(const char *buf, size_t siz, int start, struct ssl1_parserctx *pctx)
+ssize_t feed1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {
   return ssl2_parse_block(&pctx->ssl2, buf, siz);
 }
 
-ssize_t szbe2(const char *buf, size_t siz, int start, struct ssl2_parserctx *pctx)
+ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
 {
   size_t i;
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     pctx->bytes_sz = 0;
   }
@@ -36,15 +36,15 @@ ssize_t szbe2(const char *buf, size_t siz, int start, struct ssl2_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed2(const char *buf, size_t siz, int start, struct ssl2_parserctx *pctx)
+ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
 {
   return ssl3_parse_block(&pctx->ssl3, buf, siz);
 }
 
-ssize_t szbe3(const char *buf, size_t siz, int start, struct ssl3_parserctx *pctx)
+ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
   size_t i;
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     pctx->bytes_sz = 0;
   }
@@ -55,19 +55,19 @@ ssize_t szbe3(const char *buf, size_t siz, int start, struct ssl3_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed3(const char *buf, size_t siz, int start, struct ssl3_parserctx *pctx)
+ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     ssl4_parserctx_init(&pctx->ssl4);
   }
   return ssl4_parse_block(&pctx->ssl4, buf, siz);
 }
 
-ssize_t szbe4(const char *buf, size_t siz, int start, struct ssl4_parserctx *pctx)
+ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
 {
   size_t i;
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     pctx->bytes_sz = 0;
   }
@@ -78,19 +78,19 @@ ssize_t szbe4(const char *buf, size_t siz, int start, struct ssl4_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed4(const char *buf, size_t siz, int start, struct ssl4_parserctx *pctx)
+ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
 {
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     ssl5_parserctx_init(&pctx->ssl5);
   }
   return ssl5_parse_block(&pctx->ssl5, buf, siz);
 }
 
-ssize_t szbe5(const char *buf, size_t siz, int start, struct ssl5_parserctx *pctx)
+ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
 {
   size_t i;
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     pctx->bytes_sz = 0;
   }
@@ -101,19 +101,19 @@ ssize_t szbe5(const char *buf, size_t siz, int start, struct ssl5_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed5(const char *buf, size_t siz, int start, struct ssl5_parserctx *pctx)
+ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
 {
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     ssl6_parserctx_init(&pctx->ssl6);
   }
   return ssl6_parse_block(&pctx->ssl6, buf, siz);
 }
 
-ssize_t szbe6(const char *buf, size_t siz, int start, struct ssl6_parserctx *pctx)
+ssize_t szbe6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
 {
   size_t i;
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     pctx->bytes_sz = 0;
   }
@@ -137,11 +137,11 @@ static inline void myPutchar(char ch)
   }
 }
 
-ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *pctx)
+ssize_t print6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     putchar('<');
   }
@@ -153,7 +153,7 @@ ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *pc
   {
     myPutchar(ubuf[i]);
   }
-  if (start)
+  if (flags & YALE_FLAG_START)
   {
     putchar('>');
   }
@@ -161,11 +161,15 @@ ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *pc
   {
     putchar(']');
   }
+  if (flags & YALE_FLAG_END)
+  {
+    putchar('-');
+  }
   putchar('\n');
   return -EAGAIN;
 }
 
-ssize_t szset32_3(const char *buf, size_t siz, int start, struct ssl3_parserctx *pctx)
+ssize_t szset32_3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
   pctx->bytes_sz = 32;
   return -EAGAIN;

@@ -933,7 +933,16 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "      ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
     fprintf(f, "      if (bytes_cb != PARSER_UINT_MAX)\n");
     fprintf(f, "      {\n");
-    fprintf(f, "        ssize_t cbr = %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprintf(f, "        enum yale_flags flags = 0;\n");
+    fprintf(f, "        if (pctx->bytes_start)\n");
+    fprintf(f, "        {\n");
+    fprintf(f, "          flags |= YALE_FLAG_START;\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "        if (ret == pctx->bytes_sz)\n");
+    fprintf(f, "        {\n");
+    fprintf(f, "          flags |= YALE_FLAG_END;\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "        ssize_t cbr = %s_callbacks[bytes_cb](blk+off, ret, flags, pctx);\n", gen->parsername);
     fprints(f, "        if (cbr != ret && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
     fprints(f, "        {\n");
     fprints(f, "          return cbr;");
@@ -1006,10 +1015,19 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
   {
     fprintf(f, "        parser_uint_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parsername);
+    fprintf(f, "        enum yale_flags flags = 0;\n");
     fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
+    fprintf(f, "        if (pctx->bytes_start)\n");
+    fprintf(f, "        {\n");
+    fprintf(f, "          flags |= YALE_FLAG_START;\n");
+    fprintf(f, "        }\n");
+    fprintf(f, "        if (ret == pctx->bytes_sz)\n");
+    fprintf(f, "        {\n");
+    fprintf(f, "          flags |= YALE_FLAG_END;\n");
+    fprintf(f, "        }\n");
     fprintf(f, "        if (bytes_cb != PARSER_UINT_MAX)\n");
     fprintf(f, "        {\n");
-    fprintf(f, "          ssize_t cbr = %s_callbacks[bytes_cb](blk+off, ret, pctx->bytes_start, pctx);\n", gen->parsername);
+    fprintf(f, "          ssize_t cbr = %s_callbacks[bytes_cb](blk+off, ret, flags, pctx);\n", gen->parsername);
     fprints(f, "          if (cbr != ret && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
     fprints(f, "          {\n");
     fprints(f, "            return cbr;");
@@ -1126,7 +1144,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    else // if (curstate == PARSER_UINT_MAX)\n"
              "    {\n");
   fprintf(f, "      cb1f = %s_callbacks[pctx->stack[pctx->stacksz - 1].cb];\n", gen->parsername);
-  fprints(f, "      ssize_t cbr = cb1f(NULL, 0, 0, pctx);//, baton);\n"
+  fprints(f, "      ssize_t cbr = cb1f(NULL, 0, YALE_FLAG_ACTION, pctx);//, baton);\n"
              "      if (cbr != 0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n"
              "      {\n"
              "        return cbr;\n"
