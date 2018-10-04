@@ -84,15 +84,13 @@ ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pct
   {
     return result;
   }
-#if 0
   if (flags & YALE_FLAG_END)
   {
-    if (pctx->ssl5.stacksz > 0)
+    if (pctx->ssl4.stacksz != 1)
     {
       return -EINVAL;
     }
   }
-#endif
   return result;
 }
 
@@ -158,15 +156,13 @@ ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pct
   {
     return result;
   }
-#if 0
   if (flags & YALE_FLAG_END)
   {
-    if (pctx->ssl6.stacksz > 0)
+    if (pctx->ssl6.stacksz != 1)
     {
       return -EINVAL;
     }
   }
-#endif
   return result;
 }
 
