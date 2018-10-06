@@ -2,14 +2,14 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c condparsercparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -34,6 +34,9 @@ $(OBJGEN): %.o: %.c %.h %.d Makefile
 
 yaleparser: yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o Makefile
 	$(CC) $(CFLAGS) -o yaleparser yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o
+
+condtest: condtest.o condparsercparser.o Makefile
+	$(CC) $(CFLAGS) -o condtest condtest.o condparsercparser.o
 
 httpmain: httpmain.o httpparser.o Makefile
 	$(CC) $(CFLAGS) -o httpmain httpmain.o httpparser.o
@@ -72,6 +75,11 @@ lenprefixcmain.o: lenprefixcparser.h Makefile
 lenprefixcparser.d: lenprefixcparser.h Makefile
 lenprefixcparser.o: lenprefixcparser.h Makefile
 
+condparsercmain.d: condparsercparser.h Makefile
+condparsercmain.o: condparsercparser.h Makefile
+condparsercparser.d: condparsercparser.h Makefile
+condparsercparser.o: condparsercparser.h Makefile
+
 http.py: yaletopy httppaper.txt
 	./yaletopy httppaper.txt http.py
 
@@ -92,6 +100,12 @@ httpcparser.h: yaleparser httppaper.txt Makefile
 
 httpcparser.c: yaleparser httppaper.txt Makefile
 	./yaleparser httppaper.txt c
+
+condparsercparser.h: yaleparser condparser.txt Makefile
+	./yaleparser condparser.txt h
+
+condparsercparser.c: yaleparser condparser.txt Makefile
+	./yaleparser condparser.txt c
 
 # ------ Begin SSL --------
 

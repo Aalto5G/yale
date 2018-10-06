@@ -42,3 +42,6 @@ perf.data.old
 /ssl6cparser.h
 /sslcmain
 /sslcmainprint
+/condtest
+/condparsercparser.c
+/condparsercparser.h
