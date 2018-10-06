@@ -78,6 +78,7 @@ struct cb {
 
 struct rule {
   yale_uint_t lhs;
+  yale_uint_t cond;
   struct ruleitem rhs[YALE_UINT_MAX_LEGAL];
   yale_uint_t itemcnt;
   struct ruleitem rhsnoact[YALE_UINT_MAX_LEGAL];
@@ -99,6 +100,8 @@ struct yale {
   yale_uint_t rulecnt;
   char *parsername;
   char *bytessizetype;
+  char *conds[YALE_UINT_MAX_LEGAL];
+  yale_uint_t condcnt;
   yale_uint_t startns;
   uint8_t startns_present;
   uint8_t nofastpath;

@@ -1,0 +1,23 @@
+%{
+#include "condparsercommon.h"
+%}
+
+token uint16zero = "\x00\x00" ;
+token uint16one = "\x00\x01" ;
+
+msgser =
+| msg msgser
+;
+
+msg = 
+uint16zero action<cb=setzero> msgcont
+| uint16one action<cb=setone> msgcont
+;
+
+stateinclude %{ uint8_t condval; %};
+
+msgcont<cond = %{ pctx->condval == 0 %}> = uint16zero;
+msgcont<cond = %{ pctx->condval == 1 %}> = uint16one;
+
+directive main = msgser ;
+directive parsername = condparser ;

@@ -127,6 +127,8 @@ yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen);
 
 void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_uint_t rulecnt, const struct namespaceitem *ns);
 
+void parsergen_set_conds(struct ParserGen *gen, char **conds, yale_uint_t condcnt);
+
 void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t cbcnt);
 
 ssize_t max_stack_sz(struct ParserGen *gen);

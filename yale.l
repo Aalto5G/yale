@@ -54,6 +54,7 @@ val       return VAL;
 prio      return PRIO;
 cb        return CB;
 parsername return PARSERNAME;
+cond      return COND;
 
 uint8     return UINT8;
 uint16be  return UINT16BE;

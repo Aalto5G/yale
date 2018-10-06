@@ -682,11 +682,11 @@ void gen_parser(struct ParserGen *gen)
       struct dict *fo = gen->Fo[A];
       if (has_bitset(&fi->dict.has, a))
       {
-        lookuptbl_put(gen, A, a, YALE_UINT_MAX_LEGAL, i, get_sole_cb(&fi->dict, a));
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a));
       }
       if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
       {
-        lookuptbl_put(gen, A, a, YALE_UINT_MAX_LEGAL, i, get_sole_cb(fo, a));
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(fo, a));
       }
     }
     for (a = YALE_UINT_MAX_LEGAL - 1; a < YALE_UINT_MAX_LEGAL; a++)
@@ -695,11 +695,11 @@ void gen_parser(struct ParserGen *gen)
       struct dict *fo = gen->Fo[A];
       if (has_bitset(&fi->dict.has, a))
       {
-        lookuptbl_put(gen, A, a, YALE_UINT_MAX_LEGAL, i, get_sole_cb(&fi->dict, a));
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a));
       }
       if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
       {
-        lookuptbl_put(gen, A, a, YALE_UINT_MAX_LEGAL, i, get_sole_cb(fo, a));
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(fo, a));
       }
     }
   }
@@ -1292,6 +1292,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
     fprintf(f, "      case %d:\n", (int)X);
+    fprintf(f, "        ruleid=PARSER_UINT_MAX;\n");
     for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
     {
       yale_uint_t cond = gen->nonterminal_conds[X].conds[c].cond;
@@ -1600,6 +1601,12 @@ int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs)
     return 1; // Let's consider bytes as terminal
   }
   return parsergen_is_terminal(gen, rhs->value);
+}
+
+void parsergen_set_conds(struct ParserGen *gen, char **conds, yale_uint_t condcnt)
+{
+  gen->condcnt = condcnt;
+  memcpy(gen->conds, conds, condcnt*sizeof(*conds));
 }
 
 void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_uint_t rulecnt, const struct namespaceitem *ns)

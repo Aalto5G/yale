@@ -87,6 +87,7 @@ int yaleyywrap(yyscan_t scanner)
 %token DOLLAR_LITERAL
 %token MINUS
 %token CB
+%token COND
 
 %token UINT8
 %token UINT16BE
@@ -110,7 +111,9 @@ int yaleyywrap(yyscan_t scanner)
 %type<i> maybe_prio
 %type<i> maybe_minus
 %type<i> token_ltgtexp
+%type<i> cond_ltgtexp
 %type<i> maybe_token_ltgt
+%type<i> maybe_cond_ltgt
 %type<i> bytes_ltgtexp
 %type<i> maybe_bytes_ltgt
 %type<str> STRING_LITERAL
@@ -164,7 +167,7 @@ yalerule:
   tk->nsitem = i;
   tk->re = $5;
 }
-| FREEFORM_TOKEN EQUALS
+| FREEFORM_TOKEN maybe_cond_ltgt EQUALS
 {
   struct rule *rule;
   yale_uint_t i;
@@ -200,6 +203,7 @@ yalerule:
     yale->ns[i].is_lhs = 1;
     yale->nscnt++;
   }
+  rule->cond = $2;
   rule->lhs = i;
 }
 elements SEMICOLON
@@ -331,6 +335,7 @@ alternation:
   }
   rule = &yale->rules[yale->rulecnt];
   rule->lhs = yale->rules[yale->rulecnt-1].lhs;
+  rule->cond = yale->rules[yale->rulecnt-1].cond;
   yale->rulecnt++;
 }
 concatenation
@@ -476,6 +481,26 @@ maybe_uint_ltgt
 
 maybe_uint_ltgt:
 | LT uint_ltgtexp GT
+;
+
+maybe_cond_ltgt:
+{
+  $$ = YALE_UINT_MAX_LEGAL;
+}
+| LT cond_ltgtexp GT
+{
+  $$ = $2;
+}
+;
+
+cond_ltgtexp:
+COND EQUALS PERCENTC_LITERAL
+{
+  int i;
+  i = yale->condcnt++;
+  yale->conds[i] = $3;
+  $$ = i;
+}
 ;
 
 maybe_token_ltgt:

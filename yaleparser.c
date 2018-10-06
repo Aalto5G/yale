@@ -123,6 +123,7 @@ int main(int argc, char **argv)
     }
     parsergen_set_start_state(&gen, yale.ns[yale.startns].val);
     parsergen_set_cb(&gen, yale.cbs, yale.cbcnt);
+    parsergen_set_conds(&gen, yale.conds, yale.condcnt);
     parsergen_set_rules(&gen, yale.rules, yale.rulecnt, yale.ns);
     if (yale.nofastpath)
     {
