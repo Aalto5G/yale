@@ -21,6 +21,11 @@ struct REGen {
 };
 
 struct LookupTblEntry {
+  struct yale_hash_list_node node;
+  yale_uint_t nonterminal;
+  yale_uint_t terminal;
+  yale_uint_t cond;
+  //char *condition;
   yale_uint_t val;
   yale_uint_t cb;
 };
@@ -37,6 +42,17 @@ struct stackconfig {
   yale_uint_t *stack;
   yale_uint_t sz;
   size_t i;
+};
+
+struct nonterminal_cond {
+  yale_uint_t cond;
+  yale_uint_t statetblidx;
+  yale_uint_t pick_those;
+};
+
+struct nonterminal_conds {
+  struct nonterminal_cond conds[YALE_UINT_MAX_LEGAL];
+  yale_uint_t condcnt;
 };
 
 struct ParserGen {
@@ -58,22 +74,28 @@ struct ParserGen {
   int tokens_finalized;
   yale_uint_t rulecnt;
   yale_uint_t cbcnt;
+  yale_uint_t condcnt;
+  size_t Tcnt;
   struct yale_hash_table Fi_hash;
   struct yale_hash_table stackconfigs_hash;
   struct dict *Fo[YALE_UINT_MAX_LEGAL + 1]; // 2 kB
   struct REGen re_gen;
-  yale_uint_t pick_thoses_id_by_nonterminal[YALE_UINT_MAX_LEGAL];
+  //yale_uint_t pick_thoses_id_by_nonterminal_cond[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
   struct pick_those_struct pick_thoses[YALE_UINT_MAX_LEGAL];
+  char *conds[YALE_UINT_MAX_LEGAL];
+  struct nonterminal_conds nonterminal_conds[YALE_UINT_MAX_LEGAL];
   struct iovec re_by_idx[YALE_UINT_MAX_LEGAL];
   int priorities[YALE_UINT_MAX_LEGAL];
   struct rule rules[YALE_UINT_MAX_LEGAL]; // 382 kB
   struct cb cbs[YALE_UINT_MAX_LEGAL];
   struct nfa_node ns[YALE_UINT_MAX_LEGAL]; // 2 MB
   struct dfa_node ds[YALE_UINT_MAX_LEGAL];
-  struct LookupTblEntry T[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
+  struct yale_hash_table Thash;
+  //struct LookupTblEntry T[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
     // val==YALE_UINT_MAX_LEGAL: invalid
     // cb==YALE_UINT_MAX_LEGAL: no callback
   yale_uint_t pick_those[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL]; // 64 kB
+  struct LookupTblEntry Tentries[32768];
   struct firstset_entry *Fi[8192]; // 64 kB
   //struct stackconfig stackconfigs[32768]; // 1.25 MB
   struct stackconfig *stackconfigs[32768]; // 0.25 MB
