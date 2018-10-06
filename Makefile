@@ -75,8 +75,8 @@ lenprefixcmain.o: lenprefixcparser.h Makefile
 lenprefixcparser.d: lenprefixcparser.h Makefile
 lenprefixcparser.o: lenprefixcparser.h Makefile
 
-condparsercmain.d: condparsercparser.h Makefile
-condparsercmain.o: condparsercparser.h Makefile
+condtest.d: condparsercparser.h Makefile
+condtest.o: condparsercparser.h Makefile
 condparsercparser.d: condparsercparser.h Makefile
 condparsercparser.o: condparsercparser.h Makefile
 
