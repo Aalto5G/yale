@@ -1191,6 +1191,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    else if (likely(curstate != PARSER_UINT_MAX))\n"
              "    {\n");
   fprintf(f, "      int is_bytes;\n");
+  fprintf(f, "      curstateoff = PARSER_UINT_MAX;\n");
   fprintf(f, "      switch (curstate)\n");
   fprintf(f, "      {\n");
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
@@ -1219,6 +1220,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "          abort();\n");
   fprintf(f, "      }\n");
   //fprintf(f, "      curstateoff = curstate - %s_num_terminals;\n", gen->parsername);
+  fprintf(f, "      if (curstateoff == PARSER_UINT_MAX)\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        return -EINVAL;\n");
+  fprintf(f, "      }\n");
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
   fprintf(f, "      cbs = %s_parserstatetblentries[curstateoff].cb;\n", gen->parsername);
   fprintf(f, "      is_bytes = %s_parserstatetblentries[curstateoff].is_bytes;\n", gen->parsername);
@@ -1394,6 +1399,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        abort();\n"
              "      }\n");
   fprintf(f, "      //ruleid = %s_parserstatetblentries[curstateoff].rhs[state];\n", gen->parsername);
+  fprintf(f, "      if (ruleid == PARSER_UINT_MAX)\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        return -EINVAL;\n");
+  fprintf(f, "      }\n");
   fprintf(f, "      rule = &%s_rules[ruleid];\n", gen->parsername);
   fprints(f, "      pctx->stacksz--;\n"
              "#if 0\n"
