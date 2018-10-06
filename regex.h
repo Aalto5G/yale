@@ -13,11 +13,13 @@
 
 struct re;
 
+#if 0
 struct wildcard {
 };
 
 struct emptystr {
 };
+#endif
 
 struct literals {
   struct charbitset bitmask;
@@ -60,8 +62,10 @@ enum re_type {
 struct re {
   enum re_type type;
   union {
+#if 0
     struct wildcard wc;
     struct emptystr e;
+#endif
     struct literals lit;
     struct concat cat;
     struct altern alt;
