@@ -211,6 +211,8 @@ clean:
 	rm -f httpcparser.h
 	rm -f lenprefixcparser.c
 	rm -f lenprefixcparser.h
+	rm -f condparsercparser.c
+	rm -f condparsercparser.h
 	rm -f httpparser.c
 	rm -f httpparser.h
 	rm -f ssl1cparser.c
@@ -238,3 +240,4 @@ distclean: clean
 	rm -f lenprefixcmain
 	rm -f yaleparser
 	rm -f regexmain
+	rm -f condtest
