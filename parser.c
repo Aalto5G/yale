@@ -5,6 +5,8 @@
 #include "yalemurmur.h"
 #include <sys/uio.h>
 
+#undef DO_PRINT_STACKCONFIG
+
 void *parsergen_alloc(struct ParserGen *gen, size_t sz)
 {
   void *result = gen->userareaptr;
@@ -377,7 +379,78 @@ struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem
   }
 }
 
-void stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_uint_t sz)
+void stackconfig_print(struct ParserGen *gen, yale_uint_t scidx)
+{
+#ifdef DO_PRINT_STACKCONFIG
+  yale_uint_t sz = gen->stackconfigs[scidx]->sz;
+  yale_uint_t i;
+  printf("s");
+  for (i = 0; i < sz; i++)
+  {
+    printf("_%d", (int)gen->stackconfigs[scidx]->stack[i]);
+  }
+  printf(" [label=\"");
+  for (i = 0; i < sz; i++)
+  {
+    if (i == 0)
+    {
+      printf("%d", (int)gen->stackconfigs[scidx]->stack[i]);
+    }
+    else
+    {
+      printf(",%d", (int)gen->stackconfigs[scidx]->stack[i]);
+    }
+  }
+  printf("\"];\n");
+#endif
+}
+
+void stacktransitionlast_print(struct ParserGen *gen, yale_uint_t scidx)
+{
+#ifdef DO_PRINT_STACKCONFIG
+  yale_uint_t sz = gen->stackconfigs[scidx]->sz;
+  yale_uint_t i;
+  printf("s");
+  for (i = 0; i < sz; i++)
+  {
+    printf("_%d", (int)gen->stackconfigs[scidx]->stack[i]);
+  }
+  printf(" -> s");
+  for (i = 0; i < sz-1; i++)
+  {
+    printf("_%d", (int)gen->stackconfigs[scidx]->stack[i]);
+  }
+  printf(" [label=\"");
+  printf("%d", (int)gen->stackconfigs[scidx]->stack[sz-1]);
+  printf("\"];\n");
+#endif
+}
+
+void stacktransitionarbitrary_print(struct ParserGen *gen, yale_uint_t scidx1,
+                                    yale_uint_t scidx2, yale_uint_t tkn)
+{
+#ifdef DO_PRINT_STACKCONFIG
+  yale_uint_t sz1 = gen->stackconfigs[scidx1]->sz;
+  yale_uint_t sz2 = gen->stackconfigs[scidx2]->sz;
+  yale_uint_t i;
+  printf("s");
+  for (i = 0; i < sz1; i++)
+  {
+    printf("_%d", (int)gen->stackconfigs[scidx1]->stack[i]);
+  }
+  printf(" -> s");
+  for (i = 0; i < sz2; i++)
+  {
+    printf("_%d", (int)gen->stackconfigs[scidx2]->stack[i]);
+  }
+  printf(" [label=\"");
+  printf("(%d)", (int)tkn);
+  printf("\"];\n");
+#endif
+}
+
+
+size_t stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_uint_t sz)
 {
   size_t i = gen->stackconfigcnt;
   uint32_t hashval = stack_hash(stack, sz);
@@ -410,11 +483,14 @@ void stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_ui
     gen->stackconfigs[i]->i = i;
     yale_hash_table_add_nogrow(&gen->stackconfigs_hash, &gen->stackconfigs[i]->node, hashval);
     gen->stackconfigcnt++;
+    stackconfig_print(gen, i);
     //printf("Not found %d!\n", (int)sz);
   }
+  return i;
 }
 
 int parsergen_is_terminal(struct ParserGen *gen, yale_uint_t x);
+
 
 ssize_t max_stack_sz(struct ParserGen *gen)
 {
@@ -428,6 +504,7 @@ ssize_t max_stack_sz(struct ParserGen *gen)
   gen->stackconfigs[0]->stack = parsergen_alloc(gen, 1*sizeof(yale_uint_t));
   gen->stackconfigs[0]->stack[0] = gen->start_state;
   gen->stackconfigs[0]->sz = 1;
+  stackconfig_print(gen, 0);
   //printf("Start state is %d, terminal? %d\n", gen->start_state, parsergen_is_terminal(gen, gen->start_state));
   for (i = 0; i < gen->stackconfigcnt; i++)
   {
@@ -442,6 +519,7 @@ ssize_t max_stack_sz(struct ParserGen *gen)
       if (parsergen_is_terminal(gen, last) || last == YALE_UINT_MAX_LEGAL)
       {
         stackconfig_append(gen, current->stack, current->sz-1);
+        stacktransitionlast_print(gen, i);
         continue;
       }
       for (a = 0; a < gen->tokencnt; a++)
@@ -484,7 +562,8 @@ ssize_t max_stack_sz(struct ParserGen *gen)
                 stack[sz++] = it->value;
               }
             }
-            stackconfig_append(gen, stack, sz);
+            size_t tmp = stackconfig_append(gen, stack, sz);
+            stacktransitionarbitrary_print(gen, i, tmp, a);
           }
         }
       }
@@ -528,7 +607,8 @@ ssize_t max_stack_sz(struct ParserGen *gen)
                 stack[sz++] = it->value;
               }
             }
-            stackconfig_append(gen, stack, sz);
+            size_t tmp = stackconfig_append(gen, stack, sz);
+            stacktransitionarbitrary_print(gen, i, tmp, a);
           }
         }
       }
