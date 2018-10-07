@@ -45,3 +45,6 @@ perf.data.old
 /condtest
 /condparsercparser.c
 /condparsercparser.h
+/httprespcparser.c
+/httprespcparser.h
+/httprespcmain

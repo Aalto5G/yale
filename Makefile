@@ -2,14 +2,14 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c condparsercparser.c
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c condparsercparser.c httprespcparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -56,6 +56,9 @@ lenprefixcmain: lenprefixcmain.o lenprefixcparser.o Makefile
 regexmain: regexmain.o regex.o Makefile
 	$(CC) $(CFLAGS) -o regexmain regexmain.o regex.o
 
+httprespcmain: httprespcmain.o httprespcparser.o Makefile
+	$(CC) $(CFLAGS) -o httprespcmain httprespcmain.o httprespcparser.o
+
 httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile
 httpmainprint.d: httpparser.h Makefile
@@ -69,6 +72,11 @@ httpcmainprint.d: httpcparser.h Makefile
 httpcmainprint.o: httpcparser.h Makefile
 httpcparser.d: httpcparser.h Makefile
 httpcparser.o: httpcparser.h Makefile
+
+httprespcmain.d: httprespcparser.h Makefile
+httprespcmain.o: httprespcparser.h Makefile
+httprespcparser.d: httprespcparser.h Makefile
+httprespcparser.o: httprespcparser.h Makefile
 
 lenprefixcmain.d: lenprefixcparser.h Makefile
 lenprefixcmain.o: lenprefixcparser.h Makefile
@@ -100,6 +108,12 @@ httpcparser.h: yaleparser httppaper.txt Makefile
 
 httpcparser.c: yaleparser httppaper.txt Makefile
 	./yaleparser httppaper.txt c
+
+httprespcparser.h: yaleparser httpresp.txt Makefile
+	./yaleparser httpresp.txt h
+
+httprespcparser.c: yaleparser httpresp.txt Makefile
+	./yaleparser httpresp.txt c
 
 condparsercparser.h: yaleparser condparser.txt Makefile
 	./yaleparser condparser.txt h
