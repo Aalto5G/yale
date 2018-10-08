@@ -225,6 +225,8 @@ clean:
 	rm -f httpcparser.h
 	rm -f lenprefixcparser.c
 	rm -f lenprefixcparser.h
+	rm -f httprespcparser.c
+	rm -f httprespcparser.h
 	rm -f condparsercparser.c
 	rm -f condparsercparser.h
 	rm -f httpparser.c
