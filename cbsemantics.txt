@@ -129,3 +129,7 @@ if encountering nonterminal:
 - use the T[X,y] decision by applying the rule
 
 TODO: how the interaction with conditionals works?
+T[X,y] = {cond1: rN<cb=...>, cond2: rM<cb=...>}
+
+TODO: modification to main stack size calculation
+TODO: cb stack size calculation
