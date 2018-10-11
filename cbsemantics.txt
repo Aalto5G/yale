@@ -139,3 +139,13 @@ TODO: cb stack size calculation
 
 Note that if Fi(A) = {d<cb=cb1>, d<cb=cb2>} the d<cb=cb1> and d<cb=cb2> are
 treated as different, so there is a FIRST/FIRST confict.
+
+Example:
+A = B y;
+B = C D;
+C = epsilon | x<cb=cb1>;
+D = epsilon | x<cb=cb2>;
+
+Fi(C D) = {epsilon, x<cb=cb1>, x<cb=cb2>}
+
+This set of rules would have a FIRST/FOLLOW conflict anyway.
