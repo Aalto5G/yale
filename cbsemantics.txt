@@ -30,42 +30,42 @@ Fi(E) = {e<cb=cb5>}
 2.
 Fi(e<cb=cb5>) = {e<cb=cb5>}
 Fi(d<cb=cb4>) = {d<cb=cb4>}
-Fi(D<cb=cb3> E) = {d<cb=cb3,cb4>} <- cb3 taken into account!
+Fi(D<cb=cb3> E) = {d<cb=cb3',cb4>} <- cb3 taken into account!
 Fi(C<cb=cb2> D) = {}
 Fi(B<cb=cb1> C) = {}
 
 3.
 Fi(A) = {}
 Fi(B) = {}
-Fi(C) = {d<cb=cb3,cb4>}
+Fi(C) = {d<cb=cb3',cb4>}
 Fi(D) = {d<cb=cb4>}
 Fi(E) = {e<cb=cb5>}
 
 2.
 Fi(e<cb=cb5>) = {e<cb=cb5>}
 Fi(d<cb=cb4>) = {d<cb=cb4>}
-Fi(D<cb=cb3> E) = {d<cb=cb3,cb4>}
-Fi(C<cb=cb2> D) = {d<cb=cb2,cb3,cb4>} <- cb2 taken into account!
+Fi(D<cb=cb3> E) = {d<cb=cb3',cb4>}
+Fi(C<cb=cb2> D) = {d<cb=cb2',cb3',cb4>} <- cb2 taken into account!
 Fi(B<cb=cb1> C) = {}
 
 3.
 Fi(A) = {}
-Fi(B) = {d<cb=cb2,cb3,cb4>}
-Fi(C) = {d<cb=cb3,cb4>}
+Fi(B) = {d<cb=cb2',cb3',cb4>}
+Fi(C) = {d<cb=cb3',cb4>}
 Fi(D) = {d<cb=cb4>}
 Fi(E) = {e<cb=cb5>}
 
 2.
 Fi(e<cb=cb5>) = {e<cb=cb5>}
 Fi(d<cb=cb4>) = {d<cb=cb4>}
-Fi(D<cb=cb3> E) = {d<cb=cb3,cb4>}
-Fi(C<cb=cb2> D) = {d<cb=cb2,cb3,cb4>}
-Fi(B<cb=cb1> C) = {d<cb=cb1,cb2,cb3,cb4>} <- cb1 taken into account!
+Fi(D<cb=cb3> E) = {d<cb=cb3',cb4>}
+Fi(C<cb=cb2> D) = {d<cb=cb2',cb3',cb4>}
+Fi(B<cb=cb1> C) = {d<cb=cb1',cb2',cb3',cb4>} <- cb1 taken into account!
 
 3.
-Fi(A) = {d<cb=cb1,cb2,cb3,cb4>}
-Fi(B) = {d<cb=cb2,cb3,cb4>}
-Fi(C) = {d<cb=cb3,cb4>}
+Fi(A) = {d<cb=cb1',cb2',cb3',cb4>}
+Fi(B) = {d<cb=cb2',cb3',cb4>}
+Fi(C) = {d<cb=cb3',cb4>}
 Fi(D) = {d<cb=cb4>}
 Fi(E) = {e<cb=cb5>}
 
@@ -108,16 +108,19 @@ Fo(E) = Fo(C) = {}, unchanged
 
 Now we can construct parse table:
 
-T[A,d] = r1<cb=cb1,cb2,cb3,cb4>
+T[A,d] = r1<cb=cb1',cb2',cb3',cb4>
 T[A,e] = nil
-T[B,d] = r2<cb=cb2,cb3,cb4>
+T[B,d] = r2<cb=cb2',cb3',cb4>
 T[B,e] = nil
-T[C,d] = r3<cb=cb3,cb4>
+T[C,d] = r3<cb=cb3',cb4>
 T[C,e] = nil
 T[D,d] = r4<cb=cb4>
 T[D,e] = nil
 T[E,d] = nil
 T[E,e] = r5<cb=cb5>
+
+The apostrophe (') tells that a rule will push the callback into stack, meaning
+that it shouldn't be called with the END marker.
 
 Stack consists of these pairs:
 (terminal, cb) or (nonterminal, cb)
@@ -133,3 +136,6 @@ T[X,y] = {cond1: rN<cb=...>, cond2: rM<cb=...>}
 
 TODO: modification to main stack size calculation
 TODO: cb stack size calculation
+
+Note that if Fi(A) = {d<cb=cb1>, d<cb=cb2>} the d<cb=cb1> and d<cb=cb2> are
+treated as different, so there is a FIRST/FIRST confict.
