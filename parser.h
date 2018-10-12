@@ -37,6 +37,25 @@ struct firstset_entry {
   struct dict dict; // 8 KB
 };
 
+struct firstset_value {
+  uint8_t is_bytes:1;
+  yale_uint_t token;
+  yale_uint_t cbsz;
+  yale_uint_t *cbs;
+};
+
+struct firstset_values {
+  struct firstset_value *values;
+  yale_uint_t valuessz;
+};
+
+struct firstset_entry2 {
+  struct yale_hash_list_node node;
+  struct ruleitem *rhs;
+  yale_uint_t rhssz;
+  struct firstset_values values;
+};
+
 struct stackconfig {
   struct yale_hash_list_node node;
   yale_uint_t *stack;
@@ -64,7 +83,7 @@ struct ParserGen {
   char *state_include_str;
   char *init_include_str;
   char *bytes_size_type;
-  size_t Ficnt;
+  //size_t Ficnt;
   uint8_t nofastpath;
   yale_uint_t pick_thoses_cnt;
   yale_uint_t max_stack_size;
@@ -77,7 +96,9 @@ struct ParserGen {
   yale_uint_t condcnt;
   size_t Tcnt;
   struct yale_hash_table Fi_hash;
+  struct yale_hash_table Fi2_hash;
   struct yale_hash_table stackconfigs_hash;
+  struct firstset_values Fo2[YALE_UINT_MAX_LEGAL + 1];
   struct dict *Fo[YALE_UINT_MAX_LEGAL + 1]; // 2 kB
   struct REGen re_gen;
   //yale_uint_t pick_thoses_id_by_nonterminal_cond[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
@@ -96,7 +117,7 @@ struct ParserGen {
     // cb==YALE_UINT_MAX_LEGAL: no callback
   yale_uint_t pick_those[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL]; // 64 kB
   struct LookupTblEntry Tentries[32768];
-  struct firstset_entry *Fi[8192]; // 64 kB
+  //struct firstset_entry *Fi[8192]; // 64 kB
   //struct stackconfig stackconfigs[32768]; // 1.25 MB
   struct stackconfig *stackconfigs[32768]; // 0.25 MB
   struct transitionbufs bufs; // 16 MB, this could be made to use dynamic alloc
@@ -136,5 +157,9 @@ ssize_t max_stack_sz(struct ParserGen *gen);
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f);
 
 void parsergen_dump_parser(struct ParserGen *gen, FILE *f);
+
+void firstset2_update(struct ParserGen *gen, struct firstset_values *val2, const struct firstset_values *val1, int noepsilon, int *changed);
+
+void firstset_values_deep_free(struct firstset_values *orig);
 
 #endif

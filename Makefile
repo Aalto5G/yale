@@ -2,7 +2,7 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -34,6 +34,9 @@ $(OBJGEN): %.o: %.c %.h %.d Makefile
 
 yaleparser: yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o Makefile
 	$(CC) $(CFLAGS) -o yaleparser yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o
+
+unit: unit.o parser.o regex.o Makefile
+	$(CC) $(CFLAGS) -o unit unit.o parser.o regex.o
 
 condtest: condtest.o condparsercparser.o Makefile
 	$(CC) $(CFLAGS) -o condtest condtest.o condparsercparser.o
