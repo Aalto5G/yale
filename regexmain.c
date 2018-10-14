@@ -249,7 +249,9 @@ int main(int argc, char **argv)
     dump_collected(f, "http", &bufs);
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
     {
-      dump_one(f, "http", &pick_thoses[i]);
+#if 0
+      dump_one(f, "http", &pick_thoses[i]); // Doesn't work anymore, needs gen
+#endif
     }
     fclose(f);
   }

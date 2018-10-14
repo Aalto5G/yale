@@ -95,6 +95,7 @@ struct ParserGen {
   yale_uint_t cbcnt;
   yale_uint_t condcnt;
   size_t Tcnt;
+  struct numbers_sets numbershash;
   struct yale_hash_table Fi_hash;
   struct yale_hash_table Fi2_hash;
   struct yale_hash_table stackconfigs_hash;

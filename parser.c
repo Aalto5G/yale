@@ -289,6 +289,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
                        parsergen_alloc_fn, gen);
   yale_hash_table_init(&gen->Thash, 32768, lookuptbl_hash_fn, NULL,
                        parsergen_alloc_fn, gen);
+  numbers_sets_init(&gen->numbershash, parsergen_alloc_fn, gen);
 }
 
 void firstset_entry2_deep_free(struct firstset_entry2 *e);
@@ -1477,7 +1478,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   dump_collected(f, gen->parsername, &gen->bufs);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
-    dump_one(f, gen->parsername, &gen->pick_thoses[i]);
+    dump_one(f, gen->parsername, &gen->pick_thoses[i], &gen->numbershash, parsergen_alloc_fn, gen);
   }
   fprintf(f, "const parser_uint_t %s_num_terminals;\n", gen->parsername);
   fprintf(f, "ssize_t(*%s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);

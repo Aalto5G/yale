@@ -134,7 +134,8 @@ void nfa_connect_default(struct nfa_node *n, yale_uint_t node2)
 
 void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
                     struct bitset *closurep, int *tainted,
-                    struct bitset *acceptidsetp)
+                    struct bitset *acceptidsetp,
+                    struct bitset *taintidsetp)
 {
   struct bitset closure = nodes;
   struct bitset taintidset = {};
@@ -233,10 +234,11 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
   }
   *closurep = closure;
   *acceptidsetp = acceptidset;
+  *taintidsetp = taintidset;
   *tainted = (taintcnt > 1);
 }
 
-void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acceptidset)
+void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acceptidset, struct bitset *taintidset)
 {
 #if 0
 #else
@@ -258,16 +260,23 @@ void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acc
     printf("Accepting yet acceptidset empty\n");
     abort();
   }
+  if (accepting && bitset_empty(taintidset))
+  {
+    printf("Accepting yet taintidset empty\n");
+    abort();
+  }
   n->accepting = !!accepting;
   n->tainted = !!tainted;
   n->acceptidset = *acceptidset;
+  n->taintidset = *taintidset;
   n->transitions_id = SIZE_MAX;
 }
 
 void dfa_init_empty(struct dfa_node *n)
 {
   struct bitset acceptidset = {};
-  dfa_init(n, 0, 0, &acceptidset);
+  struct bitset taintidset = {};
+  dfa_init(n, 0, 0, &acceptidset, &taintidset);
 }
 
 void dfa_connect(struct dfa_node *n, char ch, yale_uint_t node2)
@@ -662,6 +671,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
   struct bitset dfabegin = {};
   int tainted;
   struct bitset acceptidset = {};
+  struct bitset taintidset = {};
   struct bitset defaults = {};
   const struct bitset defaults_empty = {};
   yale_uint_t wordoff = begin/64;
@@ -676,7 +686,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
 
   initial.bitset[wordoff] |= (1ULL<<bitoff);
 
-  epsilonclosure(ns, initial, &dfabegin, &tainted, &acceptidset);
+  epsilonclosure(ns, initial, &dfabegin, &tainted, &acceptidset, &taintidset);
   for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
     wordoff = i/64;
@@ -701,7 +711,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
 
   d.tbl[d.tblsz].dfanodeid = curdfanode;
   memcpy(&d.tbl[d.tblsz++].key, &dfabegin, sizeof(dfabegin));
-  dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset);
+  dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset, &taintidset);
   curdfanode++;
 
   queue[0] = dfabegin;
@@ -738,7 +748,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         i++;
       }
     }
-    epsilonclosure(ns, defaults, &defaultsec, &tainted, &acceptidset);
+    epsilonclosure(ns, defaults, &defaultsec, &tainted, &acceptidset, &taintidset);
     if (!bitset_empty(&defaultsec))
     {
       dfanodeid = YALE_UINT_MAX_LEGAL;
@@ -780,7 +790,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         }
         d.tbl[d.tblsz].dfanodeid = curdfanode;
         memcpy(&d.tbl[d.tblsz++].key, &defaultsec, sizeof(defaultsec));
-        dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset);
+        dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset, &taintidset);
         dfanodeid = curdfanode++;
         if (queuesz >= sizeof(queue)/sizeof(*queue))
         {
@@ -813,7 +823,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         continue;
       }
       bitset_update(&d2[i], &defaults);
-      epsilonclosure(ns, d2[i], &ec, &tainted, &acceptidset);
+      epsilonclosure(ns, d2[i], &ec, &tainted, &acceptidset, &taintidset);
 
       dfanodeid = YALE_UINT_MAX_LEGAL;
       for (j = 0; j < d.tblsz; j++)
@@ -854,7 +864,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         }
         d.tbl[d.tblsz].dfanodeid = curdfanode;
         memcpy(&d.tbl[d.tblsz++].key, &ec, sizeof(ec));
-        dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset);
+        dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset, &taintidset);
         dfanodeid = curdfanode++;
         if (queuesz >= sizeof(queue)/sizeof(*queue))
         {
@@ -1510,9 +1520,55 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs)
 }
 
 void
-dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
+dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
+         struct numbers_sets *numbershash,
+         void *(*alloc)(void*,size_t), void *allocud)
 {
   size_t i, j;
+  for (i = 0; i < pick_those->dscnt; i++)
+  {
+    struct dfa_node *ds = &pick_those->ds[i];
+    if (numbers_sets_put(numbershash, &ds->taintidset, alloc, allocud))
+    {
+      fprintf(f, "static const parser_uint_t taintidsetarray");
+      for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+      {
+        yale_uint_t wordoff = j/64;
+        yale_uint_t bitoff = j%64;
+        if (ds->taintidset.bitset[wordoff] & (1ULL<<bitoff))
+        {
+          fprintf(f, "_%d", (int)j);
+        }
+        if (bitoff != 63)
+        {
+          j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        }
+        else
+        {
+          j++;
+        }
+      }
+      fprintf(f, "[] = {");
+      for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+      {
+        yale_uint_t wordoff = j/64;
+        yale_uint_t bitoff = j%64;
+        if (ds->taintidset.bitset[wordoff] & (1ULL<<bitoff))
+        {
+          fprintf(f, "%d,", (int)j);
+        }
+        if (bitoff != 63)
+        {
+          j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        }
+        else
+        {
+          j++;
+        }
+      }
+      fprintf(f, "};\n");
+    }
+  }
   fprintf(f, "const struct state %s_states", parsername);
   for (i = 0; i < pick_those->len; i++)
   {
@@ -1532,6 +1588,43 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those)
       fprintf(f, "{ .accepting = %d, .acceptid = %d, .final = %d,\n",
                  (int)ds->accepting, (int)ds->acceptid, (int)ds->final);
     }
+    fprints(f, ".taintids = taintidsetarray");
+    for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+    {
+      yale_uint_t wordoff = j/64;
+      yale_uint_t bitoff = j%64;
+      if (ds->taintidset.bitset[wordoff] & (1ULL<<bitoff))
+      {
+        fprintf(f, "_%d", (int)j);
+      }
+      if (bitoff != 63)
+      {
+        j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      }
+      else
+      {
+        j++;
+      }
+    }
+    fprints(f, ", .taintidsz = sizeof(taintidsetarray");
+    for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+    {
+      yale_uint_t wordoff = j/64;
+      yale_uint_t bitoff = j%64;
+      if (ds->taintidset.bitset[wordoff] & (1ULL<<bitoff))
+      {
+        fprintf(f, "_%d", (int)j);
+      }
+      if (bitoff != 63)
+      {
+        j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      }
+      else
+      {
+        j++;
+      }
+    }
+    fprints(f, ")/sizeof(parser_uint_t),\n");
     fprints(f, ".fastpathbitmask = {");
     if (ds->accepting && !ds->final)
     {
@@ -1865,4 +1958,43 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprints(f, "}\n");
 
   free(parserupper);
+}
+
+uint32_t numbers_hash(const struct bitset *numbers)
+{
+  return yalemurmur_buf(0x12345678U, numbers, sizeof(*numbers));
+}
+
+uint32_t numbers_hash_fn(struct yale_hash_list_node *node, void *ud)
+{
+  struct numbers_set *ids = YALE_CONTAINER_OF(node, struct numbers_set, node);
+  return numbers_hash(&ids->numbers);
+}
+
+void numbers_sets_init(struct numbers_sets *hash, void *(*alloc)(void*,size_t), void *allocud)
+{
+  yale_hash_table_init(&hash->hash, 8192, numbers_hash_fn, NULL, alloc, allocud);
+}
+
+int numbers_sets_put(struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud)
+{
+  uint32_t hashval = numbers_hash(numbers);
+  struct yale_hash_list_node *node;
+  struct numbers_set *e;
+  YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&hash->hash, node, hashval)
+  {
+    e = YALE_CONTAINER_OF(node, struct numbers_set, node);
+    if (memcmp(&e->numbers, numbers, sizeof(*numbers)) == 0)
+    {
+      return 0;
+    }
+  }
+  e = alloc(allocud, sizeof(*e));
+  if (e == NULL)
+  {
+    abort(); // FIXME error handling
+  }
+  memcpy(&e->numbers, numbers, sizeof(*numbers));
+  yale_hash_table_add_nogrow(&hash->hash, &e->node, hashval);
+  return 1;
 }

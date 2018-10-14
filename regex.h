@@ -84,6 +84,7 @@ struct dfa_node {
   uint8_t accepting:1;
   uint8_t final:1;
   struct bitset acceptidset;
+  struct bitset taintidset;
   uint64_t algo_tmp;
   size_t transitions_id;
 };
@@ -96,6 +97,19 @@ struct nfa_node {
   yale_uint_t taintid;
 };
 
+struct numbers_set {
+  struct yale_hash_list_node node;
+  struct bitset numbers;
+};
+
+struct numbers_sets {
+  struct yale_hash_table hash;
+};
+
+void numbers_sets_init(struct numbers_sets *hash, void *(*alloc)(void*,size_t), void *allocud);
+
+int numbers_sets_put(struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud);
+
 void nfa_init(struct nfa_node *n, int accepting, int taintid);
 
 void nfa_connect(struct nfa_node *n, char ch, yale_uint_t node2);
@@ -106,9 +120,10 @@ void nfa_connect_default(struct nfa_node *n, yale_uint_t node2);
 
 void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
                     struct bitset *closurep, int *tainted,
-                    struct bitset *acceptidsetp);
+                    struct bitset *acceptidsetp,
+                    struct bitset *taintidsetp);
 
-void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acceptidset);
+void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acceptidset, struct bitset *taintidset);
 
 void dfa_init_empty(struct dfa_node *n);
 
@@ -242,7 +257,9 @@ void
 dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs);
 
 void
-dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those);
+dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
+         struct numbers_sets *numbershash,
+         void *(*alloc)(void*,size_t), void *allocud);
 
 void
 dump_chead(FILE *f, const char *parsername, int nofastpath);

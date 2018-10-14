@@ -34,6 +34,8 @@ struct state {
   uint8_t accepting;
   uint8_t final;
   parser_uint_t acceptid;
+  const parser_uint_t *taintids;
+  parser_uint_t taintidsz;
   uint64_t fastpathbitmask[4];
 #ifdef SMALL_CODE
   const lexer_uint_t *transitions;
