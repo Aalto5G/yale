@@ -57,11 +57,13 @@ int main(int argc, char **argv)
   }
   yaleyydoparse(f, &yale);
   fclose(f);
+#if 0
   if (check_actions(&yale) != 0)
   {
     printf("Fail action\n");
     exit(1);
   }
+#endif
 
   snprintf(cnamebuf, sizeof(cnamebuf), "%s%s", yale.parsername, "cparser.c");
   snprintf(hnamebuf, sizeof(hnamebuf), "%s%s", yale.parsername, "cparser.h");
