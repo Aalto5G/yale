@@ -1528,46 +1528,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
   for (i = 0; i < pick_those->dscnt; i++)
   {
     struct dfa_node *ds = &pick_those->ds[i];
-    if (numbers_sets_put(numbershash, &ds->taintidset, alloc, allocud))
-    {
-      fprintf(f, "static const parser_uint_t taintidsetarray");
-      for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
-      {
-        yale_uint_t wordoff = j/64;
-        yale_uint_t bitoff = j%64;
-        if (ds->taintidset.bitset[wordoff] & (1ULL<<bitoff))
-        {
-          fprintf(f, "_%d", (int)j);
-        }
-        if (bitoff != 63)
-        {
-          j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-        }
-        else
-        {
-          j++;
-        }
-      }
-      fprintf(f, "[] = {");
-      for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
-      {
-        yale_uint_t wordoff = j/64;
-        yale_uint_t bitoff = j%64;
-        if (ds->taintidset.bitset[wordoff] & (1ULL<<bitoff))
-        {
-          fprintf(f, "%d,", (int)j);
-        }
-        if (bitoff != 63)
-        {
-          j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-        }
-        else
-        {
-          j++;
-        }
-      }
-      fprintf(f, "};\n");
-    }
+    numbers_sets_emit(f, numbershash, &ds->taintidset, alloc, allocud);
   }
   fprintf(f, "const struct state %s_states", parsername);
   for (i = 0; i < pick_those->len; i++)
@@ -1997,4 +1958,49 @@ int numbers_sets_put(struct numbers_sets *hash, const struct bitset *numbers, vo
   memcpy(&e->numbers, numbers, sizeof(*numbers));
   yale_hash_table_add_nogrow(&hash->hash, &e->node, hashval);
   return 1;
+}
+
+void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud)
+{
+  size_t j;
+  if (numbers_sets_put(hash, numbers, alloc, allocud))
+  {
+    fprintf(f, "static const parser_uint_t taintidsetarray");
+    for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+    {
+      yale_uint_t wordoff = j/64;
+      yale_uint_t bitoff = j%64;
+      if (numbers->bitset[wordoff] & (1ULL<<bitoff))
+      {
+        fprintf(f, "_%d", (int)j);
+      }
+      if (bitoff != 63)
+      {
+        j = (wordoff*64) + myffsll(numbers->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      }
+      else
+      {
+        j++;
+      }
+    }
+    fprintf(f, "[] = {");
+    for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+    {
+      yale_uint_t wordoff = j/64;
+      yale_uint_t bitoff = j%64;
+      if (numbers->bitset[wordoff] & (1ULL<<bitoff))
+      {
+        fprintf(f, "%d,", (int)j);
+      }
+      if (bitoff != 63)
+      {
+        j = (wordoff*64) + myffsll(numbers->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      }
+      else
+      {
+        j++;
+      }
+    }
+    fprintf(f, "};\n");
+  }
 }

@@ -160,7 +160,8 @@ uint32_t lookuptbl_hash_fn(struct yale_hash_list_node *node, void *ud)
 void lookuptbl_put(struct ParserGen *gen,
                    yale_uint_t nonterminal, yale_uint_t terminal,
                    yale_uint_t cond,
-                   yale_uint_t val, yale_uint_t cb)
+                   yale_uint_t val, yale_uint_t cb,
+                   yale_uint_t *cbs, yale_uint_t cbsz)
 {
   uint32_t hashval = lookuptbl_hash(nonterminal, terminal);
   struct yale_hash_list_node *node;
@@ -186,6 +187,11 @@ void lookuptbl_put(struct ParserGen *gen,
   e->cond = cond;
   e->val = val;
   e->cb = cb;
+  memset(&e->cbs, 0, sizeof(e->cbs));
+  for (i = 0; i < cbsz; i++)
+  {
+    set_bitset(&e->cbs, cbs[i]);
+  }
   yale_hash_table_add_nogrow(&gen->Thash, &e->node, hashval);
   for (i = 0; i < gen->nonterminal_conds[nonterminal].condcnt; i++)
   {
@@ -1316,27 +1322,63 @@ void gen_parser(struct ParserGen *gen)
     for (a = 0; a < gen->tokencnt; a++)
     {
       struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
+      struct firstset_entry2 *fi2 = firstset2_lookup(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
+      struct firstset_value *fval = NULL;
       struct dict *fo = gen->Fo[A];
+      struct firstset_values *fo2 = &gen->Fo2[A];
       if (has_bitset(&fi->dict.has, a))
       {
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a));
+        for (j = 0; j < fi2->values.valuessz; j++)
+        {
+          if (fi2->values.values[j].token == a)
+          {
+            fval = &fi2->values.values[j];
+          }
+        }
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a), fval->cbs, fval->cbsz);
       }
+      fval = NULL;
       if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
       {
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(fo, a));
+        for (j = 0; j < fo2->valuessz; j++)
+        {
+          if (fo2->values[j].token == a)
+          {
+            fval = &fo2->values[j];
+          }
+        }
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(fo, a), fval->cbs, fval->cbsz);
       }
     }
     for (a = YALE_UINT_MAX_LEGAL - 1; a < YALE_UINT_MAX_LEGAL; a++)
     {
       struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
+      struct firstset_entry2 *fi2 = firstset2_lookup(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
+      struct firstset_value *fval = NULL;
       struct dict *fo = gen->Fo[A];
+      struct firstset_values *fo2 = &gen->Fo2[A];
       if (has_bitset(&fi->dict.has, a))
       {
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a));
+        for (j = 0; j < fi2->values.valuessz; j++)
+        {
+          if (fi2->values.values[j].token == a)
+          {
+            fval = &fi2->values.values[j];
+          }
+        }
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a), fval->cbs, fval->cbsz);
       }
+      fval = NULL;
       if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
       {
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(fo, a));
+        for (j = 0; j < fo2->valuessz; j++)
+        {
+          if (fo2->values[j].token == a)
+          {
+            fval = &fo2->values[j];
+          }
+        }
+        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(fo, a), fval->cbs, fval->cbsz);
       }
     }
   }
@@ -1493,6 +1535,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "  const struct state *re;\n");
   fprintf(f, "  //const parser_uint_t rhs[%d];\n", gen->tokencnt);
   fprintf(f, "  const parser_uint_t cb[%d];\n", gen->tokencnt);
+  fprintf(f, "  const struct callbacks cb2[%d];\n", gen->tokencnt);
   fprints(f, "};\n");
   fprintf(f, "const parser_uint_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt);
   fprintf(f, "const parser_uint_t %s_start_state = %d;\n", gen->parsername, gen->start_state);
@@ -1504,6 +1547,45 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprints(f, "},\n");
   }
   fprints(f, "};\n");
+  for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
+  {
+    for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
+    {
+      yale_uint_t cond = gen->nonterminal_conds[X].conds[c].cond;
+      {
+        uint32_t hashval = lookuptbl_hash(X, YALE_UINT_MAX_LEGAL-1);
+        struct yale_hash_list_node *node;
+        YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+        {
+          struct LookupTblEntry *e =
+            YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+          if (e->nonterminal == X && e->terminal == YALE_UINT_MAX_LEGAL-1 &&
+              e->cond == cond &&
+              e->val != YALE_UINT_MAX_LEGAL)
+          {
+            numbers_sets_emit(f, &gen->numbershash, &e->cbs, parsergen_alloc_fn, gen);
+            break;
+          }
+        }
+      }
+      for (x = 0; x < gen->tokencnt; x++)
+      {
+        uint32_t hashval = lookuptbl_hash(X, x);
+        struct yale_hash_list_node *node;
+        YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+        {
+          struct LookupTblEntry *e =
+            YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+          if (e->nonterminal == X && e->terminal == x &&
+              e->cond == cond)
+          {
+            numbers_sets_emit(f, &gen->numbershash, &e->cbs, parsergen_alloc_fn, gen);
+            break;
+          }
+        }
+      }
+    }
+  }
   fprintf(f, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {\n", gen->parsername, gen->parsername);
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
@@ -1605,6 +1687,67 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
           }
         }
         fprints(f, ",\n");
+        fprints(f, ".cb2 = {\n");
+        for (i = 0; i < gen->tokencnt; i++)
+        {
+          uint32_t hashval = lookuptbl_hash(X, i);
+          int found = 0;
+          struct yale_hash_list_node *node;
+          YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+          {
+            struct LookupTblEntry *e =
+              YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+            if (e->nonterminal == X && e->terminal == i &&
+                e->cond == cond &&
+                e->val != YALE_UINT_MAX_LEGAL)
+            {
+              fprintf(f, "{.cbs = taintidsetarray");
+              for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+              {
+                yale_uint_t wordoff = j/64;
+                yale_uint_t bitoff = j%64;
+                if (e->cbs.bitset[wordoff] & (1ULL<<bitoff))
+                {
+                  fprintf(f, "_%d", (int)j);
+                }
+                if (bitoff != 63)
+                {
+                  j = (wordoff*64) + myffsll(e->cbs.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+                }
+                else
+                {
+                  j++;
+                }
+              }
+              fprintf(f, ", .cbsz = sizeof(taintidsetarray");
+              for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
+              {
+                yale_uint_t wordoff = j/64;
+                yale_uint_t bitoff = j%64;
+                if (e->cbs.bitset[wordoff] & (1ULL<<bitoff))
+                {
+                  fprintf(f, "_%d", (int)j);
+                }
+                if (bitoff != 63)
+                {
+                  j = (wordoff*64) + myffsll(e->cbs.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+                }
+                else
+                {
+                  j++;
+                }
+              }
+              fprintf(f, ")/sizeof(parser_uint_t),}, ");
+              found = 1;
+              break;
+            }
+          }
+          if (!found)
+          {
+            fprintf(f, "{.cbs = NULL, .cbsz = 0}, ");
+          }
+        }
+        fprints(f, "},\n");
         fprints(f, ".cb = {\n");
         for (i = 0; i < gen->tokencnt; i++)
         {

@@ -110,6 +110,8 @@ void numbers_sets_init(struct numbers_sets *hash, void *(*alloc)(void*,size_t), 
 
 int numbers_sets_put(struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud);
 
+void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud);
+
 void nfa_init(struct nfa_node *n, int accepting, int taintid);
 
 void nfa_connect(struct nfa_node *n, char ch, yale_uint_t node2);

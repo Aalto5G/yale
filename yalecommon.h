@@ -44,6 +44,11 @@ struct state {
 #endif
 };
 
+struct callbacks {
+  const parser_uint_t *cbs;
+  parser_uint_t cbsz;
+};
+
 struct ruleentry {
   parser_uint_t rhs;
   parser_uint_t cb;

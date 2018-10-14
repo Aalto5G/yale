@@ -28,6 +28,7 @@ struct LookupTblEntry {
   //char *condition;
   yale_uint_t val;
   yale_uint_t cb;
+  struct bitset cbs;
 };
 
 struct firstset_entry {
