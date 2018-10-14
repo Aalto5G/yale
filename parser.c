@@ -808,7 +808,10 @@ struct firstset_values firstset_func2(struct ParserGen *gen, const struct ruleit
   {
     struct firstset_values result2;
     result2 = firstset_func2(gen, rhs+1, rhssz-1);
-    firstset2_update_noepsilon(gen, &result2, &e2->values);
+    struct firstset_values toupdate;
+    toupdate = firstset_values_deep_copy_cbadd(e2->values, rhs[0].cb);
+    firstset2_update_noepsilon(gen, &result2, &toupdate);
+    firstset_values_deep_free(&toupdate);
     return result2;
   }
 }
