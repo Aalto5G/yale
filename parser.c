@@ -526,7 +526,7 @@ void firstset_entry2_deep_free(struct firstset_entry2 *e)
 int cb_compar(const void *a, const void *b)
 {
   const int *iap = a, *ibp = b;
-  int ia = *iap, ib = *ibp;
+  yale_uint_t ia = *iap, ib = *ibp;
   if (ia > ib)
   {
     return 1;
