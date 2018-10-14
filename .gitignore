@@ -49,3 +49,6 @@ perf.data.old
 /httprespcparser.h
 /httprespcmain
 /unit
+/recursivecbcparser.c
+/recursivecbcparser.h
+/recursivecbmain

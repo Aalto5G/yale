@@ -2,14 +2,14 @@
 
 CFLAGS = -O3 -g -Wall -Wextra -Werror -Wno-unused-parameter
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c recursivecbmain.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c condparsercparser.c httprespcparser.c
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c condparsercparser.c httprespcparser.c recursivecbcparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -17,7 +17,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -62,6 +62,9 @@ regexmain: regexmain.o regex.o Makefile
 httprespcmain: httprespcmain.o httprespcparser.o Makefile
 	$(CC) $(CFLAGS) -o httprespcmain httprespcmain.o httprespcparser.o
 
+recursivecbmain: recursivecbmain.o recursivecbcparser.o Makefile
+	$(CC) $(CFLAGS) -o recursivecbmain recursivecbmain.o recursivecbcparser.o
+
 httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile
 httpmainprint.d: httpparser.h Makefile
@@ -75,6 +78,11 @@ httpcmainprint.d: httpcparser.h Makefile
 httpcmainprint.o: httpcparser.h Makefile
 httpcparser.d: httpcparser.h Makefile
 httpcparser.o: httpcparser.h Makefile
+
+recursivecbmain.d: recursivecbcparser.h Makefile
+recursivecbmain.o: recursivecbcparser.h Makefile
+recursivecbcparser.d: recursivecbcparser.h Makefile
+recursivecbcparser.o: recursivecbcparser.h Makefile
 
 httprespcmain.d: httprespcparser.h Makefile
 httprespcmain.o: httprespcparser.h Makefile
@@ -123,6 +131,12 @@ condparsercparser.h: yaleparser condparser.txt Makefile
 
 condparsercparser.c: yaleparser condparser.txt Makefile
 	./yaleparser condparser.txt c
+
+recursivecbcparser.h: yaleparser recursivecb.txt Makefile
+	./yaleparser recursivecb.txt h
+
+recursivecbcparser.c: yaleparser recursivecb.txt Makefile
+	./yaleparser recursivecb.txt c
 
 # ------ Begin SSL --------
 

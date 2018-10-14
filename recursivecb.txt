@@ -1,0 +1,17 @@
+%{
+#include "recursivecbcommon.h"
+%}
+
+token a = "a";
+token b = "b";
+token c = "c";
+token d = "d";
+token e = "e";
+token f = "f";
+
+S = a<cb=f1> b c ;
+S = D<cb=f2> e<cb=f3> f;
+D = | d<cb=f4>;
+
+directive main = S ;
+directive parsername = recursivecb ;
