@@ -1,0 +1,48 @@
+- major backtrack mess, i.e. use of backtrackstart for two purposes
+
+- backtrack buffer is not cleared
+
+- backtrack within backtrack
+  - should have backtrackstart, backtrackmid, backtrackend?
+
+token a = "a(bcdef)?";
+token b = "b(cdegh)?";
+token c = "cdegi";
+
+input: "a", "b", "c", "d", "e", "g", "i"
+
+"a": don't store to backtrack buffer
+"b": store to backtrack buffer (backtrackmid++; backtrackend++)
+"c": store to backtrack buffer (backtrackmid++; backtrackend++)
+"d": store to backtrack buffer (backtrackmid++; backtrackend++)
+"e": store to backtrack buffer (backtrackmid++; backtrackend++), now has "bcde"
+"g": don't process it yet, return token a, revert backtrackmid to backtrackstart
+"g": process backtrack buffer first:
+  bt "b": discard (backtrackstart++; backtrackmid++)
+  bt "c": don't (backtrackmid++)
+  bt "d": don't (backtrackmid++)
+  bt "e": don't (backtrackmid++)
+  in "g": store to backtrack buffer (backtrackmid++; backtrackend++)
+"i": don't process it yet, return token b
+  - and revert backtrackmid to backtrackstart
+"i": process backtrack buffer first:
+  bt "c": don't (backtrackmid++)
+  bt "d": don't (backtrackmid++)
+  bt "e": don't (backtrackmid++)
+  bt "g": don't (backtrackmid++)
+  in "i": return token c, clear backtrack buffer
+
+Rule: store input character to backtrack buffer whenever last_accept is valid
+and state is not accepting
+
+Rule: when returning newly discovered token from input, clear backtrack buffer
+... except when discovering it from backtrack buffer, set: start = mid
+Rule: when in an accepting state, clear backtrack buffer (start=0; mid=0; end=0)
+... and set last_accept
+... except when handling the backtrack buffer and in an accepting state, set:
+    start = mid;
+
+Rule: input is handled only when backtrack buffer has the following equality:
+backtrackmid == backtrackend.
+
+Should backtrackmid actually be a local variable?
