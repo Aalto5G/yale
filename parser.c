@@ -2130,9 +2130,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
     {
       yale_uint_t cond = gen->nonterminal_conds[X].conds[c].cond;
+      yale_uint_t statetblidx = gen->nonterminal_conds[X].conds[c].statetblidx;
       if (cond != YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "        if (%s)\n", gen->conds[cond]);
+        fprintf(f, "        if (curstateoff == %d)\n", (int)statetblidx);
         fprintf(f, "        {\n");
         fprints(f, "          switch (state)\n"
                    "          {\n");
