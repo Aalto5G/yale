@@ -28,7 +28,7 @@ $(DEPGEN): %.d: %.c %.h Makefile
 $(OBJ): %.o: %.c %.d Makefile
 	$(CC) $(CFLAGS) -c -o $*.o $*.c
 $(OBJGEN): %.o: %.c %.h %.d Makefile
-	$(CC) $(CFLAGS) -c -o $*.o $*.c -Wno-sign-compare -Wno-missing-prototypes -Wno-sign-conversion
+	$(CC) $(CFLAGS) -c -o $*.o $*.c
 
 -include *.d
 
