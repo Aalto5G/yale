@@ -1644,12 +1644,15 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   {
     parserupper[i] = toupper((unsigned char)parserupper[i]);
   }
-  fprints(f, "static inline int\n");
-  fprintf(f, "%s_is_fastpath(const struct state *st, unsigned char uch)\n", parsername);
-  fprints(f, "{\n");
-  fprints(f, "  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));\n");
-  fprints(f, "}\n");
-  fprints(f, "\n");
+  if (!nofastpath)
+  {
+    fprints(f, "static inline int\n");
+    fprintf(f, "%s_is_fastpath(const struct state *st, unsigned char uch)\n", parsername);
+    fprints(f, "{\n");
+    fprints(f, "  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));\n");
+    fprints(f, "}\n");
+    fprints(f, "\n");
+  }
   fprints(f, "ssize_t\n");
   fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)\n", parsername, parsername, parsername);
   fprints(f, "{\n");
