@@ -1531,7 +1531,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   {
     fprintf(f, "%s, ", gen->cbs[i].name);
   }
-  fprints(f, "};\n");
+  fprints(f, "NULL};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
   fprints(f, "  const uint8_t is_bytes;\n");
   fprints(f, "  const parser_uint_t bytes_cb;\n");
