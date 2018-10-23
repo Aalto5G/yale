@@ -52,3 +52,6 @@ perf.data.old
 /recursivecbcparser.c
 /recursivecbcparser.h
 /recursivecbmain
+/backtracktestcparser.c
+/backtracktestcparser.h
+/backtracktestmain

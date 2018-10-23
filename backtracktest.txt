@@ -1,0 +1,8 @@
+token a = "a(bcdef)?";
+token b = "b(cdegh)?";
+token c = "cdegi";
+
+S = a b c;
+
+directive main = S ;
+directive parsername = backtracktest ;
