@@ -1974,34 +1974,37 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    else if (likely(curstate != PARSER_UINT_MAX))\n"
              "    {\n");
   fprintf(f, "      int is_bytes;\n");
-  fprintf(f, "      curstateoff = PARSER_UINT_MAX;\n");
-  fprintf(f, "      switch (curstate)\n");
+  fprintf(f, "      if (pctx->curstateoff == PARSER_UINT_MAX)\n");
   fprintf(f, "      {\n");
+  fprintf(f, "        switch (curstate)\n");
+  fprintf(f, "        {\n");
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
-    fprintf(f, "        case %d:\n", (int)X);
+    fprintf(f, "          case %d:\n", (int)X);
     for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
     {
       if (gen->nonterminal_conds[X].conds[c].cond == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "          curstateoff = %d;\n", (int)gen->nonterminal_conds[X].conds[c].statetblidx);
+        fprintf(f, "            pctx->curstateoff = %d;\n", (int)gen->nonterminal_conds[X].conds[c].statetblidx);
       }
     }
     for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
     {
       if (gen->nonterminal_conds[X].conds[c].cond != YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "          if (%s)\n", gen->conds[gen->nonterminal_conds[X].conds[c].cond]);
-        fprintf(f, "          {\n");
-        fprintf(f, "            curstateoff = %d;\n", (int)gen->nonterminal_conds[X].conds[c].statetblidx);
-        fprintf(f, "          }\n");
+        fprintf(f, "            if (%s)\n", gen->conds[gen->nonterminal_conds[X].conds[c].cond]);
+        fprintf(f, "            {\n");
+        fprintf(f, "              pctx->curstateoff = %d;\n", (int)gen->nonterminal_conds[X].conds[c].statetblidx);
+        fprintf(f, "            }\n");
       }
     }
-    fprintf(f, "          break;\n");
+    fprintf(f, "            break;\n");
   }
-  fprintf(f, "        default:\n");
-  fprintf(f, "          abort();\n");
+  fprintf(f, "          default:\n");
+  fprintf(f, "            abort();\n");
+  fprintf(f, "        }\n");
   fprintf(f, "      }\n");
+  fprintf(f, "      curstateoff = pctx->curstateoff;\n");
   //fprintf(f, "      curstateoff = curstate - %s_num_terminals;\n", gen->parsername);
   fprintf(f, "      if (curstateoff == PARSER_UINT_MAX)\n");
   fprintf(f, "      {\n");
@@ -2200,6 +2203,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        abort();\n"
              "      }\n"
              "      i = 0;\n"
+             "      pctx->curstateoff = PARSER_UINT_MAX;\n"
              "      while (i + 4 <= rule->rhssz)\n"
              "      {\n"
              "        pctx->stack[pctx->stacksz++] = rule->rhs[i+0];\n"
@@ -2267,6 +2271,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "  parser_uint_t stacksz;\n");
   fprints(f, "  parser_uint_t saved_token;\n");
+  fprints(f, "  parser_uint_t curstateoff;\n");
   fprints(f, "  uint8_t bytes_start;\n");
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
@@ -2280,6 +2285,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
           gen->parsername, gen->parsername);
   fprints(f, "{\n");
   fprints(f, "  pctx->saved_token = PARSER_UINT_MAX;\n");
+  fprints(f, "  pctx->curstateoff = PARSER_UINT_MAX;\n");
   fprints(f, "  pctx->bytes_start = 1;\n");
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
   {
