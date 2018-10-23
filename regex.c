@@ -1795,7 +1795,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprintf(f, "        }\n");
   fprintf(f, "        flags |= YALE_FLAG_END;\n");
   fprints(f, "        cbr = cbtbl[cbs[st->acceptid]](buf, i, flags, pctx);\n");
-  fprints(f, "        if (cbr != i && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprints(f, "        if (cbr != (ssize_t)i && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "        {\n");
   fprints(f, "          *state = PARSER_UINT_MAX;");
   fprints(f, "          return cbr;");
@@ -1811,7 +1811,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprintf(f, "        }\n");
   fprintf(f, "        flags |= YALE_FLAG_END;\n");
   fprints(f, "        cbr = cbtbl[cb1](buf, i, flags, pctx);\n");
-  fprints(f, "        if (cbr != i && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprints(f, "        if (cbr != (ssize_t)i && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "        {\n");
   fprints(f, "          *state = PARSER_UINT_MAX;");
   fprints(f, "          return cbr;");
@@ -1837,7 +1837,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprintf(f, "          }\n");
   fprintf(f, "          flags |= YALE_FLAG_END;\n");
   fprints(f, "          cbr = cbtbl[cbs[st->acceptid]](buf, i + 1, flags, pctx);\n");
-  fprints(f, "          if (cbr != i+1 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprints(f, "          if (cbr != (ssize_t)i+1 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "          {\n");
   fprints(f, "            *state = PARSER_UINT_MAX;");
   fprints(f, "            return cbr;");
@@ -1853,7 +1853,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprintf(f, "          }\n");
   fprintf(f, "          flags |= YALE_FLAG_END;\n");
   fprints(f, "          cbr = cbtbl[cb1](buf, i + 1, flags, pctx);\n");
-  fprints(f, "          if (cbr != i+1 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprints(f, "          if (cbr != (ssize_t)i+1 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "          {\n");
   fprints(f, "            *state = PARSER_UINT_MAX;");
   fprints(f, "            return cbr;");
@@ -1895,7 +1895,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprintf(f, "      flags |= YALE_FLAG_START;\n");
   fprintf(f, "    }\n");
   fprints(f, "    cbr = cbtbl[cbs[st->acceptid]](buf, sz, flags, pctx);\n");
-  fprints(f, "    if (cbr != sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprints(f, "    if (cbr != (ssize_t)sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "    {\n");
   fprints(f, "      return cbr;");
   fprints(f, "    }\n");
@@ -1909,7 +1909,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprintf(f, "      flags |= YALE_FLAG_START;\n");
   fprintf(f, "    }\n");
   fprints(f, "    cbr = cbtbl[cb1](buf, sz, flags, pctx);\n");
-  fprints(f, "    if (cbr != sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprints(f, "    if (cbr != (ssize_t)sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "    {\n");
   fprints(f, "      return cbr;");
   fprints(f, "    }\n");

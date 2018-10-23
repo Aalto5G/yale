@@ -1904,7 +1904,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        {\n");
     fprintf(f, "          flags |= YALE_FLAG_START;\n");
     fprintf(f, "        }\n");
-    fprintf(f, "        if (ret == pctx->bytes_sz)\n");
+    fprintf(f, "        if (ret == (int64_t)pctx->bytes_sz)\n");
     fprintf(f, "        {\n");
     fprintf(f, "          flags |= YALE_FLAG_END;\n");
     fprintf(f, "        }\n");
@@ -2021,7 +2021,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        {\n");
     fprintf(f, "          flags |= YALE_FLAG_START;\n");
     fprintf(f, "        }\n");
-    fprintf(f, "        if (ret == pctx->bytes_sz)\n");
+    fprintf(f, "        if (ret == (int64_t)pctx->bytes_sz)\n");
     fprintf(f, "        {\n");
     fprintf(f, "          flags |= YALE_FLAG_END;\n");
     fprintf(f, "        }\n");
