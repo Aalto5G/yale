@@ -1470,6 +1470,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt)
   fprints(f, "  lexer_uint_t last_accept; // LEXER_UINT_MAX means never accepted\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  uint8_t backtrackstart;\n"); // FIXME uint8_t
+  fprints(f, "  uint8_t backtrackmid;\n"); // FIXME uint8_t
   fprints(f, "  uint8_t backtrackend;\n"); // FIXME uint8_t
   fprintf(f, "  unsigned char backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper);
   fprints(f, "#endif\n");
@@ -1482,6 +1483,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt)
   fprints(f, "  ctx->last_accept = LEXER_UINT_MAX;\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  ctx->backtrackstart = 0;\n");
+  fprints(f, "  ctx->backtrackmid = 0;\n");
   fprints(f, "  ctx->backtrackend = 0;\n");
   fprints(f, "#endif\n");
   fprints(f, "}\n");
@@ -1668,12 +1670,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprints(f, "  }\n");
   fprints(f, "  //printf(\"Called: %s\\n\", buf);\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "  if (unlikely(ctx->backtrackstart != ctx->backtrackend))\n");
+  fprints(f, "  if (unlikely(ctx->backtrackmid != ctx->backtrackend))\n");
   fprints(f, "  {\n");
-  fprints(f, "    while (ctx->backtrackstart != ctx->backtrackend)\n");
+  fprints(f, "    while (ctx->backtrackmid != ctx->backtrackend)\n");
   fprints(f, "    {\n");
   fprints(f, "      st = &stbl[ctx->state];\n");
-  fprints(f, "      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackstart]];\n");
+  fprints(f, "      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackmid]];\n");
   fprints(f, "      if (unlikely(ctx->state == LEXER_UINT_MAX))\n");
   fprints(f, "      {\n");
   fprints(f, "        if (ctx->last_accept == LEXER_UINT_MAX)\n");
@@ -1688,10 +1690,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprints(f, "        ctx->state = 0;\n");
   fprints(f, "        return 0;\n");
   fprints(f, "      }\n");
-  fprints(f, "      ctx->backtrackstart++;\n");
-  fprintf(f, "      if (ctx->backtrackstart >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
+  fprints(f, "      ctx->backtrackmid++;\n");
+  fprintf(f, "      if (ctx->backtrackmid >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
   fprints(f, "      {\n");
-  fprints(f, "        ctx->backtrackstart = 0;\n");
+  fprints(f, "        ctx->backtrackmid = 0;\n");
   fprints(f, "      }\n");
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      if (st->accepting)\n");
@@ -1701,11 +1703,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprints(f, "          *state = st->acceptid;\n");
   fprints(f, "          ctx->state = 0;\n");
   fprints(f, "          ctx->last_accept = LEXER_UINT_MAX;\n");
+  fprints(f, "          ctx->backtrackstart = ctx->backtrackmid;\n");
   fprints(f, "          return 0;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
   fprints(f, "          ctx->last_accept = ctx->state; // FIXME correct?\n");
+  fprints(f, "          ctx->backtrackstart = ctx->backtrackmid; // FIXME correct?\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "    }\n");
@@ -1782,6 +1786,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprints(f, "      }\n");
   fprints(f, "      ctx->state = ctx->last_accept;\n");
   fprints(f, "      ctx->last_accept = LEXER_UINT_MAX;\n");
+  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
+  fprints(f, "      ctx->backtrackmid = ctx->backtrackstart;\n");
+  fprintf(f, "#endif\n");
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      *state = st->acceptid;\n");
   fprints(f, "      ctx->state = 0;\n");
@@ -1859,11 +1866,17 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprints(f, "            return cbr;");
   fprints(f, "          }\n");
   fprints(f, "        }\n");
+  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
+  fprints(f, "        ctx->backtrackstart = ctx->backtrackend;\n");
+  fprints(f, "#endif\n");
   fprints(f, "        return i + 1;\n");
   fprints(f, "      }\n");
   fprints(f, "      else\n");
   fprints(f, "      {\n");
   fprints(f, "        ctx->last_accept = ctx->state; // FIXME correct?\n");
+  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
+  fprints(f, "        ctx->backtrackstart = ctx->backtrackend;\n");
+  fprints(f, "#endif\n");
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "    else\n");
@@ -1871,11 +1884,16 @@ dump_chead(FILE *f, const char *parsername, int nofastpath)
   fprints(f, "      if (ctx->last_accept != LEXER_UINT_MAX)\n");
   fprints(f, "      {\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "        ctx->backtrack[ctx->backtrackstart++] = ubuf[i]; // FIXME correct?\n");
-  fprintf(f, "        if (ctx->backtrackstart >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
+  fprints(f, "        if (ctx->backtrackmid != ctx->backtrackend)\n");
   fprints(f, "        {\n");
-  fprints(f, "          ctx->backtrackstart = 0;\n");
+  fprints(f, "          abort();\n");
   fprints(f, "        }\n");
+  fprints(f, "        ctx->backtrack[ctx->backtrackend++] = ubuf[i]; // FIXME correct?\n");
+  fprintf(f, "        if (ctx->backtrackend >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
+  fprints(f, "        {\n");
+  fprints(f, "          ctx->backtrackend = 0;\n");
+  fprints(f, "        }\n");
+  fprints(f, "        ctx->backtrackmid = ctx->backtrackend;\n");
   fprints(f, "        if (ctx->backtrackstart == ctx->backtrackend)\n");
   fprints(f, "        {\n");
   fprints(f, "          abort();\n");

@@ -12,11 +12,12 @@ int main(int argc, char **argv)
   for (i = 0; i < sizeof(input)-1; i++)
   {
     consumed = backtracktest_parse_block(&pctx, &input[i], 1);
-    if (consumed != sizeof(input)-1 && consumed != -EAGAIN)
+    if (consumed != 1 && consumed != -EAGAIN)
     {
-      printf("Fail i = %zu\n", i),
+      printf("Fail i = %zu\n", i);
       abort();
     }
+    printf("Succeed i = %zu\n", i);
   }
   return 0;
 }
