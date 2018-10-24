@@ -2351,10 +2351,12 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
     fprintf(f, "  %s bytes_sz;\n", gen->bytes_size_type ? gen->bytes_size_type : "uint64_t");
   }
   fprints(f, "  parser_uint_t stacksz;\n");
+  fprints(f, "  parser_uint_t cbstacksz;\n");
   fprints(f, "  parser_uint_t saved_token;\n");
   fprints(f, "  parser_uint_t curstateoff;\n");
   fprints(f, "  uint8_t bytes_start;\n");
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
+  fprintf(f, "  parser_uint_t cbstack[%d];\n", gen->max_cb_stack_size);
   fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
   if (gen->state_include_str)
   {
@@ -2372,6 +2374,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   {
     fprints(f, "  pctx->bytes_sz = 0;\n");
   }
+  fprints(f, "  pctx->cbstacksz = 0;\n");
   fprints(f, "  pctx->stacksz = 1;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
   fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
