@@ -2281,7 +2281,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        abort();\n"
              "      }\n"
              "#endif\n"
-             "      if (pctx->stacksz + rule->rhssz + (curcb != PARSER_UINT_MAX) > sizeof(pctx->stack)/sizeof(struct ruleentry))\n");
+             "      if ((size_t)pctx->stacksz + rule->rhssz + (curcb != PARSER_UINT_MAX) > sizeof(pctx->stack)/sizeof(struct ruleentry))\n");
   fprints(f, "      {\n"
              "        abort();\n"
              "      }\n"
@@ -2289,7 +2289,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      pctx->curstateoff = PARSER_UINT_MAX;\n"
              "      if (curcb != PARSER_UINT_MAX)\n"
              "      {\n"
-             "        if (pctx->cbstacksz + 1 > sizeof(pctx->cbstack)/sizeof(*pctx->cbstack))\n"
+             "        if ((size_t)pctx->cbstacksz + 1 > sizeof(pctx->cbstack)/sizeof(*pctx->cbstack))\n"
              "        {\n"
              "          abort();\n"
              "        }\n"
