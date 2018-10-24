@@ -2546,6 +2546,11 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
 void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t cbcnt)
 {
   yale_uint_t i;
+  if (cbcnt > 64)
+  {
+    printf("Too many callbacks: current maximum is 64\n");
+    abort();
+  }
   gen->cbcnt = cbcnt;
   for (i = 0; i < cbcnt; i++)
   {
