@@ -1926,7 +1926,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    pctx->saved_token = PARSER_UINT_MAX;\n"
              "    return 0;\n"
              "  }\n");
-  fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1);//, baton);\n", gen->parsername, gen->parsername);
+  fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1, pctx->cbstack, pctx->cbstacksz);//, baton);\n", gen->parsername, gen->parsername);
   fprints(f, "}\n"
              "\n"
              "#define EXTRA_SANITY\n"
