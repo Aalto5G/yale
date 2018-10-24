@@ -240,12 +240,12 @@ int main(int argc, char **argv)
     fprintf(f, "#ifndef _HTTPPARSER_H_\n");
     fprintf(f, "#define _HTTPPARSER_H_\n");
     fprintf(f, "#include \"yalecommon.h\"\n");
-    dump_headers(f, "http", maxbt);
+    dump_headers(f, "http", maxbt, 0);
     fprintf(f, "#endif\n");
     fclose(f);
     f = fopen("httpparser2.c", "w");
     fprintf(f, "#include \"httpparser2.h\"\n");
-    dump_chead(f, "http", 0);
+    dump_chead(f, "http", 0, 0);
     dump_collected(f, "http", &bufs);
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
     {

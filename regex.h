@@ -253,7 +253,7 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
         struct transitionbufs *bufs,
         void *(*alloc)(void*, size_t), void *alloc_ud);
 
-void dump_headers(FILE *f, const char *parsername, size_t max_bt);
+void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz);
 
 void
 dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs);
@@ -264,6 +264,6 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
          void *(*alloc)(void*,size_t), void *allocud);
 
 void
-dump_chead(FILE *f, const char *parsername, int nofastpath);
+dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz);
 
 #endif

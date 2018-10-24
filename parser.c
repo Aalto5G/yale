@@ -1600,7 +1600,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   size_t i, j, X, x;
   size_t curidx = 0;
   yale_uint_t c;
-  dump_chead(f, gen->parsername, gen->nofastpath);
+  dump_chead(f, gen->parsername, gen->nofastpath, gen->max_cb_stack_size);
   dump_collected(f, gen->parsername, &gen->bufs);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
@@ -1926,7 +1926,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    pctx->saved_token = PARSER_UINT_MAX;\n"
              "    return 0;\n"
              "  }\n");
-  fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1, pctx->cbstack, pctx->cbstacksz);//, baton);\n", gen->parsername, gen->parsername);
+  if (gen->max_cb_stack_size)
+  {
+    fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1, pctx->cbstack, pctx->cbstacksz);//, baton);\n", gen->parsername, gen->parsername);
+  }
+  else
+  {
+    fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1);//, baton);\n", gen->parsername, gen->parsername);
+  }
   fprints(f, "}\n"
              "\n"
              "#define EXTRA_SANITY\n"
@@ -2288,16 +2295,23 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      i = 0;\n"
              "      pctx->curstateoff = PARSER_UINT_MAX;\n"
              "      if (curcb != PARSER_UINT_MAX)\n"
-             "      {\n"
-             "        if ((size_t)pctx->cbstacksz + 1 > sizeof(pctx->cbstack)/sizeof(*pctx->cbstack))\n"
-             "        {\n"
-             "          abort();\n"
-             "        }\n"
-             "        pctx->stack[pctx->stacksz].rhs = PARSER_UINT_MAX;\n"
-             "        pctx->stack[pctx->stacksz].cb = PARSER_UINT_MAX;\n"
-             "        pctx->cbstack[pctx->cbstacksz++] = curcb;\n"
-             "        pctx->stacksz++;\n"
-             "      }\n"
+             "      {\n");
+  if (gen->max_cb_stack_size)
+  {
+    fprints(f, "        if ((size_t)pctx->cbstacksz + 1 > sizeof(pctx->cbstack)/sizeof(*pctx->cbstack))\n"
+               "        {\n"
+               "          abort();\n"
+               "        }\n"
+               "        pctx->stack[pctx->stacksz].rhs = PARSER_UINT_MAX;\n"
+               "        pctx->stack[pctx->stacksz].cb = PARSER_UINT_MAX;\n"
+               "        pctx->cbstack[pctx->cbstacksz++] = curcb;\n"
+               "        pctx->stacksz++;\n");
+  }
+  else
+  {
+    fprints(f, "        abort();\n");
+  }
+  fprints(f, "      }\n"
              "      while (i + 4 <= rule->rhssz)\n"
              "      {\n"
              "        pctx->stack[pctx->stacksz++] = rule->rhs[i+0];\n"
@@ -2322,14 +2336,21 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    else // if (curstate == PARSER_UINT_MAX)\n"
              "    {\n"
              "      if (curcb == PARSER_UINT_MAX)\n"
-             "      {\n"
-             "        pctx->stacksz--;\n"
-             "        if (pctx->cbstacksz == 0)\n"
-             "        {\n"
-             "          abort();\n"
-             "        }\n"
-             "        pctx->cbstacksz--;\n"
-             "      }\n"
+             "      {\n");
+  if (gen->max_cb_stack_size)
+  {
+    fprints(f, "        pctx->stacksz--;\n"
+               "        if (pctx->cbstacksz == 0)\n"
+               "        {\n"
+               "          abort();\n"
+               "        }\n"
+               "        pctx->cbstacksz--;\n");
+  }
+  else
+  {
+    fprints(f, "        abort();\n");
+  }
+  fprints(f, "      }\n"
              "      else\n"
              "      {\n"
              "        ssize_t cbr;\n");
@@ -2370,19 +2391,25 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {
   fprints(f, "#include \"yalecommon.h\"\n");
-  dump_headers(f, gen->parsername, gen->max_bt);
+  dump_headers(f, gen->parsername, gen->max_bt, gen->max_cb_stack_size);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
   {
     fprintf(f, "  %s bytes_sz;\n", gen->bytes_size_type ? gen->bytes_size_type : "uint64_t");
   }
   fprints(f, "  parser_uint_t stacksz;\n");
-  fprints(f, "  parser_uint_t cbstacksz;\n");
+  if (gen->max_cb_stack_size)
+  {
+    fprints(f, "  parser_uint_t cbstacksz;\n");
+  }
   fprints(f, "  parser_uint_t saved_token;\n");
   fprints(f, "  parser_uint_t curstateoff;\n");
   fprints(f, "  uint8_t bytes_start;\n");
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
-  fprintf(f, "  parser_uint_t cbstack[%d];\n", gen->max_cb_stack_size);
+  if (gen->max_cb_stack_size)
+  {
+    fprintf(f, "  parser_uint_t cbstack[%d];\n", gen->max_cb_stack_size);
+  }
   fprintf(f, "  struct %s_rectx rctx;\n", gen->parsername);
   if (gen->state_include_str)
   {
@@ -2400,7 +2427,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   {
     fprints(f, "  pctx->bytes_sz = 0;\n");
   }
-  fprints(f, "  pctx->cbstacksz = 0;\n");
+  if (gen->max_cb_stack_size)
+  {
+    fprints(f, "  pctx->cbstacksz = 0;\n");
+  }
   fprints(f, "  pctx->stacksz = 1;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
   fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
