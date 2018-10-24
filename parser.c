@@ -132,15 +132,18 @@ yale_uint_t get_sole_cb(struct dict *d, yale_uint_t x)
   return seen ? cb : YALE_UINT_MAX_LEGAL;
 }
 
-uint32_t stack_hash(const yale_uint_t *stack, yale_uint_t sz)
+uint32_t stack_cb_hash(const struct stackconfigitem *stack, yale_uint_t sz, yale_uint_t cbsz)
 {
-  return yalemurmur_buf(0x12345678U, stack, sz);
+  struct yalemurmurctx ctx = YALEMURMURCTX_INITER(0x12345678U);
+  yalemurmurctx_feed32(&ctx, cbsz);
+  yalemurmurctx_feed_buf(&ctx, stack, sz*sizeof(*stack));
+  return yalemurmurctx_get(&ctx);
 }
 
-uint32_t stack_hash_fn(struct yale_hash_list_node *node, void *ud)
+uint32_t stack_cb_hash_fn(struct yale_hash_list_node *node, void *ud)
 {
   struct stackconfig *cfg = YALE_CONTAINER_OF(node, struct stackconfig, node);
-  return stack_hash(cfg->stack, cfg->sz);
+  return stack_cb_hash(cfg->stack, cfg->sz, cfg->cbsz);
 }
 
 uint32_t lookuptbl_hash(yale_uint_t nonterminal, yale_uint_t terminal)
@@ -291,7 +294,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
                        parsergen_alloc_fn, gen);
   yale_hash_table_init(&gen->Fi2_hash, 8192, firstset2_hash_fn, NULL,
                        parsergen_alloc_fn, gen);
-  yale_hash_table_init(&gen->stackconfigs_hash, 32768, stack_hash_fn, NULL,
+  yale_hash_table_init(&gen->stackconfigs_hash, 32768, stack_cb_hash_fn, NULL,
                        parsergen_alloc_fn, gen);
   yale_hash_table_init(&gen->Thash, 32768, lookuptbl_hash_fn, NULL,
                        parsergen_alloc_fn, gen);
@@ -887,10 +890,11 @@ void stacktransitionarbitrary_print(struct ParserGen *gen, yale_uint_t scidx1,
 }
 
 
-size_t stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_uint_t sz)
+size_t stackconfig_append(struct ParserGen *gen, const struct stackconfigitem *stack, yale_uint_t sz,
+                          yale_uint_t cbsz)
 {
   size_t i = gen->stackconfigcnt;
-  uint32_t hashval = stack_hash(stack, sz);
+  uint32_t hashval = stack_cb_hash(stack, sz, cbsz);
   struct yale_hash_list_node *node;
   YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->stackconfigs_hash, node, hashval)
   {
@@ -899,7 +903,11 @@ size_t stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_
     {
       continue;
     }
-    if (memcmp(cfg->stack, stack, sz*sizeof(yale_uint_t)) != 0)
+    if (memcmp(cfg->stack, stack, sz*sizeof(*stack)) != 0)
+    {
+      continue;
+    }
+    if (cfg->cbsz != cbsz)
     {
       continue;
     }
@@ -914,9 +922,10 @@ size_t stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_
       abort();
     }
     gen->stackconfigs[i] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[i]));
-    gen->stackconfigs[i]->stack = parsergen_alloc(gen, sz*sizeof(yale_uint_t));
-    memcpy(gen->stackconfigs[i]->stack, stack, sz*sizeof(yale_uint_t));
+    gen->stackconfigs[i]->stack = parsergen_alloc(gen, sz*sizeof(*stack));
+    memcpy(gen->stackconfigs[i]->stack, stack, sz*sizeof(*stack));
     gen->stackconfigs[i]->sz = sz;
+    gen->stackconfigs[i]->cbsz = cbsz;
     gen->stackconfigs[i]->i = i;
     yale_hash_table_add_nogrow(&gen->stackconfigs_hash, &gen->stackconfigs[i]->node, hashval);
     gen->stackconfigcnt++;
@@ -929,18 +938,22 @@ size_t stackconfig_append(struct ParserGen *gen, const yale_uint_t *stack, yale_
 int parsergen_is_terminal(struct ParserGen *gen, yale_uint_t x);
 
 
-ssize_t max_stack_sz(struct ParserGen *gen)
+ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
 {
   size_t maxsz = 1;
+  size_t maxcbsz = 0;
   size_t i, j;
-  yale_uint_t stack[YALE_UINT_MAX_LEGAL];
+  struct stackconfigitem stack[YALE_UINT_MAX_LEGAL];
   size_t sz;
+  size_t cbsz = 0;
   yale_uint_t a;
   gen->stackconfigcnt = 1;
   gen->stackconfigs[0] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[0]));
-  gen->stackconfigs[0]->stack = parsergen_alloc(gen, 1*sizeof(yale_uint_t));
-  gen->stackconfigs[0]->stack[0] = gen->start_state;
+  gen->stackconfigs[0]->stack = parsergen_alloc(gen, 1*sizeof(*stack));
+  gen->stackconfigs[0]->stack[0].val = gen->start_state;
+  gen->stackconfigs[0]->stack[0].cb = YALE_UINT_MAX_LEGAL;
   gen->stackconfigs[0]->sz = 1;
+  gen->stackconfigs[0]->cbsz = 0;
   stackconfig_print(gen, 0);
   //printf("Start state is %d, terminal? %d\n", gen->start_state, parsergen_is_terminal(gen, gen->start_state));
   for (i = 0; i < gen->stackconfigcnt; i++)
@@ -950,25 +963,39 @@ ssize_t max_stack_sz(struct ParserGen *gen)
     {
       maxsz = current->sz;
     }
+    if (current->cbsz > maxcbsz)
+    {
+      maxcbsz = current->cbsz;
+    }
     if (current->sz > 0)
     {
-      yale_uint_t last = current->stack[current->sz-1];
-      if (parsergen_is_terminal(gen, last) || last == YALE_UINT_MAX_LEGAL)
+      struct stackconfigitem last = current->stack[current->sz-1];
+      if (last.val == YALE_UINT_MAX_LEGAL - 2)
       {
-        stackconfig_append(gen, current->stack, current->sz-1);
+        if (current->cbsz == 0)
+        {
+          abort(); // Should never happen
+        }
+        stackconfig_append(gen, current->stack, current->sz-1, current->cbsz - 1);
+        stacktransitionlast_print(gen, i);
+        continue;
+      }
+      if (parsergen_is_terminal(gen, last.val) || last.val == YALE_UINT_MAX_LEGAL)
+      {
+        stackconfig_append(gen, current->stack, current->sz-1, current->cbsz);
         stacktransitionlast_print(gen, i);
         continue;
       }
       for (a = 0; a < gen->tokencnt; a++)
       {
-        uint32_t hashval = lookuptbl_hash(last, a);
+        uint32_t hashval = lookuptbl_hash(last.val, a);
         struct yale_hash_list_node *node;
         YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
         {
           yale_uint_t rule;
           struct LookupTblEntry *e =
             YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
-          if (e->nonterminal != last)
+          if (e->nonterminal != last.val)
           {
             continue;
           }
@@ -982,38 +1009,60 @@ ssize_t max_stack_sz(struct ParserGen *gen)
             //printf("Rule differs from YALE_UINT_MAX_LEGAL\n");
             memcpy(stack, current->stack, (current->sz-1)*sizeof(*stack));
             sz = current->sz - 1;
+            cbsz = current->cbsz;
             if (sz + gen->rules[rule].itemcnt > YALE_UINT_MAX_LEGAL)
             {
               return -1;
+            }
+            if (last.cb != YALE_UINT_MAX_LEGAL)
+            {
+              if (cbsz + 1 > YALE_UINT_MAX_LEGAL)
+              {
+                return -1;
+              }
+              if (sz + gen->rules[rule].itemcnt + 1 > YALE_UINT_MAX_LEGAL)
+              {
+                return -1;
+              }
+              cbsz++;
+              stack[sz].val = YALE_UINT_MAX_LEGAL - 2;
+              stack[sz].cb = YALE_UINT_MAX_LEGAL;
+              sz++;
             }
             for (j = 0; j < gen->rules[rule].itemcnt; j++)
             {
               struct ruleitem *it =
                 &gen->rules[rule].rhs[gen->rules[rule].itemcnt-j-1];
+              stack[sz].cb = YALE_UINT_MAX_LEGAL;
               if (it->is_action)
               {
-                stack[sz++] = YALE_UINT_MAX_LEGAL;
+                stack[sz].val = YALE_UINT_MAX_LEGAL;
               }
               else
               {
-                stack[sz++] = it->value;
+                stack[sz].val = it->value;
               }
+              if (!parsergen_is_terminal(gen, it->value) && !it->is_action)
+              {
+                stack[sz].cb = it->cb;
+              }
+              sz++;
             }
-            size_t tmp = stackconfig_append(gen, stack, sz);
+            size_t tmp = stackconfig_append(gen, stack, sz, cbsz);
             stacktransitionarbitrary_print(gen, i, tmp, a);
           }
         }
       }
       for (a = YALE_UINT_MAX_LEGAL - 1; a < YALE_UINT_MAX_LEGAL; a++)
       {
-        uint32_t hashval = lookuptbl_hash(last, a);
+        uint32_t hashval = lookuptbl_hash(last.val, a);
         struct yale_hash_list_node *node;
         YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
         {
           yale_uint_t rule;
           struct LookupTblEntry *e =
             YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
-          if (e->nonterminal != last)
+          if (e->nonterminal != last.val)
           {
             continue;
           }
@@ -1027,30 +1076,53 @@ ssize_t max_stack_sz(struct ParserGen *gen)
             //printf("Rule differs from YALE_UINT_MAX_LEGAL\n");
             memcpy(stack, current->stack, (current->sz-1)*sizeof(*stack));
             sz = current->sz - 1;
+            cbsz = current->cbsz;
             if (sz + gen->rules[rule].itemcnt > YALE_UINT_MAX_LEGAL)
             {
               return -1;
+            }
+            if (last.cb != YALE_UINT_MAX_LEGAL)
+            {
+              if (cbsz + 1 > YALE_UINT_MAX_LEGAL)
+              {
+                return -1;
+              }
+              if (sz + gen->rules[rule].itemcnt + 1 > YALE_UINT_MAX_LEGAL)
+              {
+                return -1;
+              }
+              cbsz++;
+              stack[sz].val = YALE_UINT_MAX_LEGAL - 2;
+              stack[sz].cb = YALE_UINT_MAX_LEGAL;
+              sz++;
             }
             for (j = 0; j < gen->rules[rule].itemcnt; j++)
             {
               struct ruleitem *it =
                 &gen->rules[rule].rhs[gen->rules[rule].itemcnt-j-1];
+              stack[sz].cb = YALE_UINT_MAX_LEGAL;
               if (it->is_action)
               {
-                stack[sz++] = YALE_UINT_MAX_LEGAL;
+                stack[sz].val = YALE_UINT_MAX_LEGAL;
               }
               else
               {
-                stack[sz++] = it->value;
+                stack[sz].val = it->value;
               }
+              if (!parsergen_is_terminal(gen, it->value) && !it->is_action)
+              {
+                stack[sz].cb = it->cb;
+              }
+              sz++;
             }
-            size_t tmp = stackconfig_append(gen, stack, sz);
+            size_t tmp = stackconfig_append(gen, stack, sz, cbsz);
             stacktransitionarbitrary_print(gen, i, tmp, a);
           }
         }
       }
     }
   }
+  *maxcbszptr = maxcbsz;
   return maxsz;
 }
 
@@ -1071,6 +1143,8 @@ void gen_parser(struct ParserGen *gen)
 {
   int changed;
   size_t i, j;
+  size_t tmpsz;
+  ssize_t tmpssz;
 
   //memset(gen->Fo, 0, sizeof(gen->Fo[0])*(gen->tokencnt + gen->nonterminalcnt));
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
@@ -1511,7 +1585,14 @@ void gen_parser(struct ParserGen *gen)
       gen->max_bt = curbt;
     }
   }
-  gen->max_stack_size = max_stack_sz(gen);
+  tmpssz = max_stack_sz(gen, &tmpsz);
+  if (tmpssz < 0)
+  {
+    printf("Error: stack overflow\n");
+    abort();
+  }
+  gen->max_stack_size = tmpssz;
+  gen->max_cb_stack_size = tmpsz;
 }
 
 void parsergen_dump_parser(struct ParserGen *gen, FILE *f)

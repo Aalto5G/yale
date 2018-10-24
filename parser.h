@@ -57,10 +57,16 @@ struct firstset_entry2 {
   struct firstset_values values;
 };
 
+struct stackconfigitem {
+  yale_uint_t val;
+  yale_uint_t cb;
+};
+
 struct stackconfig {
   struct yale_hash_list_node node;
-  yale_uint_t *stack;
+  struct stackconfigitem *stack;
   yale_uint_t sz;
+  yale_uint_t cbsz;
   size_t i;
 };
 
@@ -88,6 +94,7 @@ struct ParserGen {
   uint8_t nofastpath;
   yale_uint_t pick_thoses_cnt;
   yale_uint_t max_stack_size;
+  yale_uint_t max_cb_stack_size;
   yale_uint_t max_bt;
   size_t stackconfigcnt;
   char *userareaptr;
@@ -154,7 +161,7 @@ void parsergen_set_conds(struct ParserGen *gen, char **conds, yale_uint_t condcn
 
 void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t cbcnt);
 
-ssize_t max_stack_sz(struct ParserGen *gen);
+ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr);
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f);
 
