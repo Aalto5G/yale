@@ -2425,7 +2425,11 @@ yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, in
   {
     abort();
   }
-  if (gen->tokencnt >= YALE_UINT_MAX_LEGAL)
+  // last valid token YALE_UINT_MAX_LEGAL-3
+  // token YALE_UINT_MAX_LEGAL-2 is "pop from cb stack"
+  // token YALE_UINT_MAX_LEGAL-1 is bytes
+  // token YALE_UINT_MAX_LEGAL is action
+  if (gen->tokencnt >= YALE_UINT_MAX_LEGAL - 2)
   {
     abort();
   }
