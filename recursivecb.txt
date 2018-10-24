@@ -11,7 +11,7 @@ token f = "f";
 
 S = a<cb=f1> b c ;
 S = D<cb=f2> e<cb=f3> f;
-D = | d<cb=f4>;
+D = | d<cb=f4> e<cb=f1>;
 
 directive main = S ;
 directive parsername = recursivecb ;

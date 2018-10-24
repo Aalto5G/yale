@@ -57,7 +57,7 @@ ssize_t f4(const char *buf, size_t siz, int start, struct recursivecb_parserctx 
 
 int main(int argc, char **argv)
 {
-  char input[] = "def";
+  char input[] = "deef";
   struct recursivecb_parserctx pctx = {};
   ssize_t consumed;
 

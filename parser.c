@@ -1837,7 +1837,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "static inline ssize_t\n");
   fprintf(f, "%s_get_saved_token(struct %s_parserctx *pctx, const struct state *restates,\n", gen->parsername, gen->parsername);
   fprints(f, "                const char *blkoff, size_t szoff, parser_uint_t *state,\n"
-             "                const parser_uint_t *cbs, parser_uint_t cb1)//, void *baton)\n"
+             "                const struct callbacks *cb2, parser_uint_t cb1)//, void *baton)\n"
              "{\n"
              "  if (pctx->saved_token != PARSER_UINT_MAX)\n"
              "  {\n"
@@ -1845,7 +1845,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    pctx->saved_token = PARSER_UINT_MAX;\n"
              "    return 0;\n"
              "  }\n");
-  fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cbs, cb1);//, baton);\n", gen->parsername, gen->parsername);
+  fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1);//, baton);\n", gen->parsername, gen->parsername);
   fprints(f, "}\n"
              "\n"
              "#define EXTRA_SANITY\n"
@@ -1862,7 +1862,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  parser_uint_t cb1;\n"
              "  const struct state *restates;\n"
              "  const struct rule *rule;\n"
-             "  const parser_uint_t *cbs;\n");
+             "  const struct callbacks *cb2;\n");
   fprintf(f, "  ssize_t (*cb1f)(const char *, size_t, int, struct %s_parserctx*);\n", gen->parsername);
   fprints(f, "\n"
              "  while (off < sz || pctx->saved_token != PARSER_UINT_MAX)\n"
@@ -2011,7 +2011,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "        return -EINVAL;\n");
   fprintf(f, "      }\n");
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
-  fprintf(f, "      cbs = %s_parserstatetblentries[curstateoff].cb;\n", gen->parsername);
+  fprintf(f, "      cb2 = %s_parserstatetblentries[curstateoff].cb2;\n", gen->parsername);
   fprintf(f, "      is_bytes = %s_parserstatetblentries[curstateoff].is_bytes;\n", gen->parsername);
   fprintf(f, "      if (is_bytes)\n");
   fprintf(f, "      {\n");
@@ -2054,7 +2054,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      }\n");
   fprintf(f, "      else\n");
   fprintf(f, "      {\n");
-  fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cbs, PARSER_UINT_MAX);//, baton);\n", gen->parsername);
+  fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cb2, PARSER_UINT_MAX);//, baton);\n", gen->parsername);
   fprints(f, "        if (ret == -EAGAIN)\n"
              "        {\n"
              "          //off = sz;\n"
