@@ -18,6 +18,8 @@ static inline void myPutchar(char ch)
 }
 #endif
 
+int abort_on_mistake = 0;
+
 ssize_t print(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
 {
 #ifdef DO_PRINT
@@ -52,6 +54,10 @@ ssize_t print(const char *buf, size_t siz, int start, struct backtracktestcb_par
   }
   if (start & YALE_FLAG_MAJOR_MISTAKE)
   {
+    if (abort_on_mistake)
+    {
+      abort();
+    }
     putchar('!');
   }
   if (start & YALE_FLAG_END)
@@ -89,6 +95,10 @@ int main(int argc, char **argv)
     {
       printf("Fail i = %zu\n", i);
       abort();
+    }
+    if (i == 6)
+    {
+      abort_on_mistake = 1;
     }
     printf("Succeed i = %zu\n", i);
   }

@@ -1794,7 +1794,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                bitoff = ffsres - 1;\n");
   fprints(f, "              }\n");
   fprints(f, "            }\n");
-  fprints(f, "            endmask = ctx->confirm_status & ~cbmask;\n");
+  fprints(f, "            endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -1832,7 +1832,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                bitoff = ffsres - 1;\n");
   fprints(f, "              }\n");
   fprints(f, "            }\n");
-  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -1914,7 +1914,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                bitoff = ffsres - 1;\n");
   fprints(f, "              }\n");
   fprints(f, "            }\n");
-  fprints(f, "            endmask = ctx->confirm_status & ~cbmask;\n");
+  fprints(f, "            endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -1937,7 +1937,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                bitoff = ffsres - 1;\n");
   fprints(f, "              }\n");
   fprints(f, "            }\n");
-  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -2039,7 +2039,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          bitoff = ffsres - 1;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      endmask = ctx->confirm_status & ~cbmask;\n");
+  fprints(f, "      endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2077,7 +2077,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          bitoff = ffsres - 1;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+  fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2159,7 +2159,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          bitoff = ffsres - 1;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      endmask = ctx->confirm_status & ~cbmask;\n");
+  fprints(f, "      endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2182,7 +2182,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          bitoff = ffsres - 1;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+  fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
