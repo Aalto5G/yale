@@ -1451,7 +1451,7 @@ static int fprints(FILE *f, const char *s)
   return fputs(s, f);
 }
 
-void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz)
+void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, const char *cbbitmasktype)
 {
   char *parserupper = strdup(parsername);
   size_t len = strlen(parsername);
@@ -1468,6 +1468,10 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz)
   fprintf(f, "struct %s_rectx {\n", parsername);
   fprints(f, "  lexer_uint_t state; // 0 is initial state\n");
   fprints(f, "  lexer_uint_t last_accept; // LEXER_UINT_MAX means never accepted\n");
+  fprintf(f, "  %s start_status;\n", cbbitmasktype);
+  fprintf(f, "  %s confirm_status;\n", cbbitmasktype);
+  fprintf(f, "  %s btbuf_status;\n", cbbitmasktype);
+  fprintf(f, "  %s lastack_status;\n", cbbitmasktype);
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  uint8_t backtrackstart;\n"); // FIXME uint8_t
   fprints(f, "  uint8_t backtrackmid;\n"); // FIXME uint8_t
@@ -1481,6 +1485,10 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz)
   fprints(f, "{\n");
   fprints(f, "  ctx->state = 0;\n");
   fprints(f, "  ctx->last_accept = LEXER_UINT_MAX;\n");
+  fprints(f, "  ctx->start_status = 0;\n");
+  fprints(f, "  ctx->confirm_status = 0;\n");
+  fprints(f, "  ctx->btbuf_status = 0;\n");
+  fprints(f, "  ctx->lastack_status = 0;\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  ctx->backtrackstart = 0;\n");
   fprints(f, "  ctx->backtrackmid = 0;\n");

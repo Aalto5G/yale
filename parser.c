@@ -2392,20 +2392,6 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {
   const char *cbbitmasktype = NULL;
   fprints(f, "#include \"yalecommon.h\"\n");
-  dump_headers(f, gen->parsername, gen->max_bt, gen->max_cb_stack_size);
-  fprintf(f, "struct %s_parserctx {\n", gen->parsername);
-  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
-  {
-    fprintf(f, "  %s bytes_sz;\n", gen->bytes_size_type ? gen->bytes_size_type : "uint64_t");
-  }
-  fprints(f, "  parser_uint_t stacksz;\n");
-  if (gen->max_cb_stack_size)
-  {
-    fprints(f, "  parser_uint_t cbstacksz;\n");
-  }
-  fprints(f, "  parser_uint_t saved_token;\n");
-  fprints(f, "  parser_uint_t curstateoff;\n");
-  fprints(f, "  uint8_t bytes_start;\n");
   if (gen->cbcnt <= 8)
   {
     cbbitmasktype = "uint8_t";
@@ -2427,10 +2413,20 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
     printf("Too many callbacks\n");
     abort();
   }
-  fprintf(f, "  %s start_status;\n", cbbitmasktype);
-  fprintf(f, "  %s confirm_status;\n", cbbitmasktype);
-  fprintf(f, "  %s btbuf_status;\n", cbbitmasktype);
-  fprintf(f, "  %s lastack_status;\n", cbbitmasktype);
+  dump_headers(f, gen->parsername, gen->max_bt, gen->max_cb_stack_size, cbbitmasktype);
+  fprintf(f, "struct %s_parserctx {\n", gen->parsername);
+  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
+  {
+    fprintf(f, "  %s bytes_sz;\n", gen->bytes_size_type ? gen->bytes_size_type : "uint64_t");
+  }
+  fprints(f, "  parser_uint_t stacksz;\n");
+  if (gen->max_cb_stack_size)
+  {
+    fprints(f, "  parser_uint_t cbstacksz;\n");
+  }
+  fprints(f, "  parser_uint_t saved_token;\n");
+  fprints(f, "  parser_uint_t curstateoff;\n");
+  fprints(f, "  uint8_t bytes_start;\n");
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   if (gen->max_cb_stack_size)
   {
@@ -2458,10 +2454,6 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
     fprints(f, "  pctx->cbstacksz = 0;\n");
   }
   fprints(f, "  pctx->stacksz = 1;\n");
-  fprints(f, "  pctx->start_status = 0;\n");
-  fprints(f, "  pctx->confirm_status = 0;\n");
-  fprints(f, "  pctx->btbuf_status = 0;\n");
-  fprints(f, "  pctx->lastack_status = 0;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
   fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
   fprintf(f, "  %s_init_statemachine(&pctx->rctx);\n", gen->parsername);
