@@ -1870,6 +1870,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "            ssize_t cbr;\n");
   if (cbssz)
   {
+    fprints(f, "            size_t cbidx;\n");
     fprints(f, "            for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "            {\n");
     fprints(f, "              cbmask |= 1ULL<<cbstack[cbidx];\n");
@@ -2114,6 +2115,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      ssize_t cbr;\n");
   if (cbssz)
   {
+    fprints(f, "      size_t cbidx;\n");
     fprints(f, "      for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "      {\n");
     fprints(f, "        cbmask |= 1ULL<<cbstack[cbidx];\n");

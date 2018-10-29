@@ -7,7 +7,17 @@ token abcde = "abcde";
 token bc = "bc";
 token df = "df";
 
-S = abcde<cb=cb1> | a<cb=cb2> bc<cb=cb2> df<cb=cb2> ;
+token a2 = "a(bc)?";
+token b2 = "bd";
+token e2 = "e";
+
+
+
+S = abcde<cb=cb1> | a<cb=cb2> bc<cb=cb2> df<cb=cb2> S2 ;
+
+S2 = A<cb=cb1>;
+
+A = a2 b2 e2;
 
 directive main = S ;
 directive parsername = backtracktestcb ;
