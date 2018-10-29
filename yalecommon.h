@@ -13,6 +13,7 @@ enum yale_flags {
   YALE_FLAG_START = (1<<0),
   YALE_FLAG_END = (1<<1),
   YALE_FLAG_ACTION = (1<<2),
+  YALE_FLAG_MAJOR_MISTAKE = (1<<3),
 };
 
 typedef uint8_t lexer_uint_t;

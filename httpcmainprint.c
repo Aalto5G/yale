@@ -28,8 +28,16 @@ ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn
     myPutchar(ubuf[i]);
   }
   putchar('>');
-  putchar('\n');
 #endif
+  if (start & YALE_FLAG_END)
+  {
+    putchar('-');
+  }
+  if (start & YALE_FLAG_MAJOR_MISTAKE)
+  {
+    putchar('!');
+  }
+  putchar('\n');
   return -EAGAIN;
 }
 ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn)
