@@ -2390,6 +2390,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {
+  const char *cbbitmasktype = NULL;
   fprints(f, "#include \"yalecommon.h\"\n");
   dump_headers(f, gen->parsername, gen->max_bt, gen->max_cb_stack_size);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
@@ -2405,6 +2406,31 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "  parser_uint_t saved_token;\n");
   fprints(f, "  parser_uint_t curstateoff;\n");
   fprints(f, "  uint8_t bytes_start;\n");
+  if (gen->cbcnt <= 8)
+  {
+    cbbitmasktype = "uint8_t";
+  }
+  else if (gen->cbcnt <= 16)
+  {
+    cbbitmasktype = "uint16_t";
+  }
+  else if (gen->cbcnt <= 32)
+  {
+    cbbitmasktype = "uint32_t";
+  }
+  else if (gen->cbcnt <= 64)
+  {
+    cbbitmasktype = "uint64_t";
+  }
+  else
+  {
+    printf("Too many callbacks\n");
+    abort();
+  }
+  fprintf(f, "  %s start_status;\n", cbbitmasktype);
+  fprintf(f, "  %s confirm_status;\n", cbbitmasktype);
+  fprintf(f, "  %s btbuf_status;\n", cbbitmasktype);
+  fprintf(f, "  %s lastack_status;\n", cbbitmasktype);
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   if (gen->max_cb_stack_size)
   {
@@ -2432,6 +2458,10 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
     fprints(f, "  pctx->cbstacksz = 0;\n");
   }
   fprints(f, "  pctx->stacksz = 1;\n");
+  fprints(f, "  pctx->start_status = 0;\n");
+  fprints(f, "  pctx->confirm_status = 0;\n");
+  fprints(f, "  pctx->btbuf_status = 0;\n");
+  fprints(f, "  pctx->lastack_status = 0;\n");
   fprintf(f, "  pctx->stack[0].rhs = %d;\n", gen->start_state);
   fprints(f, "  pctx->stack[0].cb = PARSER_UINT_MAX;\n");
   fprintf(f, "  %s_init_statemachine(&pctx->rctx);\n", gen->parsername);
