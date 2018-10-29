@@ -1862,9 +1862,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "            ctx->confirm_status &= ~mismask;\n");
   fprints(f, "            ctx->btbuf_status = 0;\n");
   fprints(f, "          }\n");
-  fprints(f, "          if (st && cb1 != PARSER_UINT_MAX)\n");
+  fprints(f, "          if (st && !cb2)\n");
   fprints(f, "          {\n");
-  fprints(f, "            uint64_t cbmask = 1ULL<<cb1;\n");
+  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
   fprints(f, "            uint64_t endmask = 0, mismask = 0;\n");
   fprints(f, "            uint16_t bitoff;\n");
   fprints(f, "            ssize_t cbr;\n");
@@ -2107,9 +2107,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      ctx->confirm_status &= ~mismask;\n");
   fprints(f, "      ctx->btbuf_status = 0;\n");
   fprints(f, "    }\n");
-  fprints(f, "    if (st && cb1 != PARSER_UINT_MAX)\n");
+  fprints(f, "    if (st && !cb2)\n");
   fprints(f, "    {\n");
-  fprints(f, "      uint64_t cbmask = 1ULL<<cb1;\n");
+  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
   fprints(f, "      uint64_t endmask = 0, mismask = 0;\n");
   fprints(f, "      uint16_t bitoff;\n");
   fprints(f, "      ssize_t cbr;\n");
@@ -2425,7 +2425,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        }\n");
   }
   fprints(f, "      }\n");
-  fprints(f, "      if (cb1 != PARSER_UINT_MAX && st->accepting && i > 0)\n");
+  fprints(f, "      if (!cb2 && st->accepting && i > 0)\n");
   fprints(f, "      {\n");
   if (cbssz || 1)
   {
@@ -2433,7 +2433,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     {
       fprints(f, "        size_t cbidx;\n");
     }
-    fprints(f, "        uint64_t cbmask = 1ULL<<cb1;\n"); // FIXME may need a bigger one
+    fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
     fprints(f, "        uint64_t endmask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "        uint64_t mismask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "        uint16_t bitoff;\n");
@@ -2681,7 +2681,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "          }\n");
   }
   fprints(f, "        }\n");
-  fprints(f, "        if (cb1 != PARSER_UINT_MAX && st->accepting)\n");
+  fprints(f, "        if (!cb2 && st->accepting)\n");
   fprints(f, "        {\n");
   if (cbssz || 1)
   {
@@ -2689,7 +2689,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     {
       fprints(f, "          size_t cbidx;\n");
     }
-    fprints(f, "          uint64_t cbmask = 1ULL<<cb1;\n"); // FIXME may need a bigger one
+    fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
     fprints(f, "          uint64_t endmask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "          uint64_t mismask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "          uint16_t bitoff;\n");
@@ -2934,11 +2934,11 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    ctx->start_status &= ~mismask;\n");
   fprints(f, "    ctx->confirm_status &= ~mismask;\n");
   fprints(f, "  }\n");
-  fprints(f, "  if (st && cb1 != PARSER_UINT_MAX)\n"); // RFE correct not to have st->accepting?
+  fprints(f, "  if (st && !cb2)\n"); // RFE correct not to have st->accepting?
   fprints(f, "  {\n");
   fprintf(f, "    enum yale_flags flags = 0;\n");
   fprintf(f, "    ssize_t cbr;\n");
-  fprints(f, "    uint64_t cbmask = 1ULL<<cb1;\n"); // FIXME may need a bigger one
+  fprints(f, "    uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
   fprints(f, "    uint64_t endmask = 0;\n"); // FIXME may need a bigger one
   fprints(f, "    uint64_t mismask = 0;\n"); // FIXME may need a bigger one
   fprints(f, "    uint16_t bitoff = 0;\n");
