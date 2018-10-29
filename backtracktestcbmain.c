@@ -23,12 +23,41 @@ ssize_t print(const char *buf, size_t siz, int start, struct backtracktestcb_par
 #ifdef DO_PRINT
   const char *ubuf = buf;
   size_t i;
-  putchar('<');
+
+  // We don't want empty starts
+  if ((start & YALE_FLAG_START) && siz == 0)
+  {
+    abort();
+  }
+
+  if (start & YALE_FLAG_START)
+  {
+    putchar('<');
+  }
+  else
+  {
+    putchar('[');
+  }
   for (i = 0; i < siz; i++)
   {
     myPutchar(ubuf[i]);
   }
-  putchar('>');
+  if (start & YALE_FLAG_START)
+  {
+    putchar('>');
+  }
+  else
+  {
+    putchar(']');
+  }
+  if (start & YALE_FLAG_MAJOR_MISTAKE)
+  {
+    putchar('!');
+  }
+  if (start & YALE_FLAG_END)
+  {
+    putchar('-');
+  }
   putchar('\n');
 #endif
   return -EAGAIN;

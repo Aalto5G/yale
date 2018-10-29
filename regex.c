@@ -2291,7 +2291,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      *state = st->acceptid;\n");
   fprints(f, "      ctx->state = 0;\n");
-  fprints(f, "      if (cb2 && st->accepting)\n");
+  fprints(f, "      if (cb2 && st->accepting && i > 0)\n");
   fprints(f, "      {\n");
   fprints(f, "        size_t cbidx;\n");
   fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
@@ -2423,7 +2423,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        }\n");
   }
   fprints(f, "      }\n");
-  fprints(f, "      if (cb1 != PARSER_UINT_MAX && st->accepting)\n");
+  fprints(f, "      if (cb1 != PARSER_UINT_MAX && st->accepting && i > 0)\n");
   fprints(f, "      {\n");
   if (cbssz || 1)
   {
