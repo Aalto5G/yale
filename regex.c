@@ -1832,7 +1832,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   if (cbssz || 1)
   {
     fprints(f, "        uint64_t cbmask = 0;\n"); // FIXME may need a bigger one
+#if 0
     fprints(f, "        uint64_t endmask = 0;\n"); // FIXME may need a bigger one
+#endif
     fprints(f, "        uint64_t mismask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "        uint16_t bitoff;\n");
   }
@@ -1877,6 +1879,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            bitoff = ffsres - 1;\n");
     fprints(f, "          }\n");
     fprints(f, "        }\n");
+#if 0
     fprints(f, "        endmask = ctx->confirm_status & ~cbmask;\n");
     fprints(f, "        for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "        {\n");
@@ -1923,11 +1926,16 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            bitoff = ffsres - 1;\n");
     fprints(f, "          }\n");
     fprints(f, "        }\n");
+#endif
+    fprints(f, "        mismask = ctx->start_status & ~cbmask;\n");
+    fprints(f, "        ctx->btbuf_status = mismask;\n");
     fprints(f, "        ctx->start_status |= cbmask;\n");
     fprints(f, "        ctx->confirm_status |= cbmask;\n");
+#if 0
     fprints(f, "        ctx->start_status &= ~endmask;\n");
     fprints(f, "        ctx->confirm_status &= ~endmask;\n");
     fprints(f, "        ctx->start_status &= ~mismask;\n");
+#endif
   }
   else
   {
