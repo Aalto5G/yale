@@ -1719,8 +1719,8 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
       for (x = 0; x < gen->tokencnt; x++)
       {
-        //yale_uint_t id = gen->pick_thoses_id_by_nonterminal[X]; // FIXME cond
-        yale_uint_t id = gen->nonterminal_conds[X].conds[c].pick_those;
+        ////yale_uint_t id = gen->pick_thoses_id_by_nonterminal[X]; // FIXME cond
+        //yale_uint_t id = gen->nonterminal_conds[X].conds[c].pick_those;
         uint32_t hashval = lookuptbl_hash(X, x);
         struct yale_hash_list_node *node;
         YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
@@ -1730,7 +1730,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
           if (e->nonterminal == X && e->terminal == x &&
               e->cond == cond && e->cb != YALE_UINT_MAX_LEGAL)
           {
-            check_cb(gen->pick_thoses[id].ds, 0, x);
+            //check_cb(gen->pick_thoses[id].ds, 0, x);
             break;
           }
         }
@@ -1896,7 +1896,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         }
         else
         {
-          check_cb(gen->pick_thoses[it->value].ds, 0, it->value);
+          //check_cb(gen->pick_thoses[it->value].ds, 0, it->value);
           fprintf(f, ".rhs = %d, .cb = %d", it->value, it->cb);
         }
       }

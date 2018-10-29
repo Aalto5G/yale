@@ -55,3 +55,6 @@ perf.data.old
 /backtracktestcparser.c
 /backtracktestcparser.h
 /backtracktestmain
+/backtracktestcbcparser.c
+/backtracktestcbcparser.h
+/backtracktestcbmain
