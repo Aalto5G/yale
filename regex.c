@@ -1716,7 +1716,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        st = &stbl[ctx->state];\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
-  fprints(f, "        return 0;\n");
+  fprints(f, "        return 0;\n"); // FIXME callbacks
   fprints(f, "      }\n");
   fprints(f, "      ctx->backtrackmid++;\n");
   fprintf(f, "      if (ctx->backtrackmid >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
@@ -1733,7 +1733,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "          ctx->lastack_status = 0;\n");
   fprints(f, "          ctx->backtrackstart = ctx->backtrackmid;\n");
-  fprints(f, "          return 0;\n");
+  fprints(f, "          return 0;\n"); // FIXME callbacks
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
@@ -1743,6 +1743,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "    }\n");
+  fprints(f, "    \n"); // FIXME callbacks here! from backtrackstart to backtrackend
   fprints(f, "  }\n");
   fprints(f, "#endif\n");
   fprints(f, "  for (i = 0; i < sz; i++)\n");
