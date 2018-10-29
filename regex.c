@@ -2407,6 +2407,8 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        else\n");
     fprints(f, "        {\n");
     fprints(f, "          mismask = ctx->start_status & ~cbmask;\n");
+    // FIXME or?
+    fprints(f, "          mismask = ctx->start_status | cbmask;\n");
     fprints(f, "          ctx->btbuf_status = mismask;\n");
     fprints(f, "          ctx->start_status |= cbmask;\n");
     fprints(f, "          ctx->confirm_status |= cbmask;\n");
@@ -2537,6 +2539,8 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        else\n");
     fprints(f, "        {\n");
     fprints(f, "          mismask = ctx->start_status & ~cbmask;\n");
+    // FIXME or?
+    fprints(f, "          mismask = ctx->start_status | cbmask;\n");
     fprints(f, "          ctx->btbuf_status = mismask;\n");
     fprints(f, "          ctx->start_status |= cbmask;\n");
     fprints(f, "          ctx->confirm_status |= cbmask;\n");
@@ -3003,6 +3007,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    ctx->start_status &= ~mismask;\n");
   fprints(f, "    ctx->confirm_status &= ~mismask;\n");
   fprints(f, "  }\n");
+  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
+  fprints(f, "  if (ctx->backtrackstart != ctx->backtrackend)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    ctx->btbuf_status = ctx->start_status;\n");
+  fprints(f, "  }\n");
+  fprintf(f, "#endif\n");
   fprints(f, "  *state = PARSER_UINT_MAX;\n");
   fprints(f, "  return -EAGAIN; // Not yet\n");
   fprints(f, "}\n");
