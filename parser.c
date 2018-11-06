@@ -2257,6 +2257,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        {\n");
     fprintf(f, "          flags |= YALE_FLAG_END;\n");
     fprintf(f, "        }\n");
+    fprintf(f, "        if (curcb != PARSER_UINT_MAX)\n");
+    fprintf(f, "        {\n");
+    fprintf(f, "          cbmask |= 1ULL<<curcb;\n");
+    fprintf(f, "        }\n");
     fprintf(f, "        for (cbidx = 0; cbidx < bytes_cb2->cbsz; cbidx++)\n");
     fprintf(f, "        {\n");
     fprintf(f, "          cbmask |= 1ULL<<bytes_cb2->cbs[cbidx];\n");
