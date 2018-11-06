@@ -1,0 +1,22 @@
+%{
+#include "reprefixcommon.h"
+%}
+
+token uint16zero = "\x00\x00" ;
+token uint16one = "\x00\x01" ;
+token uint16any = "..?" ;
+
+msgser =
+| msg<cb=printall> msgser
+;
+
+msg = 
+uint16one uint16any<cb=szbe> uintcontainer<cb=printcont>
+;
+
+uintcontainer =
+uint16any<cb=print>
+;
+
+directive main = msgser ;
+directive parsername = reprefix ;

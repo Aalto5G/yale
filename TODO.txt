@@ -1,3 +1,4 @@
 bytecontainer in lenprefix.txt and callback system, now fixed
 - ...but check if the same issue affects non-bytes data types as well
+- ...yes, it affects
 Shortcut for SCCLL(1)

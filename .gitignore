@@ -58,3 +58,6 @@ perf.data.old
 /backtracktestcbcparser.c
 /backtracktestcbcparser.h
 /backtracktestcbmain
+/reprefixcmain
+/reprefixcparser.c
+/reprefixcparser.h
