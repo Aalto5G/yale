@@ -2370,7 +2370,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      }\n");
   fprintf(f, "      else\n");
   fprintf(f, "      {\n");
-  fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cb2, PARSER_UINT_MAX);//, baton);\n", gen->parsername);
+  fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cb2, curcb);//, baton);\n", gen->parsername);
   fprints(f, "        if (ret == -EAGAIN)\n"
              "        {\n"
              "          //off = sz;\n"

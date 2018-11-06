@@ -1721,7 +1721,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        ctx->backtrackmid = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "        if (st && cb2)\n");
   fprints(f, "        {\n");
-  fprints(f, "          uint64_t cbmask = 0, endmask = 0, mismask = 0;\n");
+  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
   fprints(f, "          ssize_t cbr;\n");
   fprints(f, "          size_t cbidx;\n");
   //fprints(f, "          size_t taintidx;\n");
@@ -1972,7 +1972,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->lastack_status = 0;\n");
   fprints(f, "          if (st && cb2)\n");
   fprints(f, "          {\n");
-  fprints(f, "            uint64_t cbmask = 0, endmask = 0, mismask = 0;\n");
+  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
   fprints(f, "            ssize_t cbr;\n");
   fprints(f, "            size_t cbidx;\n");
   //fprints(f, "            size_t taintidx;\n");
@@ -2217,7 +2217,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    }\n");
   fprints(f, "    if (st && cb2)\n");
   fprints(f, "    {\n");
-  fprints(f, "      uint64_t cbmask = 0, endmask = 0, mismask = 0;\n");
+  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
   fprints(f, "      ssize_t cbr;\n");
   fprints(f, "      size_t cbidx, taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
@@ -2536,7 +2536,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        enum yale_flags flags = 0;\n");
   if (cbssz || 1)
   {
-    fprints(f, "        uint64_t cbmask = 0;\n"); // FIXME may need a bigger one
+    fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
     fprints(f, "        uint64_t endmask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "        uint64_t mismask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "        uint16_t bitoff;\n");
@@ -2808,7 +2808,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          enum yale_flags flags = 0;\n");
   if (cbssz || 1)
   {
-    fprints(f, "          uint64_t cbmask = 0;\n"); // FIXME may need a bigger one
+    fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
     fprints(f, "          uint64_t endmask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "          uint64_t mismask = 0;\n"); // FIXME may need a bigger one
     fprints(f, "          uint16_t bitoff;\n");
@@ -3075,7 +3075,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "  }\n"); // FIXME use taintid set:
   fprints(f, "  if (st && cb2)\n");
   fprints(f, "  {\n");
-  fprints(f, "    uint64_t cbmask = 0;\n"); // FIXME may need a bigger one
+  fprints(f, "    uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
   fprints(f, "    uint64_t endmask = 0;\n"); // FIXME may need a bigger one
   fprints(f, "    uint64_t mismask = 0;\n"); // FIXME may need a bigger one
   fprintf(f, "    enum yale_flags flags = 0;\n");
