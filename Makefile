@@ -291,6 +291,12 @@ clean:
 	rm -f httprespcparser.h
 	rm -f condparsercparser.c
 	rm -f condparsercparser.h
+	rm -f backtracktestcbcparser.c
+	rm -f backtracktestcbcparser.h
+	rm -f backtracktestcparser.c
+	rm -f backtracktestcparser.h
+	rm -f recursivecbcparser.c
+	rm -f recursivecbcparser.h
 	rm -f httpparser.c
 	rm -f httpparser.h
 	rm -f ssl1cparser.c
@@ -314,9 +320,15 @@ distclean: clean
 	rm -f httpmainprint
 	rm -f httpcmain
 	rm -f httpcmainprint
+	rm -f httprespcmain
 	rm -f sslcmain
+	rm -f recursivecbmain
+	rm -f backtracktestmain
+	rm -f backtracktestcbmain
+	rm -f sslcmainprint
 	rm -f lenprefixcmain
 	rm -f reprefixcmain
 	rm -f yaleparser
 	rm -f regexmain
 	rm -f condtest
+	rm -f unit
