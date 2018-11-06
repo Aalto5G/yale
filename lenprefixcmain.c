@@ -101,7 +101,7 @@ ssize_t printcont(const char *buf, size_t siz, int start, struct lenprefix_parse
 ssize_t szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   size_t i;
-  if (start)
+  if (start & YALE_FLAG_START)
   {
     pctx->bytes_sz = 0;
   }
@@ -117,6 +117,7 @@ int main(int argc, char **argv)
 {
   ssize_t consumed;
   size_t i;
+  struct lenprefix_parserctx pctx2 = {};
   struct lenprefix_parserctx pctx = {};
   char lenprefix[] =
     "\x00\x00\x00\x00"
@@ -134,6 +135,7 @@ int main(int argc, char **argv)
 
   for (i = 0; i < 1; i++)
   {
+    pctx = pctx2;
     lenprefix_parserctx_init(&pctx);
     consumed = lenprefix_parse_block(&pctx, lenprefix, sizeof(lenprefix)-1);
     if (consumed != -EAGAIN)
