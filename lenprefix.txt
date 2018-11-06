@@ -7,12 +7,12 @@ token uint16one = "\x00\x01" ;
 token uint16any = "..?" ;
 
 msgser =
-| msg msgser
+| msg<cb=printall> msgser
 ;
 
 msg = 
 uint16zero uint16any<cb=szbe> bytes<cb=print>
-| uint16one uint16any<cb=szbe> bytecontainer
+| uint16one uint16any<cb=szbe> bytecontainer<cb=printcont>
 ;
 
 bytecontainer =

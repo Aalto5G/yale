@@ -41,6 +41,62 @@ ssize_t print(const char *buf, size_t siz, int start, struct lenprefix_parserctx
   putchar('\n');
   return -EAGAIN;
 }
+ssize_t printall(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+{
+  const char *ubuf = buf;
+  size_t i;
+  if (start)
+  {
+    putchar('<');
+  }
+  else
+  {
+    putchar('[');
+  }
+  for (i = 0; i < siz; i++)
+  {
+    myPutchar(ubuf[i]);
+  }
+  if (start)
+  {
+    putchar('>');
+  }
+  else
+  {
+    putchar(']');
+  }
+  putchar('A');
+  putchar('\n');
+  return -EAGAIN;
+}
+ssize_t printcont(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+{
+  const char *ubuf = buf;
+  size_t i;
+  if (start)
+  {
+    putchar('<');
+  }
+  else
+  {
+    putchar('[');
+  }
+  for (i = 0; i < siz; i++)
+  {
+    myPutchar(ubuf[i]);
+  }
+  if (start)
+  {
+    putchar('>');
+  }
+  else
+  {
+    putchar(']');
+  }
+  putchar('C');
+  putchar('\n');
+  return -EAGAIN;
+}
 
 ssize_t szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {

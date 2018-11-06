@@ -1982,7 +1982,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    curstate = pctx->stack[pctx->stacksz - 1].rhs;\n"
              "    curcb = pctx->stack[pctx->stacksz - 1].cb;\n");
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
-  {
+  { // FIXME cb
     fprints(f, "    if (curstate == PARSER_UINT_MAX - 1)\n");
     fprints(f, "    {\n");
     fprints(f, "      parser_uint_t bytes_cb = curcb;\n");
@@ -2106,7 +2106,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      if (is_bytes)\n");
   fprintf(f, "      {\n");
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
-  {
+  { // FIXME cb
     fprintf(f, "        parser_uint_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parsername);
     fprintf(f, "        enum yale_flags flags = 0;\n");
     fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
