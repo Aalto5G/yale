@@ -274,6 +274,8 @@ yale.tab.o: yale.lex.h yale.tab.h Makefile
 
 clean:
 	rm -f $(OBJ) $(OBJGEN) $(DEP) $(DEPGEN)
+	rm -f parser.pyc
+	rm -f regex.pyc
 	rm -rf intermediatestore
 	rm -f YALE.TAB.INTERMEDIATE
 	rm -f YALE.LEX.INTERMEDIATE
