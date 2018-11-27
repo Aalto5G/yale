@@ -2047,6 +2047,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "        cbmask |= 1ULL<<pctx->cbstack[cbidx];\n");
       fprintf(f, "      }\n");
     }
+    fprintf(f, "      if (cbmask)\n");
     fprintf(f, "      for (bitoff = 0; bitoff < 64; )\n");
     fprintf(f, "      {\n");
     fprintf(f, "        int ffsres;\n");
@@ -2069,6 +2070,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        }\n");
     fprintf(f, "      }\n");
     fprintf(f, "      endmask = pctx->rctx.confirm_status & ~cbmask;\n");
+    fprintf(f, "      if (endmask)\n");
     fprintf(f, "      for (bitoff = 0; bitoff < 64; )\n");
     fprintf(f, "      {\n");
     fprintf(f, "        int ffsres;\n");
@@ -2091,6 +2093,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        }\n");
     fprintf(f, "      }\n");
     fprintf(f, "      mismask = pctx->rctx.start_status & ~cbmask & ~pctx->rctx.confirm_status;\n");
+    fprintf(f, "      if (mismask)\n");
     fprintf(f, "      for (bitoff = 0; bitoff < 64; )\n");
     fprintf(f, "      {\n");
     fprintf(f, "        int ffsres;\n");
@@ -2240,6 +2243,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "          cbmask |= 1ULL<<pctx->cbstack[cbidx];\n");
       fprintf(f, "        }\n");
     }
+    fprintf(f, "        if (cbmask)\n");
     fprintf(f, "        for (bitoff = 0; bitoff < 64; )\n");
     fprintf(f, "        {\n");
     fprintf(f, "          int ffsres;\n");
@@ -2262,6 +2266,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "          }\n");
     fprintf(f, "        }\n");
     fprintf(f, "        endmask = pctx->rctx.confirm_status & ~cbmask;\n");
+    fprintf(f, "        if (endmask)\n");
     fprintf(f, "        for (bitoff = 0; bitoff < 64; )\n");
     fprintf(f, "        {\n");
     fprintf(f, "          int ffsres;\n");
@@ -2284,6 +2289,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "          }\n");
     fprintf(f, "        }\n");
     fprintf(f, "        mismask = pctx->rctx.start_status & ~cbmask & ~pctx->rctx.confirm_status;\n");
+    fprintf(f, "        if (mismask)\n");
     fprintf(f, "        for (bitoff = 0; bitoff < 64; )\n");
     fprintf(f, "        {\n");
     fprintf(f, "          int ffsres;\n");

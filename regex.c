@@ -1743,6 +1743,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "          }\n");
   }
   fprints(f, "          cbmask &= ~ctx->btbuf_status;\n");
+  fprintf(f, "          if (cbmask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "          {\n");
   fprints(f, "            int ffsres;\n");
@@ -1781,6 +1782,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "            }\n");
   fprints(f, "          }\n");
   fprints(f, "          endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
+  fprintf(f, "          if (endmask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "          {\n");
   fprints(f, "            int ffsres;\n");
@@ -1819,6 +1821,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "            }\n");
   fprints(f, "          }\n");
   fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
+  fprintf(f, "          if (mismask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "          {\n");
   fprints(f, "            int ffsres;\n");
@@ -1863,6 +1866,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "          }\n");
   }
   fprints(f, "          cbmask &= ~ctx->btbuf_status;\n");
+  fprintf(f, "          if (cbmask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "          {\n");
   fprints(f, "            int ffsres;\n");
@@ -1901,6 +1905,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "            }\n");
   fprints(f, "          }\n");
   fprints(f, "          endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
+  fprintf(f, "          if (endmask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "          {\n");
   fprints(f, "            int ffsres;\n");
@@ -1924,6 +1929,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "            }\n");
   fprints(f, "          }\n");
   fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
+  fprintf(f, "          if (mismask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "          {\n");
   fprints(f, "            int ffsres;\n");
@@ -1994,6 +2000,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
   }
   fprints(f, "            cbmask &= ~ctx->btbuf_status;\n");
+  fprintf(f, "            if (cbmask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -2032,6 +2039,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "              }\n");
   fprints(f, "            }\n");
   fprints(f, "            endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
+  fprintf(f, "            if (endmask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -2070,6 +2078,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "              }\n");
   fprints(f, "            }\n");
   fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
+  fprintf(f, "            if (mismask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -2114,6 +2123,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
   }
   fprints(f, "            cbmask &= ~ctx->btbuf_status;\n");
+  fprintf(f, "            if (cbmask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -2152,6 +2162,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "              }\n");
   fprints(f, "            }\n");
   fprints(f, "            endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
+  fprintf(f, "            if (endmask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -2175,6 +2186,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "              }\n");
   fprints(f, "            }\n");
   fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
+  fprintf(f, "            if (mismask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
@@ -2237,6 +2249,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "      }\n");
   }
   fprints(f, "      cbmask &= ~ctx->btbuf_status;\n");
+  fprintf(f, "      if (cbmask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2275,6 +2288,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "      endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
+  fprintf(f, "      if (endmask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2313,6 +2327,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
+  fprintf(f, "      if (mismask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2357,6 +2372,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "      }\n");
   }
   fprints(f, "      cbmask &= ~ctx->btbuf_status;\n");
+  fprintf(f, "      if (cbmask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2395,6 +2411,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "      endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
+  fprintf(f, "      if (endmask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2418,6 +2435,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
+  fprintf(f, "      if (mismask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
@@ -2560,6 +2578,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        {\n");
     fprints(f, "          cbmask |= (1ULL<<mycb->cbs[cbidx]);\n");
     fprints(f, "        }\n");
+    fprintf(f, "        if (cbmask)\n");
     fprints(f, "        for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "        {\n");
     fprints(f, "          int ffsres;\n");
@@ -2589,6 +2608,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprintf(f, "#endif\n");
     fprints(f, "        {\n");
     fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
+    fprintf(f, "          if (endmask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2612,6 +2632,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
     fprints(f, "          }\n");
     fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+    fprintf(f, "          if (mismask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2692,6 +2713,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
       fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
       fprints(f, "        }\n");
     }
+    fprintf(f, "        if (cbmask)\n");
     fprints(f, "        for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "        {\n");
     fprints(f, "          int ffsres;\n");
@@ -2721,6 +2743,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprintf(f, "#endif\n");
     fprints(f, "        {\n");
     fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
+    fprintf(f, "          if (endmask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2744,6 +2767,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
     fprints(f, "          }\n");
     fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+    fprintf(f, "          if (mismask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2834,6 +2858,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "          {\n");
     fprints(f, "            cbmask |= (1ULL << mycb->cbs[cbidx]);\n");
     fprints(f, "          }\n");
+    fprintf(f, "          if (cbmask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2857,6 +2882,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
     fprints(f, "          }\n");
     fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
+    fprintf(f, "          if (endmask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2880,6 +2906,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
     fprints(f, "          }\n");
     fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+    fprintf(f, "          if (mismask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2950,6 +2977,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
       fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
       fprints(f, "          }\n");
     }
+    fprintf(f, "          if (cbmask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2973,6 +3001,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
     fprints(f, "          }\n");
     fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
+    fprintf(f, "          if (endmask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -2996,6 +3025,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            }\n");
     fprints(f, "          }\n");
     fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+    fprintf(f, "          if (mismask)\n");
     fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
     fprints(f, "          {\n");
     fprints(f, "            int ffsres;\n");
@@ -3101,6 +3131,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "      cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "    }\n");
   }
+  fprintf(f, "    if (cbmask)\n");
   fprints(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "    {\n");
   fprints(f, "      int ffsres;\n");
@@ -3123,6 +3154,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "    endmask = ctx->confirm_status & ~cbmask;\n");
+  fprintf(f, "    if (endmask)\n");
   fprints(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "    {\n");
   fprints(f, "      int ffsres;\n");
@@ -3146,6 +3178,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "    mismask = ctx->start_status & ~cbmask & ~ctx->lastack_status;\n");
+  fprintf(f, "    if (mismask)\n");
   fprints(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "    {\n");
   fprints(f, "      int ffsres;\n");
@@ -3204,6 +3237,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "      cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "    }\n");
   }
+  fprintf(f, "    if (cbmask)\n");
   fprints(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "    {\n");
   fprints(f, "      int ffsres;\n");
@@ -3227,6 +3261,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    }\n");
 #endif
   fprints(f, "    endmask = ctx->confirm_status & ~cbmask;\n");
+  fprintf(f, "    if (endmask)\n");
   fprints(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "    {\n");
   fprints(f, "      int ffsres;\n");
@@ -3250,6 +3285,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "    mismask = ctx->start_status & ~cbmask & ~ctx->lastack_status;\n");
+  fprintf(f, "    if (mismask)\n");
   fprints(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "    {\n");
   fprints(f, "      int ffsres;\n");
