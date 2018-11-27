@@ -1,3 +1,4 @@
+#define _GNU_SOURCE
 #include "parser.h"
 
 struct firstset_values singleton(yale_uint_t tkn)
