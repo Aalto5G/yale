@@ -2099,7 +2099,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        int ffsres;\n");
     fprintf(f, "        if (mismask & (1ULL<<bitoff))\n");
     fprintf(f, "        {\n");
-    fprintf(f, "          cbr = %s_callbacks[bitoff](blk+off, 0, YALE_FLAG_END, pctx);\n", gen->parsername);
+    fprintf(f, "          cbr = %s_callbacks[bitoff](blk+off, 0, YALE_FLAG_MAJOR_MISTAKE, pctx);\n", gen->parsername);
     fprintf(f, "          if (cbr != 0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
     fprintf(f, "          {\n");
     fprintf(f, "            return cbr;\n");
@@ -2295,7 +2295,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "          int ffsres;\n");
     fprintf(f, "          if (mismask & (1ULL<<bitoff))\n");
     fprintf(f, "          {\n");
-    fprintf(f, "            cbr = %s_callbacks[bitoff](blk+off, 0, YALE_FLAG_END, pctx);\n", gen->parsername);
+    fprintf(f, "            cbr = %s_callbacks[bitoff](blk+off, 0, YALE_FLAG_MAJOR_MISTAKE, pctx);\n", gen->parsername);
     fprintf(f, "            if (cbr != 0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
     fprintf(f, "            {\n");
     fprintf(f, "              return cbr;\n");
