@@ -2500,6 +2500,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprints(f, "        abort();\n");
   }
   fprints(f, "      }\n"
+             "#if 0\n"
              "      while (i + 4 <= rule->rhssz)\n"
              "      {\n"
              "        pctx->stack[pctx->stacksz++] = rule->rhs[i+0];\n"
@@ -2508,6 +2509,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "        pctx->stack[pctx->stacksz++] = rule->rhs[i+3];\n"
              "        i += 4;\n"
              "      }\n"
+             "#endif\n"
              "      for (; i < rule->rhssz; i++)\n"
              "      {\n"
              "        pctx->stack[pctx->stacksz++] = rule->rhs[i];\n"
