@@ -328,6 +328,8 @@ clean:
 	rm -f ssl6cparser.c
 	rm -f ssl6cparser.h
 	rm -f http.py
+	rm -f tokentheft1cparser.c
+	rm -f tokentheft1cparser.h
 
 distclean: clean
 	rm -f yaletest
@@ -348,3 +350,4 @@ distclean: clean
 	rm -f regexmain
 	rm -f condtest
 	rm -f unit
+	rm -f tokentheft1main
