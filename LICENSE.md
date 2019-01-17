@@ -1,4 +1,4 @@
-Copyright (c) 2018 Aalto University
+Copyright (c) 2018-2019 Aalto University
 
 Copyright (c) 2018 Juha-Matti Tilli
 
