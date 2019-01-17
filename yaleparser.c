@@ -131,6 +131,10 @@ int main(int argc, char **argv)
     {
       parsergen_nofastpath(&gen);
     }
+    if (yale.shortcutting)
+    {
+      parsergen_shortcutting(&gen);
+    }
     gen_parser(&gen);
     if (h)
     {

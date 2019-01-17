@@ -1680,8 +1680,15 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "NULL};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
-  fprints(f, "  const uint8_t is_bytes:1;\n");
-  fprints(f, "  const uint8_t is_shortcut:1;\n");
+  if (gen->shortcutting)
+  {
+    fprints(f, "  const uint8_t is_bytes:1;\n");
+    fprints(f, "  const uint8_t is_shortcut:1;\n");
+  }
+  else
+  {
+    fprints(f, "  const uint8_t is_bytes;\n");
+  }
   fprints(f, "  const parser_uint_t bytes_cb;\n");
   fprints(f, "  const struct state *re;\n");
   fprintf(f, "  //const parser_uint_t rhs[%d];\n", gen->tokencnt);
@@ -1861,7 +1868,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       else
       {
         fprintf(f, ".is_bytes = 0, ");
-        if (gen->nonterminal_conds[X].is_shortcut)
+        if (gen->shortcutting && gen->nonterminal_conds[X].is_shortcut)
         {
           fprintf(f, ".is_shortcut = 1, ");
         }
@@ -2206,7 +2213,15 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    }\n"
              "    else if (likely(curstate != PARSER_UINT_MAX))\n"
              "    {\n");
-  fprintf(f, "      int is_bytes, is_shortcut;\n");
+  fprintf(f, "      int is_bytes;\n");
+  if (gen->shortcutting)
+  {
+    fprintf(f, "      int is_shortcut;\n");
+  }
+  else
+  {
+    fprintf(f, "      const int is_shortcut = 0;\n");
+  }
   fprintf(f, "      if (pctx->curstateoff == PARSER_UINT_MAX)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        switch (curstate)\n");
@@ -2246,7 +2261,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
   fprintf(f, "      cb2 = %s_parserstatetblentries[curstateoff].cb2;\n", gen->parsername);
   fprintf(f, "      is_bytes = %s_parserstatetblentries[curstateoff].is_bytes;\n", gen->parsername);
-  fprintf(f, "      is_shortcut = %s_parserstatetblentries[curstateoff].is_shortcut;\n", gen->parsername);
+  if (gen->shortcutting)
+  {
+    fprintf(f, "      is_shortcut = %s_parserstatetblentries[curstateoff].is_shortcut;\n", gen->parsername);
+  }
   fprintf(f, "      if (is_bytes)\n");
   fprintf(f, "      {\n");
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
@@ -2318,10 +2336,13 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        abort();\n");
   }
   fprintf(f, "      }\n");
-  fprintf(f, "      else if (is_shortcut)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        state = PARSER_UINT_MAX;\n");
-  fprintf(f, "      }\n");
+  if (gen->shortcutting)
+  {
+    fprintf(f, "      else if (is_shortcut)\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        state = PARSER_UINT_MAX;\n");
+    fprintf(f, "      }\n");
+  }
   fprintf(f, "      else\n");
   fprintf(f, "      {\n");
   fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cb2, curcb);//, baton);\n", gen->parsername);
@@ -2353,7 +2374,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
     fprintf(f, "      case %d:\n", (int)X);
-    if (gen->nonterminal_conds[X].is_shortcut)
+    if (gen->shortcutting && gen->nonterminal_conds[X].is_shortcut)
     {
       fprintf(f, "          ruleid=%d;\n", (int)gen->nonterminal_conds[X].shortcut_rule);
     }
@@ -2834,4 +2855,9 @@ void parsergen_set_bytessizetype(struct ParserGen *gen, char *type)
 void parsergen_nofastpath(struct ParserGen *gen)
 {
   gen->nofastpath = 1;
+}
+
+void parsergen_shortcutting(struct ParserGen *gen)
+{
+  gen->shortcutting = 1;
 }

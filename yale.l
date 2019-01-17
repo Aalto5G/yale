@@ -45,6 +45,7 @@ action    return ACTION;
 token     return TOKEN;
 directive return DIRECTIVE;
 nofastpath return NOFASTPATH;
+shortcutting return SHORTCUTTING;
 main      return MAIN;
 entry     return ENTRY;
 bytes     return BYTES;

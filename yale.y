@@ -63,6 +63,7 @@ int yaleyywrap(yyscan_t scanner)
 %token PRIO
 %token DIRECTIVE
 %token NOFASTPATH
+%token SHORTCUTTING
 %token MAIN
 %token ENTRY
 
@@ -316,6 +317,10 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
 | NOFASTPATH SEMICOLON
 {
   yale->nofastpath = 1;
+}
+| SHORTCUTTING SEMICOLON
+{
+  yale->shortcutting = 1;
 }
 ;
 
