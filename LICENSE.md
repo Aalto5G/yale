@@ -3,7 +3,7 @@ Copyright (c) 2018-2019 Aalto University
 Copyright (c) 2018 Juha-Matti Tilli
 
 Authors:
-- Juha-Matti Tilli (copyright to Aalto University transferred on 19.4.2018)
+- Juha-Matti Tilli (copyright transfer to Aalto on 19.4.2018 for some code)
 
 Permission is hereby granted, free of charge, to any person obtaining
 a copy of this software and associated documentation files (the
