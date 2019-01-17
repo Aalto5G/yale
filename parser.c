@@ -271,6 +271,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
   {
     gen->nonterminal_conds[i].condcnt = 0;
+    gen->nonterminal_conds[i].is_shortcut = 0;
   }
 #if 0
 #if 1
@@ -1593,6 +1594,71 @@ void gen_parser(struct ParserGen *gen)
   }
   gen->max_stack_size = tmpssz;
   gen->max_cb_stack_size = tmpsz;
+  for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
+  {
+    int ok = 1;
+    yale_uint_t x;
+    yale_uint_t ruleid = YALE_UINT_MAX_LEGAL;
+    yale_uint_t cond = YALE_UINT_MAX_LEGAL;
+    if (gen->nonterminal_conds[i].condcnt != 1)
+    {
+      continue;
+    }
+    if (gen->nonterminal_conds[i].conds[0].cond != YALE_UINT_MAX_LEGAL)
+    {
+      continue;
+    }
+
+    for (x = 0; x < gen->tokencnt; x++)
+    {
+      uint32_t hashval = lookuptbl_hash(i, x);
+      struct yale_hash_list_node *node;
+      YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+      {
+        struct LookupTblEntry *e =
+          YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+        if (e->nonterminal == i && e->terminal == x && e->cond == cond &&
+            e->val != YALE_UINT_MAX_LEGAL)
+        {
+          if (ruleid == YALE_UINT_MAX_LEGAL)
+          {
+            ruleid = e->val;
+          }
+          if (ruleid != e->val)
+          {
+            ok = 0; // we could break but too complex...
+          }
+        }
+      }
+    }
+    {
+      uint32_t hashval = lookuptbl_hash(i, YALE_UINT_MAX_LEGAL-1);
+      struct yale_hash_list_node *node;
+      YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+      {
+        struct LookupTblEntry *e =
+          YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+        if (e->nonterminal == i && e->terminal == YALE_UINT_MAX_LEGAL-1 &&
+            e->cond == cond && e->val != YALE_UINT_MAX_LEGAL)
+        {
+          if (ruleid == YALE_UINT_MAX_LEGAL)
+          {
+            ruleid = e->val;
+          }
+          if (ruleid != e->val)
+          {
+            ok = 0; // we could break but too complex...
+          }
+        }
+      }
+    }
+    if (!ok)
+    {
+      continue;
+    }
+    gen->nonterminal_conds[i].is_shortcut = 1;
+    gen->nonterminal_conds[i].shortcut_rule = ruleid;
+  }
 }
 
 void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
@@ -1614,7 +1680,8 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "NULL};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
-  fprints(f, "  const uint8_t is_bytes;\n");
+  fprints(f, "  const uint8_t is_bytes:1;\n");
+  fprints(f, "  const uint8_t is_shortcut:1;\n");
   fprints(f, "  const parser_uint_t bytes_cb;\n");
   fprints(f, "  const struct state *re;\n");
   fprintf(f, "  //const parser_uint_t rhs[%d];\n", gen->tokencnt);
@@ -1794,6 +1861,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       else
       {
         fprintf(f, ".is_bytes = 0, ");
+        if (gen->nonterminal_conds[X].is_shortcut)
+        {
+          fprintf(f, ".is_shortcut = 1, ");
+        }
         fprintf(f, ".re = %s_states", gen->parsername);
         for (i = 0; i < gen->tokencnt; i++)
         {
@@ -2135,7 +2206,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    }\n"
              "    else if (likely(curstate != PARSER_UINT_MAX))\n"
              "    {\n");
-  fprintf(f, "      int is_bytes;\n");
+  fprintf(f, "      int is_bytes, is_shortcut;\n");
   fprintf(f, "      if (pctx->curstateoff == PARSER_UINT_MAX)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        switch (curstate)\n");
@@ -2175,6 +2246,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
   fprintf(f, "      cb2 = %s_parserstatetblentries[curstateoff].cb2;\n", gen->parsername);
   fprintf(f, "      is_bytes = %s_parserstatetblentries[curstateoff].is_bytes;\n", gen->parsername);
+  fprintf(f, "      is_shortcut = %s_parserstatetblentries[curstateoff].is_shortcut;\n", gen->parsername);
   fprintf(f, "      if (is_bytes)\n");
   fprintf(f, "      {\n");
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
@@ -2246,6 +2318,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        abort();\n");
   }
   fprintf(f, "      }\n");
+  fprintf(f, "      else if (is_shortcut)\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        state = PARSER_UINT_MAX;\n");
+  fprintf(f, "      }\n");
   fprintf(f, "      else\n");
   fprintf(f, "      {\n");
   fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cb2, curcb);//, baton);\n", gen->parsername);
@@ -2277,101 +2353,108 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
     fprintf(f, "      case %d:\n", (int)X);
-    fprintf(f, "        ruleid=PARSER_UINT_MAX;\n");
-    for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
+    if (gen->nonterminal_conds[X].is_shortcut)
     {
-      yale_uint_t cond = gen->nonterminal_conds[X].conds[c].cond;
-      if (cond == YALE_UINT_MAX_LEGAL)
-      {
-        fprints(f, "        switch (state)\n"
-                   "        {\n");
-        for (x = 0; x < gen->tokencnt; x++)
-        {
-          uint32_t hashval = lookuptbl_hash(X, x);
-          struct yale_hash_list_node *node;
-          YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
-          {
-            struct LookupTblEntry *e =
-              YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
-            if (e->nonterminal == X && e->terminal == x && e->cond == cond &&
-                e->val != YALE_UINT_MAX_LEGAL)
-            {
-              fprintf(f, "        case %d:\n", (int)x);
-              fprintf(f, "          ruleid=%d;\n", (int)e->val);
-              fprints(f, "          break;\n");
-            }
-          }
-        }
-        {
-          uint32_t hashval = lookuptbl_hash(X, YALE_UINT_MAX_LEGAL-1);
-          struct yale_hash_list_node *node;
-          YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
-          {
-            struct LookupTblEntry *e =
-              YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
-            if (e->nonterminal == X && e->terminal == YALE_UINT_MAX_LEGAL-1 &&
-                e->cond == cond && e->val != YALE_UINT_MAX_LEGAL)
-            {
-              fprintf(f, "        case PARSER_UINT_MAX-1:\n");
-              fprintf(f, "          ruleid=%d;\n", (int)e->val);
-              fprints(f, "          break;\n");
-            }
-          }
-        }
-        fprints(f, "        default:\n"
-                   "          ruleid=PARSER_UINT_MAX;\n"
-                   "          break;\n"
-                   "        }\n");
-      }
+      fprintf(f, "          ruleid=%d;\n", (int)gen->nonterminal_conds[X].shortcut_rule);
     }
-    for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
+    else
     {
-      yale_uint_t cond = gen->nonterminal_conds[X].conds[c].cond;
-      yale_uint_t statetblidx = gen->nonterminal_conds[X].conds[c].statetblidx;
-      if (cond != YALE_UINT_MAX_LEGAL)
+      fprintf(f, "        ruleid=PARSER_UINT_MAX;\n");
+      for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
       {
-        fprintf(f, "        if (curstateoff == %d)\n", (int)statetblidx);
-        fprintf(f, "        {\n");
-        fprints(f, "          switch (state)\n"
-                   "          {\n");
-        for (x = 0; x < gen->tokencnt; x++)
+        yale_uint_t cond = gen->nonterminal_conds[X].conds[c].cond;
+        if (cond == YALE_UINT_MAX_LEGAL)
         {
-          uint32_t hashval = lookuptbl_hash(X, x);
-          struct yale_hash_list_node *node;
-          YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+          fprints(f, "        switch (state)\n"
+                     "        {\n");
+          for (x = 0; x < gen->tokencnt; x++)
           {
-            struct LookupTblEntry *e =
-              YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
-            if (e->nonterminal == X && e->terminal == x && e->cond == cond &&
-                e->val != YALE_UINT_MAX_LEGAL)
+            uint32_t hashval = lookuptbl_hash(X, x);
+            struct yale_hash_list_node *node;
+            YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
             {
-              fprintf(f, "          case %d:\n", (int)x);
-              fprintf(f, "            ruleid=%d;\n", (int)e->val);
-              fprints(f, "            break;\n");
+              struct LookupTblEntry *e =
+                YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+              if (e->nonterminal == X && e->terminal == x && e->cond == cond &&
+                  e->val != YALE_UINT_MAX_LEGAL)
+              {
+                fprintf(f, "        case %d:\n", (int)x);
+                fprintf(f, "          ruleid=%d;\n", (int)e->val);
+                fprints(f, "          break;\n");
+              }
             }
           }
-        }
-        {
-          uint32_t hashval = lookuptbl_hash(X, YALE_UINT_MAX_LEGAL-1);
-          struct yale_hash_list_node *node;
-          YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
           {
-            struct LookupTblEntry *e =
-              YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
-            if (e->nonterminal == X && e->terminal == YALE_UINT_MAX_LEGAL-1 &&
-                e->cond == cond && e->val != YALE_UINT_MAX_LEGAL)
+            uint32_t hashval = lookuptbl_hash(X, YALE_UINT_MAX_LEGAL-1);
+            struct yale_hash_list_node *node;
+            YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
             {
-              fprintf(f, "          case PARSER_UINT_MAX-1:\n");
-              fprintf(f, "            ruleid=%d;\n", (int)e->val);
-              fprints(f, "            break;\n");
+              struct LookupTblEntry *e =
+                YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+              if (e->nonterminal == X && e->terminal == YALE_UINT_MAX_LEGAL-1 &&
+                  e->cond == cond && e->val != YALE_UINT_MAX_LEGAL)
+              {
+                fprintf(f, "        case PARSER_UINT_MAX-1:\n");
+                fprintf(f, "          ruleid=%d;\n", (int)e->val);
+                fprints(f, "          break;\n");
+              }
             }
           }
+          fprints(f, "        default:\n"
+                     "          ruleid=PARSER_UINT_MAX;\n"
+                     "          break;\n"
+                     "        }\n");
         }
-        fprints(f, "          default:\n"
-                   "            ruleid=PARSER_UINT_MAX;\n"
-                   "            break;\n"
-                   "          }\n");
-        fprintf(f, "        }\n");
+      }
+      for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
+      {
+        yale_uint_t cond = gen->nonterminal_conds[X].conds[c].cond;
+        yale_uint_t statetblidx = gen->nonterminal_conds[X].conds[c].statetblidx;
+        if (cond != YALE_UINT_MAX_LEGAL)
+        {
+          fprintf(f, "        if (curstateoff == %d)\n", (int)statetblidx);
+          fprintf(f, "        {\n");
+          fprints(f, "          switch (state)\n"
+                     "          {\n");
+          for (x = 0; x < gen->tokencnt; x++)
+          {
+            uint32_t hashval = lookuptbl_hash(X, x);
+            struct yale_hash_list_node *node;
+            YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+            {
+              struct LookupTblEntry *e =
+                YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+              if (e->nonterminal == X && e->terminal == x && e->cond == cond &&
+                  e->val != YALE_UINT_MAX_LEGAL)
+              {
+                fprintf(f, "          case %d:\n", (int)x);
+                fprintf(f, "            ruleid=%d;\n", (int)e->val);
+                fprints(f, "            break;\n");
+              }
+            }
+          }
+          {
+            uint32_t hashval = lookuptbl_hash(X, YALE_UINT_MAX_LEGAL-1);
+            struct yale_hash_list_node *node;
+            YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Thash, node, hashval)
+            {
+              struct LookupTblEntry *e =
+                YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
+              if (e->nonterminal == X && e->terminal == YALE_UINT_MAX_LEGAL-1 &&
+                  e->cond == cond && e->val != YALE_UINT_MAX_LEGAL)
+              {
+                fprintf(f, "          case PARSER_UINT_MAX-1:\n");
+                fprintf(f, "            ruleid=%d;\n", (int)e->val);
+                fprints(f, "            break;\n");
+              }
+            }
+          }
+          fprints(f, "          default:\n"
+                     "            ruleid=PARSER_UINT_MAX;\n"
+                     "            break;\n"
+                     "          }\n");
+          fprintf(f, "        }\n");
+        }
       }
     }
     fprints(f, "        break;\n");
@@ -2430,7 +2513,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      {\n"
              "        pctx->stack[pctx->stacksz++] = rule->rhs[i];\n"
              "      }\n");
-  fprintf(f, "      if (rule->rhssz && (pctx->stack[pctx->stacksz-1].rhs < %s_num_terminals || pctx->stack[pctx->stacksz-1].rhs == PARSER_UINT_MAX-1))\n", gen->parsername);
+  fprintf(f, "      if (!is_shortcut && rule->rhssz && (pctx->stack[pctx->stacksz-1].rhs < %s_num_terminals || pctx->stack[pctx->stacksz-1].rhs == PARSER_UINT_MAX-1))\n", gen->parsername);
   fprints(f, "      {\n"
              "        pctx->stacksz--; // Has to be correct token so let's process immediately\n"
              "      }\n"
