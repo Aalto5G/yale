@@ -1665,6 +1665,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
 {
   size_t i, j, X, x;
   size_t curidx = 0;
+  int special_needed;
   yale_uint_t c;
   dump_chead(f, gen->parsername, gen->nofastpath, gen->max_cb_stack_size);
   dump_collected(f, gen->parsername, &gen->bufs);
@@ -1680,15 +1681,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "NULL};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
-  if (gen->shortcutting)
-  {
-    fprints(f, "  const uint8_t is_bytes:1;\n");
-    fprints(f, "  const uint8_t is_shortcut:1;\n");
-  }
-  else
-  {
-    fprints(f, "  const uint8_t is_bytes;\n");
-  }
+  fprints(f, "  const uint8_t special_flags;\n");
   fprints(f, "  const parser_uint_t bytes_cb;\n");
   fprints(f, "  const struct state *re;\n");
   fprintf(f, "  //const parser_uint_t rhs[%d];\n", gen->tokencnt);
@@ -1815,7 +1808,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprints(f, "{\n");
       if (is_bytes)
       {
-        fprintf(f, ".is_bytes = 1, ");
+        fprintf(f, ".special_flags = YALE_SPECIAL_FLAG_BYTES, ");
         fprintf(f, ".bytes_cb = ");
         if (bytes_cb == YALE_UINT_MAX_LEGAL)
         {
@@ -1867,10 +1860,13 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
       else
       {
-        fprintf(f, ".is_bytes = 0, ");
         if (gen->shortcutting && gen->nonterminal_conds[X].is_shortcut)
         {
-          fprintf(f, ".is_shortcut = 1, ");
+          fprintf(f, ".special_flags = YALE_SPECIAL_FLAG_SHORTCUT, ");
+        }
+        else
+        {
+          fprintf(f, ".special_flags = 0, ");
         }
         fprintf(f, ".re = %s_states", gen->parsername);
         for (i = 0; i < gen->tokencnt; i++)
@@ -2213,14 +2209,18 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    }\n"
              "    else if (likely(curstate != PARSER_UINT_MAX))\n"
              "    {\n");
-  fprintf(f, "      int is_bytes;\n");
+  special_needed = 0;
+  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
+  {
+    special_needed = 1;
+  }
   if (gen->shortcutting)
   {
-    fprintf(f, "      int is_shortcut;\n");
+    special_needed = 1;
   }
-  else
+  if (special_needed)
   {
-    fprintf(f, "      const int is_shortcut = 0;\n");
+    fprintf(f, "      uint8_t special_flags;\n");
   }
   fprintf(f, "      if (pctx->curstateoff == PARSER_UINT_MAX)\n");
   fprintf(f, "      {\n");
@@ -2260,90 +2260,96 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      }\n");
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
   fprintf(f, "      cb2 = %s_parserstatetblentries[curstateoff].cb2;\n", gen->parsername);
-  fprintf(f, "      is_bytes = %s_parserstatetblentries[curstateoff].is_bytes;\n", gen->parsername);
-  if (gen->shortcutting)
+  if (special_needed)
   {
-    fprintf(f, "      is_shortcut = %s_parserstatetblentries[curstateoff].is_shortcut;\n", gen->parsername);
-  }
-  fprintf(f, "      if (is_bytes)\n");
-  fprintf(f, "      {\n");
-  if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
-  {
-    //fprintf(f, "        parser_uint_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parsername);
-    fprintf(f, "        uint64_t cbmask = 0, endmask = 0, mismask = 0;\n");
-    fprintf(f, "        ssize_t cbr;\n");
-    fprintf(f, "        size_t cbidx;\n");
-    //fprintf(f, "        uint16_t bitoff;\n");
-    fprintf(f, "        const struct callbacks *bytes_cb2 = &%s_parserstatetblentries[curstateoff].bytes_cb2;\n", gen->parsername);
-    fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
-    fprintf(f, "        if (curcb != PARSER_UINT_MAX)\n");
-    fprintf(f, "        {\n");
-    fprintf(f, "          cbmask |= 1ULL<<curcb;\n");
-    fprintf(f, "        }\n");
-    fprintf(f, "        for (cbidx = 0; cbidx < bytes_cb2->cbsz; cbidx++)\n");
-    fprintf(f, "        {\n");
-    fprintf(f, "          cbmask |= 1ULL<<bytes_cb2->cbs[cbidx];\n");
-    fprintf(f, "        }\n");
-    if (gen->max_cb_stack_size)
-    {
-      fprintf(f, "        for (cbidx = 0; cbidx < pctx->cbstacksz; cbidx++)\n");
-      fprintf(f, "        {\n");
-      fprintf(f, "          cbmask |= 1ULL<<pctx->cbstack[cbidx];\n");
-      fprintf(f, "        }\n");
-    }
-    fprintf(f, "        if (cbmask)\n");
-    fprintf(f, "        {\n");
-    fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, blk+off, ret, %s_callbacks);\n", gen->parsername, gen->parsername);
-    fprintf(f, "          if (cbr != -EAGAIN)\n");
-    fprintf(f, "          {\n");
-    fprintf(f, "            return cbr;\n");
-    fprintf(f, "          }\n");
-    fprintf(f, "        }\n");
-    fprintf(f, "        endmask = pctx->rctx.confirm_status & ~cbmask;\n");
-    fprintf(f, "        if (endmask)\n");
-    fprintf(f, "        {\n");
-    fprintf(f, "          cbr = %s_call_cbsflg(pctx, endmask, blk+off, 0, YALE_FLAG_END, %s_callbacks);\n", gen->parsername, gen->parsername);
-    fprintf(f, "          if (cbr != -EAGAIN)\n");
-    fprintf(f, "          {\n");
-    fprintf(f, "            return cbr;\n");
-    fprintf(f, "          }\n");
-    fprintf(f, "        }\n");
-    fprintf(f, "        mismask = pctx->rctx.start_status & ~cbmask & ~pctx->rctx.confirm_status;\n");
-    fprintf(f, "        if (mismask)\n");
-    fprintf(f, "        {\n");
-    fprintf(f, "          cbr = %s_call_cbsflg(pctx, mismask, blk+off, 0, YALE_FLAG_MAJOR_MISTAKE, %s_callbacks);\n", gen->parsername, gen->parsername);
-    fprintf(f, "          if (cbr != -EAGAIN)\n");
-    fprintf(f, "          {\n");
-    fprintf(f, "            return cbr;\n");
-    fprintf(f, "          }\n");
-    fprintf(f, "        }\n");
-    fprintf(f, "        pctx->rctx.start_status |= cbmask;\n");
-    fprintf(f, "        pctx->rctx.confirm_status |= cbmask;\n");
-    fprintf(f, "        pctx->rctx.start_status &= ~endmask;\n");
-    fprintf(f, "        pctx->rctx.confirm_status &= ~endmask;\n");
-    fprintf(f, "        pctx->rctx.start_status &= ~mismask;\n");
-    fprintf(f, "        pctx->bytes_sz -= ret;\n");
-    fprintf(f, "        off += ret;\n");
-    fprintf(f, "        if (pctx->bytes_sz)\n");
-    fprintf(f, "        {\n");
-    fprintf(f, "          //off = sz;\n");
-    fprintf(f, "          return -EAGAIN;\n");
-    fprintf(f, "        }\n");
-    fprintf(f, "        state = PARSER_UINT_MAX-1;\n");
-  }
-  else
-  {
-    fprintf(f, "        abort();\n");
-  }
-  fprintf(f, "      }\n");
-  if (gen->shortcutting)
-  {
-    fprintf(f, "      else if (is_shortcut)\n");
+    fprintf(f, "      special_flags = %s_parserstatetblentries[curstateoff].special_flags;\n", gen->parsername);
+    fprintf(f, "      if (unlikely(special_flags))\n");
     fprintf(f, "      {\n");
-    fprintf(f, "        state = PARSER_UINT_MAX;\n");
+    fprintf(f, "      if (special_flags & YALE_SPECIAL_FLAG_BYTES)\n");
+    fprintf(f, "      {\n");
+    if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
+    {
+      //fprintf(f, "        parser_uint_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parsername);
+      fprintf(f, "        uint64_t cbmask = 0, endmask = 0, mismask = 0;\n");
+      fprintf(f, "        ssize_t cbr;\n");
+      fprintf(f, "        size_t cbidx;\n");
+      //fprintf(f, "        uint16_t bitoff;\n");
+      fprintf(f, "        const struct callbacks *bytes_cb2 = &%s_parserstatetblentries[curstateoff].bytes_cb2;\n", gen->parsername);
+      fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
+      fprintf(f, "        if (curcb != PARSER_UINT_MAX)\n");
+      fprintf(f, "        {\n");
+      fprintf(f, "          cbmask |= 1ULL<<curcb;\n");
+      fprintf(f, "        }\n");
+      fprintf(f, "        for (cbidx = 0; cbidx < bytes_cb2->cbsz; cbidx++)\n");
+      fprintf(f, "        {\n");
+      fprintf(f, "          cbmask |= 1ULL<<bytes_cb2->cbs[cbidx];\n");
+      fprintf(f, "        }\n");
+      if (gen->max_cb_stack_size)
+      {
+        fprintf(f, "        for (cbidx = 0; cbidx < pctx->cbstacksz; cbidx++)\n");
+        fprintf(f, "        {\n");
+        fprintf(f, "          cbmask |= 1ULL<<pctx->cbstack[cbidx];\n");
+        fprintf(f, "        }\n");
+      }
+      fprintf(f, "        if (cbmask)\n");
+      fprintf(f, "        {\n");
+      fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, blk+off, ret, %s_callbacks);\n", gen->parsername, gen->parsername);
+      fprintf(f, "          if (cbr != -EAGAIN)\n");
+      fprintf(f, "          {\n");
+      fprintf(f, "            return cbr;\n");
+      fprintf(f, "          }\n");
+      fprintf(f, "        }\n");
+      fprintf(f, "        endmask = pctx->rctx.confirm_status & ~cbmask;\n");
+      fprintf(f, "        if (endmask)\n");
+      fprintf(f, "        {\n");
+      fprintf(f, "          cbr = %s_call_cbsflg(pctx, endmask, blk+off, 0, YALE_FLAG_END, %s_callbacks);\n", gen->parsername, gen->parsername);
+      fprintf(f, "          if (cbr != -EAGAIN)\n");
+      fprintf(f, "          {\n");
+      fprintf(f, "            return cbr;\n");
+      fprintf(f, "          }\n");
+      fprintf(f, "        }\n");
+      fprintf(f, "        mismask = pctx->rctx.start_status & ~cbmask & ~pctx->rctx.confirm_status;\n");
+      fprintf(f, "        if (mismask)\n");
+      fprintf(f, "        {\n");
+      fprintf(f, "          cbr = %s_call_cbsflg(pctx, mismask, blk+off, 0, YALE_FLAG_MAJOR_MISTAKE, %s_callbacks);\n", gen->parsername, gen->parsername);
+      fprintf(f, "          if (cbr != -EAGAIN)\n");
+      fprintf(f, "          {\n");
+      fprintf(f, "            return cbr;\n");
+      fprintf(f, "          }\n");
+      fprintf(f, "        }\n");
+      fprintf(f, "        pctx->rctx.start_status |= cbmask;\n");
+      fprintf(f, "        pctx->rctx.confirm_status |= cbmask;\n");
+      fprintf(f, "        pctx->rctx.start_status &= ~endmask;\n");
+      fprintf(f, "        pctx->rctx.confirm_status &= ~endmask;\n");
+      fprintf(f, "        pctx->rctx.start_status &= ~mismask;\n");
+      fprintf(f, "        pctx->bytes_sz -= ret;\n");
+      fprintf(f, "        off += ret;\n");
+      fprintf(f, "        if (pctx->bytes_sz)\n");
+      fprintf(f, "        {\n");
+      fprintf(f, "          //off = sz;\n");
+      fprintf(f, "          return -EAGAIN;\n");
+      fprintf(f, "        }\n");
+      fprintf(f, "        state = PARSER_UINT_MAX-1;\n");
+    }
+    else
+    {
+      fprintf(f, "        abort();\n");
+    }
     fprintf(f, "      }\n");
+    if (gen->shortcutting)
+    {
+      fprintf(f, "      else if (special_flags & YALE_SPECIAL_FLAG_SHORTCUT)\n");
+      fprintf(f, "      {\n");
+      fprintf(f, "        state = PARSER_UINT_MAX;\n");
+      fprintf(f, "      }\n");
+    }
+    fprintf(f, "      else\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        abort();\n");
+    fprintf(f, "      }\n");
+    fprintf(f, "      }\n");
+    fprintf(f, "      else\n");
   }
-  fprintf(f, "      else\n");
   fprintf(f, "      {\n");
   fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cb2, curcb);//, baton);\n", gen->parsername);
   fprints(f, "        if (ret == -EAGAIN)\n"
@@ -2534,7 +2540,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      {\n"
              "        pctx->stack[pctx->stacksz++] = rule->rhs[i];\n"
              "      }\n");
-  fprintf(f, "      if (!is_shortcut && rule->rhssz && (pctx->stack[pctx->stacksz-1].rhs < %s_num_terminals || pctx->stack[pctx->stacksz-1].rhs == PARSER_UINT_MAX-1))\n", gen->parsername);
+  fprintf(f, "      if (state != PARSER_UINT_MAX && rule->rhssz && (pctx->stack[pctx->stacksz-1].rhs < %s_num_terminals || pctx->stack[pctx->stacksz-1].rhs == PARSER_UINT_MAX-1))\n", gen->parsername);
   fprints(f, "      {\n"
              "        pctx->stacksz--; // Has to be correct token so let's process immediately\n"
              "      }\n"

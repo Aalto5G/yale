@@ -9,6 +9,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+enum yale_special_flags {
+  YALE_SPECIAL_FLAG_BYTES = (1<<0),
+  YALE_SPECIAL_FLAG_SHORTCUT = (1<<1),
+};
+
 enum yale_flags {
   YALE_FLAG_START = (1<<0),
   YALE_FLAG_END = (1<<1),
