@@ -1,0 +1,13 @@
+token<prio=1> a = "content-type" ;
+token<prio=1> b = "content-length" ;
+token c = "[-0-9a-z]+" ;
+token colon = ":";
+
+stateinclude %{ uint8_t condval; %};
+
+A = B ;
+B<cond = %{ pctx->condval == 0 %}> = a colon;
+B<cond = %{ pctx->condval != 0 %}> = b colon | c colon;
+
+directive main = A;
+directive parsername = tokentheft1;

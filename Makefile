@@ -3,14 +3,14 @@
 CC = clang
 CFLAGS = -Ofast -g -Wall -Wextra -Werror -Wno-unused-parameter -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -msse4 -mavx -mavx2 -msse4a -mbmi -mbmi2 -march=skylake -fomit-frame-pointer
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c reprefixcmain.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c reprefixcmain.c tokentheft1main.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
 
-GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c condparsercparser.c httprespcparser.c recursivecbcparser.c backtracktestcparser.c backtracktestcbcparser.c reprefixcparser.c
+GEN := $(LEXGEN) $(YACCGEN) httpparser.c httpcparser.c lenprefixcparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c condparsercparser.c httprespcparser.c recursivecbcparser.c backtracktestcparser.c backtracktestcbcparser.c reprefixcparser.c tokentheft1cparser.c
 
 OBJ := $(patsubst %.c,%.o,$(SRC))
 OBJGEN := $(patsubst %.c,%.o,$(GEN))
@@ -18,7 +18,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain backtracktestmain backtracktestcbmain reprefixcmain
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain backtracktestmain backtracktestcbmain reprefixcmain tokentheft1main
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -75,6 +75,9 @@ backtracktestmain: backtracktestmain.o backtracktestcparser.o Makefile
 backtracktestcbmain: backtracktestcbmain.o backtracktestcbcparser.o Makefile
 	$(CC) $(CFLAGS) -o backtracktestcbmain backtracktestcbmain.o backtracktestcbcparser.o
 
+tokentheft1main: tokentheft1main.o tokentheft1cparser.o Makefile
+	$(CC) $(CFLAGS) -o tokentheft1main tokentheft1main.o tokentheft1cparser.o
+
 httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile
 httpmainprint.d: httpparser.h Makefile
@@ -118,6 +121,11 @@ reprefixcmain.d: reprefixcparser.h Makefile
 reprefixcmain.o: reprefixcparser.h Makefile
 reprefixcparser.d: reprefixcparser.h Makefile
 reprefixcparser.o: reprefixcparser.h Makefile
+
+tokentheft1main.d: tokentheft1cparser.h Makefile
+tokentheft1main.o: tokentheft1cparser.h Makefile
+tokentheft1cparser.d: tokentheft1cparser.h Makefile
+tokentheft1cparser.o: tokentheft1cparser.h Makefile
 
 condtest.d: condparsercparser.h Makefile
 condtest.o: condparsercparser.h Makefile
@@ -180,6 +188,12 @@ backtracktestcbcparser.h: yaleparser backtracktestcb.txt Makefile
 
 backtracktestcbcparser.c: yaleparser backtracktestcb.txt Makefile
 	./yaleparser backtracktestcb.txt c
+
+tokentheft1cparser.h: yaleparser tokentheft1.txt Makefile
+	./yaleparser tokentheft1.txt h
+
+tokentheft1cparser.c: yaleparser tokentheft1.txt Makefile
+	./yaleparser tokentheft1.txt c
 
 # ------ Begin SSL --------
 
