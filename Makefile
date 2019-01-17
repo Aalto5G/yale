@@ -34,49 +34,49 @@ $(OBJGEN): %.o: %.c %.h %.d Makefile
 -include *.d
 
 yaleparser: yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o Makefile
-	$(CC) $(CFLAGS) -o yaleparser yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 unit: unit.o parser.o regex.o Makefile
-	$(CC) $(CFLAGS) -o unit unit.o parser.o regex.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 condtest: condtest.o condparsercparser.o Makefile
-	$(CC) $(CFLAGS) -o condtest condtest.o condparsercparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 httpmain: httpmain.o httpparser.o Makefile
-	$(CC) $(CFLAGS) -o httpmain httpmain.o httpparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 httpmainprint: httpmainprint.o httpparser.o Makefile
-	$(CC) $(CFLAGS) -o httpmainprint httpmainprint.o httpparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 httpcmain: httpcmain.o httpcparser.o Makefile
-	$(CC) $(CFLAGS) -o httpcmain httpcmain.o httpcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 httpcmainprint: httpcmainprint.o httpcparser.o Makefile
-	$(CC) $(CFLAGS) -o httpcmainprint httpcmainprint.o httpcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 lenprefixcmain: lenprefixcmain.o lenprefixcparser.o Makefile
-	$(CC) $(CFLAGS) -o lenprefixcmain lenprefixcmain.o lenprefixcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 reprefixcmain: reprefixcmain.o reprefixcparser.o Makefile
-	$(CC) $(CFLAGS) -o reprefixcmain reprefixcmain.o reprefixcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 regexmain: regexmain.o regex.o Makefile
-	$(CC) $(CFLAGS) -o regexmain regexmain.o regex.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 httprespcmain: httprespcmain.o httprespcparser.o Makefile
-	$(CC) $(CFLAGS) -o httprespcmain httprespcmain.o httprespcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 recursivecbmain: recursivecbmain.o recursivecbcparser.o Makefile
-	$(CC) $(CFLAGS) -o recursivecbmain recursivecbmain.o recursivecbcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 backtracktestmain: backtracktestmain.o backtracktestcparser.o Makefile
-	$(CC) $(CFLAGS) -o backtracktestmain backtracktestmain.o backtracktestcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 backtracktestcbmain: backtracktestcbmain.o backtracktestcbcparser.o Makefile
-	$(CC) $(CFLAGS) -o backtracktestcbmain backtracktestcbmain.o backtracktestcbcparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 tokentheft1main: tokentheft1main.o tokentheft1cparser.o Makefile
-	$(CC) $(CFLAGS) -o tokentheft1main tokentheft1main.o tokentheft1cparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 httpmain.d: httpparser.h Makefile
 httpmain.o: httpparser.h Makefile
@@ -132,67 +132,67 @@ condtest.o: condparsercparser.h Makefile
 condparsercparser.d: condparsercparser.h Makefile
 condparsercparser.o: condparsercparser.h Makefile
 
-http.py: yaletopy httppaper.txt
-	./yaletopy httppaper.txt http.py
+http.py: httppaper.txt yaletopy
+	./yaletopy $< $@
 
 httpparser.h: http.py parser.py regex.py Makefile
-	python http.py h
+	python $< h
 
 httpparser.c: http.py parser.py regex.py Makefile
-	python http.py c
+	python $< c
 
-lenprefixcparser.h: yaleparser lenprefix.txt Makefile
+lenprefixcparser.h: lenprefix.txt yaleparser Makefile
 	./yaleparser lenprefix.txt h
 
-lenprefixcparser.c: yaleparser lenprefix.txt Makefile
+lenprefixcparser.c: lenprefix.txt yaleparser Makefile
 	./yaleparser lenprefix.txt c
 
-reprefixcparser.h: yaleparser reprefix.txt Makefile
+reprefixcparser.h: reprefix.txt yaleparser Makefile
 	./yaleparser reprefix.txt h
 
-reprefixcparser.c: yaleparser reprefix.txt Makefile
+reprefixcparser.c: reprefix.txt yaleparser Makefile
 	./yaleparser reprefix.txt c
 
-httpcparser.h: yaleparser httppaper.txt Makefile
+httpcparser.h: httppaper.txt yaleparser Makefile
 	./yaleparser httppaper.txt h
 
-httpcparser.c: yaleparser httppaper.txt Makefile
+httpcparser.c: httppaper.txt yaleparser Makefile
 	./yaleparser httppaper.txt c
 
-httprespcparser.h: yaleparser httpresp.txt Makefile
+httprespcparser.h: httpresp.txt yaleparser Makefile
 	./yaleparser httpresp.txt h
 
-httprespcparser.c: yaleparser httpresp.txt Makefile
+httprespcparser.c: httpresp.txt yaleparser Makefile
 	./yaleparser httpresp.txt c
 
-condparsercparser.h: yaleparser condparser.txt Makefile
+condparsercparser.h: condparser.txt yaleparser Makefile
 	./yaleparser condparser.txt h
 
 condparsercparser.c: yaleparser condparser.txt Makefile
 	./yaleparser condparser.txt c
 
-recursivecbcparser.h: yaleparser recursivecb.txt Makefile
+recursivecbcparser.h: recursivecb.txt yaleparser Makefile
 	./yaleparser recursivecb.txt h
 
-recursivecbcparser.c: yaleparser recursivecb.txt Makefile
+recursivecbcparser.c: recursivecb.txt yaleparser Makefile
 	./yaleparser recursivecb.txt c
 
-backtracktestcparser.h: yaleparser backtracktest.txt Makefile
+backtracktestcparser.h: backtracktest.txt yaleparser Makefile
 	./yaleparser backtracktest.txt h
 
-backtracktestcparser.c: yaleparser backtracktest.txt Makefile
+backtracktestcparser.c: backtracktest.txt yaleparser Makefile
 	./yaleparser backtracktest.txt c
 
-backtracktestcbcparser.h: yaleparser backtracktestcb.txt Makefile
+backtracktestcbcparser.h: backtracktestcb.txt yaleparser Makefile
 	./yaleparser backtracktestcb.txt h
 
-backtracktestcbcparser.c: yaleparser backtracktestcb.txt Makefile
+backtracktestcbcparser.c: backtracktestcb.txt yaleparser Makefile
 	./yaleparser backtracktestcb.txt c
 
-tokentheft1cparser.h: yaleparser tokentheft1.txt Makefile
+tokentheft1cparser.h: tokentheft1.txt yaleparser Makefile
 	./yaleparser tokentheft1.txt h
 
-tokentheft1cparser.c: yaleparser tokentheft1.txt Makefile
+tokentheft1cparser.c: tokentheft1.txt yaleparser Makefile
 	./yaleparser tokentheft1.txt c
 
 # ------ Begin SSL --------
@@ -214,55 +214,55 @@ ssl5cparser.o: ssl5cparser.h ssl6cparser.h Makefile
 ssl6cparser.d: ssl6cparser.h Makefile
 ssl6cparser.o: ssl6cparser.h Makefile
 
-ssl1cparser.h: yaleparser ssl1.txt Makefile
-	./yaleparser ssl1.txt h
+ssl1cparser.h: ssl1.txt yaleparser Makefile
+	./yaleparser $< h
 
-ssl1cparser.c: yaleparser ssl1.txt Makefile
-	./yaleparser ssl1.txt c
+ssl1cparser.c: ssl1.txt yaleparser Makefile
+	./yaleparser $< c
 
-ssl2cparser.h: yaleparser ssl2.txt Makefile
-	./yaleparser ssl2.txt h
+ssl2cparser.h: ssl2.txt yaleparser Makefile
+	./yaleparser $< h
 
-ssl2cparser.c: yaleparser ssl2.txt Makefile
-	./yaleparser ssl2.txt c
+ssl2cparser.c: ssl2.txt yaleparser Makefile
+	./yaleparser $< c
 
-ssl3cparser.h: yaleparser ssl3.txt Makefile
-	./yaleparser ssl3.txt h
+ssl3cparser.h: ssl3.txt yaleparser Makefile
+	./yaleparser $< h
 
-ssl3cparser.c: yaleparser ssl3.txt Makefile
-	./yaleparser ssl3.txt c
+ssl3cparser.c: ssl3.txt yaleparser Makefile
+	./yaleparser $< c
 
-ssl4cparser.h: yaleparser ssl4.txt Makefile
-	./yaleparser ssl4.txt h
+ssl4cparser.h: ssl4.txt yaleparser Makefile
+	./yaleparser $< h
 
-ssl4cparser.c: yaleparser ssl4.txt Makefile
-	./yaleparser ssl4.txt c
+ssl4cparser.c: ssl4.txt yaleparser Makefile
+	./yaleparser $< c
 
-ssl5cparser.h: yaleparser ssl5.txt Makefile
-	./yaleparser ssl5.txt h
+ssl5cparser.h: ssl5.txt yaleparser Makefile
+	./yaleparser $< h
 
-ssl5cparser.c: yaleparser ssl5.txt Makefile
-	./yaleparser ssl5.txt c
+ssl5cparser.c: ssl5.txt yaleparser Makefile
+	./yaleparser $< c
 
-ssl6cparser.h: yaleparser ssl6.txt Makefile
-	./yaleparser ssl6.txt h
+ssl6cparser.h: ssl6.txt yaleparser Makefile
+	./yaleparser $< h
 
-ssl6cparser.c: yaleparser ssl6.txt Makefile
-	./yaleparser ssl6.txt c
+ssl6cparser.c: ssl6.txt yaleparser Makefile
+	./yaleparser $< c
 
 sslcmain: sslcmain.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
-	$(CC) $(CFLAGS) -o sslcmain sslcmain.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 sslcmainprint: sslcmainprint.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
-	$(CC) $(CFLAGS) -o sslcmainprint sslcmainprint.o ssl1cparser.o ssl2cparser.o ssl3cparser.o ssl4cparser.o ssl5cparser.o ssl6cparser.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 # ------ End SSL --------
 
 yaletest: yaletest.o yale.lex.o yale.tab.o yyutils.o Makefile
-	$(CC) $(CFLAGS) -o yaletest yaletest.o yale.lex.o yale.tab.o yyutils.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 yaletopy: yaletopy.o yale.lex.o yale.tab.o yyutils.o Makefile
-	$(CC) $(CFLAGS) -o yaletopy yaletopy.o yale.lex.o yale.tab.o yyutils.o
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 YALE.LEX.INTERMEDIATE: yale.l Makefile
 	mkdir -p intermediatestore
