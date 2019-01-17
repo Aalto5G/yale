@@ -3,4 +3,6 @@ bytecontainer in lenprefix.txt and callback system, now fixed
 - ...yes, it affects
 - ...but now it should be fixed
 Shortcut for SCCLL(1)
+- done
+overhaul README.md
 end marker for nested parsers
