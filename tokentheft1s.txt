@@ -9,5 +9,7 @@ A = B ;
 B<cond = %{ pctx->condval == 0 %}> = a colon;
 B<cond = %{ pctx->condval != 0 %}> = b colon | c colon;
 
+directive shortcutting;
+
 directive main = A;
-directive parsername = tokentheft1;
+directive parsername = tokentheft1s;

@@ -459,7 +459,18 @@ void reprefixcmain(void)
     "[H]C\n"
     "[H]\n";
   testmain("./reprefixcmain", expected);
+}
 
+void tokentheft1main(void)
+{
+  char *expected = "CCLL(1)";
+  testmain("./tokentheft1main", expected);
+}
+
+void tokentheft1smain(void)
+{
+  char *expected = "SCCLL(1)";
+  testmain("./tokentheft1smain", expected);
 }
 
 int main(int argc, char **argv)
@@ -471,5 +482,7 @@ int main(int argc, char **argv)
   lenprefixcmain();
   recursivecbmain();
   reprefixcmain();
+  tokentheft1main();
+  tokentheft1smain();
   return 0;
 }

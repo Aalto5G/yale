@@ -64,4 +64,7 @@ perf.data.old
 /tokentheft1cparser.c
 /tokentheft1cparser.h
 /tokentheft1main
+/tokentheft1scparser.c
+/tokentheft1scparser.h
+/tokentheft1smain
 /parserunit
