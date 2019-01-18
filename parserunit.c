@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 size_t freadall(void **pbuf, size_t *pcap, FILE *stream)
 {
@@ -47,6 +49,11 @@ void testmain(char *cmd, char *exp)
   size_t sz;
   void *buf = NULL;
   size_t cap = 0;
+  if (access(cmd, X_OK) != 0)
+  {
+    printf("test %s missing: skip\n", cmd);
+    return;
+  }
   p = popen(cmd, "r");
   if (p == NULL)
   {
