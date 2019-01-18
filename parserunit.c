@@ -70,7 +70,11 @@ void testmain(char *cmd, char *exp)
     exit(1);
   }
   free(buf);
-  pclose(p);
+  if (pclose(p) != 0)
+  {
+    printf("test %s exit status fail\n", cmd);
+    exit(1);
+  }
 }
 
 void backtracktestcbmain(void)
