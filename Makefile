@@ -18,7 +18,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain backtracktestmain backtracktestcbmain reprefixcmain tokentheft1main
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain backtracktestmain backtracktestcbmain reprefixcmain tokentheft1main parserunit
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -36,7 +36,14 @@ $(OBJGEN): %.o: %.c %.h %.d Makefile
 yaleparser: yaleparser.o yale.lex.o yale.tab.o yyutils.o parser.o regex.o Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
+.PHONY: check
+check: all
+	./parserunit
+
 unit: unit.o parser.o regex.o Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
+
+parserunit: parserunit.o Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
 condtest: condtest.o condparsercparser.o Makefile
@@ -351,3 +358,4 @@ distclean: clean
 	rm -f condtest
 	rm -f unit
 	rm -f tokentheft1main
+	rm -f parserunit
