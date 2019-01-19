@@ -351,6 +351,8 @@ clean:
 	rm -f http.py
 	rm -f tokentheft1cparser.c
 	rm -f tokentheft1cparser.h
+	rm -f tokentheft1scparser.c
+	rm -f tokentheft1scparser.h
 
 distclean: clean
 	rm -f yaletest
