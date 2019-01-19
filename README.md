@@ -1,9 +1,10 @@
 # YaLe
 
-YaLe is Yet another Lexer eliminator, or Yacc and Lex combined. It is intended
-for event-driven incremental non-blocking network protocol parsing in a state
-machine architecture. Essentially, you have a parser state for each connection.
-When new data arrives, you feed it to the parser.
+YaLe is Yet another Lexer eliminator, or Yacc and Lex combined. It may also
+mean YaLe ain't Lexing engine. It is intended for event-driven incremental
+non-blocking network protocol parsing in a state machine architecture.
+Essentially, you have a parser state for each connection. When new data
+arrives, you feed it to the parser.
 
 The ingenuity of YaLe is parser state dependent lexer. The lexer is fully
 integrated to the parser, and generated at the same time the parser is
@@ -13,10 +14,12 @@ state machine the lexer uses is dependent on the parser state.
 
 # Technical details
 
-YaLe is currently implemented in Python. Either a recent version of Python 2 or
-a Python 3 works. This Python-based implementation may change in the future to
-be fully C-based. Currently, parsers are created with a domain specific
-language. The Python interface is not intended to be used directly.
+YaLe was originally implemented in Python. Either a recent version of Python 2
+or a Python 3 worked. However, this Python-based implementation was changed to
+be fully C-based. For the Python implementation and for the C implementation,
+parsers are created with a domain specific language. The Python interface is
+not intended to be used directly. The Python implementation is currently
+unsupported, and very likely contains lots of unfixed bugs.
 
 YaLe uses a deterministic state machine, parser state dependent, to implement
 maximal munch tokenizing. Backtracking is supported for cases where there may
@@ -33,26 +36,26 @@ programming languages and mathematical expression languages cannot be parsed
 even if the grammar conversion to LL(1) is manageable. However, for network
 protocols, typically the grammar is extremely simple with no infinite
 recursion, and the main difficulty lies in the parser state dependent lexer
-that YaLE successfully implements.
+that YaLe successfully implements.
 
-A number of object types is limited to at most 256 items of the given type (or
-255 in some cases, when the last number is reserved for special purposes). The
-reason is that many integers are limited to 8 bits for space reasons.
+A number of object types is limited to at most close to 256 items of the given
+type (few last numbers may be reseved for special purposes). The reason is that
+many integers are limited to 8 bits for space reasons. There may be at most 64
+callbacks, because the maximum supported integer type is 64 bits.
 
 Callbacks and actions are supported. Actions are executed when the parser
-reaches a given state. Callbacks are executed when lexing. However, there are
-several restrictions for callbacks:
-
-* The first character must move the DFA to an accepting state
-* No transitions can eventually move the DFA to an unaccepting state from the
-  accepting state after first character has been read
-* It is unambiguous what token will be read after the first character has been
-  read, the only unknown thing can be the length of the token
+reaches a given state. Callbacks are executed when lexing. The callback system
+is particularly sophisticated, but may do mistakes in some cases due to
+imperfect information. Note a perfect callback system cannot exist due to the
+possibility to have imperfect information about the future characters to be
+read.
 
 # Why LL(1) and not LALR?
 
 A reader familiar with parsing technology might ask why LL(1) is used instead
-of LALR. The reason is that LL(1) is simpler to implement for the parser
+of LALR.
+
+Originally, the reason was that LL(1) is simpler to implement for the parser
 generator author, and LL(1) generates smaller parsers. The benefits of LALR can
 be seen when parsing computer languages where a number of expression types can
 start with the same token. LL(1) parser will require the conversion of the
@@ -62,20 +65,23 @@ concerned with computer language parsing, because it is concerned only with
 network protocol parsing. Network protocols can easily be parsed with a LL(1)
 parser with a parser state dependent lexer.
 
-Nevertheless, a quote "never say never" is applicable here. There is a
-possibility that some day LALR will be supported in addition to LL(1). It is
-expected LALR would be used only by those who absolutely need it for the
-grammar.
+Later on, it was actually realized that a streaming incremental callback system
+cannot be easily implemented for LALR parsers because LALR parsers do not have
+full information about the context, as they deduce it when seeing symbols on
+the go. However, LL(1) may easily support a streaming incremental callback
+system.
 
 # Performance
 
-YaLe parses HTTP headers at a rate of 3.6 gigabits per seconds on a modern
+YaLe parses HTTP headers at a rate of 3.3 gigabits per seconds on a modern
 computer, using a single thread. Different threads can parse concurrently
 different connections, so it won't take many connections to reach line rate.
 Note also that HTTP body does not require as much parsing as HTTP headers, if
 implementing deep packet inspection for the full HTTP data stream.
 
-YaLe generates the HTTP parser in about 0.1 seconds. The exact time taken
-depends on the version of Python used (Python 2 being faster than Python 3).
-However, both Python 2 and Python 3 generate equivalent parsers with equivalent
-parsing-time performance.
+The Python version of YaLe generated the HTTP parser in about 0.1 seconds. The
+exact time taken depends on the version of Python used (Python 2 being faster
+than Python 3). However, both Python 2 and Python 3 generate equivalent parsers
+with equivalent parsing-time performance. Note that currently, the Python
+version of YaLe is unsupported. The C version generates a parser in few
+milliseconds.
