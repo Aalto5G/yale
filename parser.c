@@ -111,7 +111,8 @@ yale_uint_t get_sole_cb(struct dict *d, yale_uint_t x)
     {
       if (seen)
       {
-        abort(); // FIXME error handling
+        printf("callback conflict encountered\n");
+        exit(1);
       }
       seen = 1;
       cb = i;
