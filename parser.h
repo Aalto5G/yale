@@ -27,6 +27,7 @@ struct LookupTblEntry {
   yale_uint_t cond;
   //char *condition;
   yale_uint_t val;
+  uint8_t conflict:1;
   struct bitset cbs;
 };
 
