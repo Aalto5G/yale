@@ -1,0 +1,9 @@
+token c = "c" ;
+
+stateinclude %{ uint8_t condval; %};
+
+A<cond = %{ pctx->condval == 0 %}> = c<cb=f1>;
+A<cond = %{ pctx->condval != 0 %}> = c<cb=f2>;
+
+directive main = A;
+directive parsername = noconflict;
