@@ -4,6 +4,5 @@ bytecontainer in lenprefix.txt and callback system, now fixed
 - ...but now it should be fixed
 Shortcut for SCCLL(1)
 - done
-overhaul README.md
 end marker for nested parsers
 callbackconflict.txt causes callback conflict even with shortcutting
