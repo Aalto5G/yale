@@ -5,7 +5,7 @@
 parserinclude ssl4 ssl4 ;
 
 token uint8any = "." ;
-token uint16any = "..?" ;
+token uint16any = ".." ;
 token uint16versaccept = "\x03[\x01\x02\x03]" ;
 
 sslhandshakedata = uint16versaccept action<cb=szset32_3> bytes

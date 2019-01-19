@@ -5,7 +5,7 @@
 parserinclude ssl2 ssl2 ;
 
 token uint8start = "\x16" ;
-token uint16any = "..?" ;
+token uint16any = ".." ;
 token uint16versaccept = "\x03[\x01\x02\x03]" ;
 
 tlsmsgs =

@@ -5,7 +5,7 @@
 parserinclude ssl5 ssl5 ;
 
 token<prio=1> uint16zero = "\x00\x00" ;
-token uint16any = "..?" ;
+token uint16any = ".." ;
 
 extensions = 
 | uint16zero uint16any<cb=szbe4> bytes<cb=feed4> extensions
