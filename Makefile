@@ -157,64 +157,64 @@ httpparser.c: http.py parser.py regex.py Makefile
 	python $< c
 
 lenprefixcparser.h: lenprefix.txt yaleparser Makefile
-	./yaleparser lenprefix.txt h
+	./yaleparser $< h
 
 lenprefixcparser.c: lenprefix.txt yaleparser Makefile
-	./yaleparser lenprefix.txt c
+	./yaleparser $< c
 
 reprefixcparser.h: reprefix.txt yaleparser Makefile
-	./yaleparser reprefix.txt h
+	./yaleparser $< h
 
 reprefixcparser.c: reprefix.txt yaleparser Makefile
-	./yaleparser reprefix.txt c
+	./yaleparser $< c
 
 httpcparser.h: httppaper.txt yaleparser Makefile
-	./yaleparser httppaper.txt h
+	./yaleparser $< h
 
 httpcparser.c: httppaper.txt yaleparser Makefile
-	./yaleparser httppaper.txt c
+	./yaleparser $< c
 
 httprespcparser.h: httpresp.txt yaleparser Makefile
-	./yaleparser httpresp.txt h
+	./yaleparser $< h
 
 httprespcparser.c: httpresp.txt yaleparser Makefile
-	./yaleparser httpresp.txt c
+	./yaleparser $< c
 
 condparsercparser.h: condparser.txt yaleparser Makefile
-	./yaleparser condparser.txt h
+	./yaleparser $< h
 
-condparsercparser.c: yaleparser condparser.txt Makefile
-	./yaleparser condparser.txt c
+condparsercparser.c: condparser.txt yaleparser Makefile
+	./yaleparser $< c
 
 recursivecbcparser.h: recursivecb.txt yaleparser Makefile
-	./yaleparser recursivecb.txt h
+	./yaleparser $< h
 
 recursivecbcparser.c: recursivecb.txt yaleparser Makefile
-	./yaleparser recursivecb.txt c
+	./yaleparser $< c
 
 backtracktestcparser.h: backtracktest.txt yaleparser Makefile
-	./yaleparser backtracktest.txt h
+	./yaleparser $< h
 
 backtracktestcparser.c: backtracktest.txt yaleparser Makefile
-	./yaleparser backtracktest.txt c
+	./yaleparser $< c
 
 backtracktestcbcparser.h: backtracktestcb.txt yaleparser Makefile
-	./yaleparser backtracktestcb.txt h
+	./yaleparser $< h
 
 backtracktestcbcparser.c: backtracktestcb.txt yaleparser Makefile
-	./yaleparser backtracktestcb.txt c
+	./yaleparser $< c
 
 tokentheft1cparser.h: tokentheft1.txt yaleparser Makefile
-	./yaleparser tokentheft1.txt h
+	./yaleparser $< h
 
 tokentheft1cparser.c: tokentheft1.txt yaleparser Makefile
-	./yaleparser tokentheft1.txt c
+	./yaleparser $< c
 
 tokentheft1scparser.h: tokentheft1s.txt yaleparser Makefile
-	./yaleparser tokentheft1s.txt h
+	./yaleparser $< h
 
 tokentheft1scparser.c: tokentheft1s.txt yaleparser Makefile
-	./yaleparser tokentheft1s.txt c
+	./yaleparser $< c
 
 # ------ Begin SSL --------
 
