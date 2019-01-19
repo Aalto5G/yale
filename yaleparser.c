@@ -99,14 +99,14 @@ int main(int argc, char **argv)
       {
         if (nsit->is_lhs)
         {
-          fprintf(stderr, "Error\n");
+          fprintf(stderr, "Error: token both terminal and nonterminal\n");
           exit(1);
         }
         continue;
       }
       if (!nsit->is_lhs)
       {
-        fprintf(stderr, "Error\n");
+        fprintf(stderr, "Error: token neither terminal nor nonterminal\n");
         exit(1);
       }
       nsit->val = parsergen_add_nonterminal(&gen);

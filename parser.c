@@ -176,13 +176,14 @@ void lookuptbl_put(struct ParserGen *gen,
     if (e->nonterminal == nonterminal && e->terminal == terminal &&
         e->cond == cond)
     {
-      printf("conflict\n");
-      abort(); // FIXME error handling
+      printf("lookup table conflict\n");
+      exit(1);
     }
   }
   if (gen->Tcnt >= sizeof(gen->Tentries)/sizeof(*gen->Tentries))
   {
-    abort(); // FIXME error handling
+    printf("lookup table size exceeded\n");
+    exit(1);
   }
   e = &gen->Tentries[gen->Tcnt++];
   e->nonterminal = nonterminal;
@@ -206,7 +207,8 @@ void lookuptbl_put(struct ParserGen *gen,
   if (i >= sizeof(gen->nonterminal_conds[nonterminal].conds) /
            sizeof(*gen->nonterminal_conds[nonterminal].conds))
   {
-    abort(); // FIXME error handling
+    printf("too many conditions for nonterminal\n");
+    exit(1);
   }
   gen->nonterminal_conds[nonterminal].conds[i].cond = cond;
   gen->nonterminal_conds[nonterminal].condcnt++;
@@ -920,7 +922,8 @@ size_t stackconfig_append(struct ParserGen *gen, const struct stackconfigitem *s
   {
     if (gen->stackconfigcnt >= sizeof(gen->stackconfigs)/sizeof(*gen->stackconfigs))
     {
-      abort();
+      printf("Error: too many PDA stack configurations\n");
+      exit(1);
     }
     gen->stackconfigs[i] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[i]));
     gen->stackconfigs[i]->stack = parsergen_alloc(gen, sz*sizeof(*stack));
@@ -1579,7 +1582,8 @@ void gen_parser(struct ParserGen *gen)
     curbt = maximal_backtrack(gen->pick_thoses[i].ds, 0, 250);
     if (curbt < 0)
     {
-      abort(); // FIXME error handling
+      printf("too long or unbounded DFA backtrack\n");
+      exit(1);
     }
     if (gen->max_bt < curbt)
     {
@@ -1589,8 +1593,8 @@ void gen_parser(struct ParserGen *gen)
   tmpssz = max_stack_sz(gen, &tmpsz);
   if (tmpssz < 0)
   {
-    printf("Error: stack overflow\n");
-    abort();
+    printf("Error: PDA stack overflow\n");
+    exit(1);
   }
   gen->max_stack_size = tmpssz;
   gen->max_cb_stack_size = tmpsz;
@@ -1785,7 +1789,9 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
       if (is_bytes && is_re)
       {
-        abort(); // FIXME error handling
+        printf("Error: state accepts both regexp and bytes tokens\n");
+        printf("Can't know which one to choose\n");
+        exit(1);
       }
       for (x = 0; x < gen->tokencnt; x++)
       {
@@ -2626,8 +2632,8 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   else
   {
-    printf("Too many callbacks\n");
-    abort();
+    printf("Too many callbacks, maximum is 64\n");
+    exit(1);
   }
   dump_headers(f, gen->parsername, gen->max_bt, gen->max_cb_stack_size, cbbitmasktype);
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
@@ -2726,7 +2732,8 @@ yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, in
   // token YALE_UINT_MAX_LEGAL is action
   if (gen->tokencnt >= YALE_UINT_MAX_LEGAL - 2)
   {
-    abort();
+    printf("Error: too many tokens, can't add token\n");
+    exit(1);
   }
   gen->re_by_idx[gen->tokencnt].iov_base = memdup(re, resz);
   gen->re_by_idx[gen->tokencnt].iov_len = resz;
@@ -2749,9 +2756,14 @@ yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen)
   {
     abort();
   }
-  if (gen->tokencnt + gen->nonterminalcnt >= YALE_UINT_MAX_LEGAL)
+  // last valid nonterminal YALE_UINT_MAX_LEGAL-3
+  // token YALE_UINT_MAX_LEGAL-2 is "pop from cb stack"
+  // token YALE_UINT_MAX_LEGAL-1 is bytes
+  // token YALE_UINT_MAX_LEGAL is action
+  if (gen->tokencnt + gen->nonterminalcnt >= YALE_UINT_MAX_LEGAL - 2)
   {
-    abort();
+    printf("Error: too many tokens+nonterminals, can't add nonterminal\n");
+    exit(1);
   }
   return gen->tokencnt + (gen->nonterminalcnt++);
 }
@@ -2804,6 +2816,11 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
         {
           abort();
         }
+        if (gen->rules[i].rhs[j].cb == YALE_UINT_MAX_LEGAL)
+        {
+          printf("Error: action without callback\n");
+          exit(1);
+        }
       }
       else if (gen->rules[i].rhs[j].is_bytes)
       {
@@ -2844,7 +2861,7 @@ void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t c
   if (cbcnt > 64)
   {
     printf("Too many callbacks: current maximum is 64\n");
-    abort();
+    exit(1);
   }
   gen->cbcnt = cbcnt;
   for (i = 0; i < cbcnt; i++)

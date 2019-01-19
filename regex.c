@@ -529,7 +529,8 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, yale_uint_t st
       }
       if (count_thisprio > 1)
       {
-        abort(); // FIXME better error handling
+        printf("Token conflict. Please adjust priorities.\n");
+        exit(1);
       }
       if (count_thisprio == 0)
       {
@@ -927,13 +928,15 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
   char last = 0;
   if (resz == 0)
   {
-    abort();
+    printf("Error: empty bracket expression in regexp\n");
+    exit(1);
   }
   if (re[0] == '^')
   {
     if (resz < 2)
     {
-      abort();
+      printf("Error: too short bracket expression in regexp\n");
+      exit(1);
     }
     inverse = 1;
     start = re+1;
@@ -955,7 +958,8 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
       char newlast;
       if (i == len)
       {
-        abort(); // FIXME error handling
+        printf("Error: backslash at the end of regular expression\n");
+        exit(1);
       }
       first = start[i];
       i++;
@@ -976,19 +980,22 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
         char hexbuf[3] = {0};
         if (i+2 >= len)
         {
-          abort();
+          printf("Error: \\xAB too short in regexp\n");
+          exit(1);
         }
         hexbuf[0] = start[i++];
         hexbuf[1] = start[i++];
         if (!isxdigit(hexbuf[0]) || !isxdigit(hexbuf[1]))
         {
-          abort(); // FIXME error handling
+          printf("Error: \\xAB does not have hex digits in regexp\n");
+          exit(1);
         }
         newlast = strtol(hexbuf, NULL, 16);
       }
       else
       {
-        abort(); // FIXME error handling
+        printf("Error: unknown escape sequence in regexp\n");
+        exit(1);
       }
       if (has_last)
       {
@@ -1007,7 +1014,8 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
       {
         if (i == len)
         {
-          abort(); // FIXME error handling
+          printf("Error: backslash at the end of regular expression\n");
+          exit(1);
         }
         first = start[i];
         i++;
@@ -1028,24 +1036,28 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
           char hexbuf[3] = {0};
           if (i+2 >= len)
           {
-            abort();
+            printf("Error: \\xAB too short in regexp\n");
+            exit(1);
           }
           hexbuf[0] = start[i++];
           hexbuf[1] = start[i++];
           if (!isxdigit(hexbuf[0]) || !isxdigit(hexbuf[1]))
           {
-            abort(); // FIXME error handling
+            printf("Error: \\xAB does not have hex digits in regexp\n");
+            exit(1);
           }
           lastlast = strtol(hexbuf, NULL, 16);
         }
         else
         {
-          abort(); // FIXME error handling
+          printf("Error: unknown escape sequence in regexp\n");
+          exit(1);
         }
       }
       else if (first == '-')
       {
-        abort(); // FIXME error handling
+        printf("Error: two consecutive '-' characters in regexp\n");
+        exit(1);
       }
       else
       {
@@ -1129,7 +1141,8 @@ struct re *parse_atom(const char *re, size_t resz, size_t *remainderstart)
     result = parse_re(re+1, resz-1, &resz);
     if (re[1+resz] != ')')
     {
-      abort(); // FIXME error handling
+      printf("error: unterminated parenthesis in regexp\n");
+      exit(1);
     }
     *remainderstart = 2+resz;
     return result;
@@ -1261,7 +1274,8 @@ struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz
     res[i] = parse_re((const char*)regexps[pick_those[i]].iov_base, regexplen, &remainderstart);
     if (remainderstart != regexplen)
     {
-      abort(); // FIXME error handling
+      printf("error: regexp not fully parsed to end\n");
+      exit(1);
     }
   }
   return result;
@@ -3045,7 +3059,8 @@ int numbers_sets_put(struct numbers_sets *hash, const struct bitset *numbers, vo
   e = alloc(allocud, sizeof(*e));
   if (e == NULL)
   {
-    abort(); // FIXME error handling
+    printf("error: memory allocation failed\n");
+    exit(1);
   }
   memcpy(&e->numbers, numbers, sizeof(*numbers));
   yale_hash_table_add_nogrow(&hash->hash, &e->node, hashval);
