@@ -346,46 +346,13 @@ alternation:
 concatenation
 ;
 
-/*
-alternation:
-concatenation
-maybe_alternationlist
-;
-
-maybe_alternationlist:
-| maybe_alternationlist PIPE concatenation
-;
-*/
-
 concatenation:
-repetition
+element
 maybe_concatenationlist
 ;
 
 maybe_concatenationlist:
-| maybe_concatenationlist repetition
-;
-
-repetition:
-maybe_repeat
-element
-maybe_c_literal
-;
-
-maybe_c_literal:
-| C_LITERAL
-{
-  printf("%s\n", $1);
-  free($1);
-};
-
-maybe_repeat:
-| INT_LITERAL
-| DOLLAR_LITERAL
-| INT_LITERAL ASTERISK INT_LITERAL
-| ASTERISK INT_LITERAL
-| INT_LITERAL ASTERISK
-| ASTERISK
+| maybe_concatenationlist element
 ;
 
 element:
@@ -453,7 +420,6 @@ ACTION maybe_token_ltgt
   *it2 = *it;
   free($1);
 }
-| uint_token
 | BYTES maybe_bytes_ltgt
 {
   struct rule *rule;
@@ -477,15 +443,6 @@ ACTION maybe_token_ltgt
 }
 | group
 | option
-;
-
-uint_token:
-uint_token_raw
-maybe_uint_ltgt
-;
-
-maybe_uint_ltgt:
-| LT uint_ltgtexp GT
 ;
 
 maybe_cond_ltgt:
@@ -519,11 +476,7 @@ maybe_token_ltgt:
 ;
 
 token_ltgtexp:
-VAL EQUALSEQUALS valstr_literal
-{
-  $$ = YALE_UINT_MAX_LEGAL;
-}
-| CB EQUALS FREEFORM_TOKEN
+CB EQUALS FREEFORM_TOKEN
 {
   yale_uint_t i;
   for (i = 0; i < yale->cbcnt; i++)
@@ -546,23 +499,6 @@ VAL EQUALSEQUALS valstr_literal
   }
   $$ = i;
 }
-;
-
-uint_ltgtexp:
-VAL EQUALSEQUALS val_literal
-;
-
-valstr_literal:
-PERIOD
-| STRING_LITERAL
-{
-  free($1.str);
-}
-;
-
-val_literal:
-PERIOD
-| INT_LITERAL
 ;
 
 maybe_bytes_ltgt:
@@ -578,11 +514,11 @@ maybe_bytes_ltgt:
 bytes_ltgtexp:
   FEED EQUALS FREEFORM_TOKEN
 {
-  free($3);
+  free($3); // FIXME actually implement!
 }
 | REINIT_FEED EQUALS FREEFORM_TOKEN
 {
-  free($3);
+  free($3); // FIXME actually implement!
 }
 | CB EQUALS FREEFORM_TOKEN
 {
@@ -607,18 +543,6 @@ bytes_ltgtexp:
   }
   $$ = i;
 }
-;
-
-uint_token_raw:
-UINT8
-| UINT16BE
-| UINT16LE
-| UINT24BE
-| UINT24LE
-| UINT32BE
-| UINT32LE
-| UINT64BE
-| UINT64LE
 ;
 
 group:
