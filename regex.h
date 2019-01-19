@@ -133,16 +133,6 @@ void dfa_connect(struct dfa_node *n, char ch, yale_uint_t node2);
 
 void dfa_connect_default(struct dfa_node *n, yale_uint_t node2);
 
-void
-check_recurse_acceptid_is(struct dfa_node *ds, yale_uint_t state, yale_uint_t acceptid);
-
-void
-check_recurse_acceptid_is_not(struct dfa_node *ds, yale_uint_t state, yale_uint_t acceptid);
-
-void check_cb_first(struct dfa_node *ds, yale_uint_t acceptid, yale_uint_t state);
-
-void check_cb(struct dfa_node *ds, yale_uint_t state, yale_uint_t acceptid);
-
 struct bitset_hash_item {
   struct bitset key;
   yale_uint_t dfanodeid;
