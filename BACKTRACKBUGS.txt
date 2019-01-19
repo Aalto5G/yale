@@ -1,3 +1,9 @@
+Note: this file contains some notes about flaws in the backtracking system of
+YaLe. The flaws shouldn't be there anymore for the C version, but the Python
+version may still be flawed.
+
+================================================================================
+
 - major backtrack mess, i.e. use of backtrackstart for two purposes
 
 - backtrack buffer is not cleared
