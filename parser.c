@@ -1157,6 +1157,9 @@ void gen_parser(struct ParserGen *gen)
     memset(gen->Fo[i], 0, sizeof(*gen->Fo[i]));
   }
 
+  // ==VARIANT1==
+  // Computing first-sets, step 1:
+  // 1. initialize every FI(Ai) with the empty set
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
     yale_uint_t rhsit = i;
@@ -1168,6 +1171,9 @@ void gen_parser(struct ParserGen *gen)
     memset(&Fi->dict, 0, sizeof(Fi->dict));
     yale_hash_table_add_nogrow(&gen->Fi_hash, &Fi->node, hashval);
   }
+  // ==VARIANT2==
+  // Computing first-sets, step 1:
+  // 1. initialize every FI(Ai) with the empty set
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
     yale_uint_t rhsit = i;
@@ -1182,6 +1188,11 @@ void gen_parser(struct ParserGen *gen)
     Fi->values.valuessz = 0;
     yale_hash_table_add_nogrow(&gen->Fi2_hash, &Fi->node, hashval);
   }
+  // ==VARIANT1==
+  // Computing first-sets, steps 2 and 3:
+  // 2. add fi(wi) to FI(wi) for every rule Ai -> wi,
+  //    where fi is defined as follows...
+  // 3. add FI(wi) to FI(Ai) for every rule Ai -> wi
   changed = 1;
   while (changed)
   {
@@ -1221,6 +1232,11 @@ void gen_parser(struct ParserGen *gen)
       changed = 1;
     }
   }
+  // ==VARIANT2==
+  // Computing first-sets, steps 2 and 3:
+  // 2. add fi(wi) to FI(wi) for every rule Ai -> wi,
+  //    where fi is defined as follows...
+  // 3. add FI(wi) to FI(Ai) for every rule Ai -> wi
   changed = 1;
   while (changed)
   {
@@ -1256,6 +1272,11 @@ void gen_parser(struct ParserGen *gen)
       }
     }
   }
+  // ==VARIANT1==
+  // Computing follow-sets, step 2:
+  // 2. if there is a rule of the form Aj -> w Ai w' then ...
+  // And step 3:
+  // 3. repeat step 2 until all FO sets stay the same
   changed = 1;
   while (changed)
   {
@@ -1277,8 +1298,9 @@ void gen_parser(struct ParserGen *gen)
         {
           continue;
         }
-        firstrhsright =
+        firstrhsright = // fi(w')
           firstset_func(gen, &gen->rules[i].rhsnoact[j+1], gen->rules[i].noactcnt - j - 1);
+        // if terminal a is in fi(w'), then add a to FO(Ai)
         for (terminal = 0; terminal < gen->tokencnt; terminal++)
         {
           if (has_bitset(&firstrhsright.dict.has, terminal))
@@ -1301,25 +1323,34 @@ void gen_parser(struct ParserGen *gen)
             }
           }
         }
+        // if epsilon is in fi(w')
         if (has_bitset(&firstrhsright.dict.has, gen->epsilon))
         {
+          // ...then add FO(Aj) to FO(Ai)
           if (!firstset_issubset(gen->Fo[nonterminal], gen->Fo[rhsmid]))
           {
             changed = 1;
             firstset_update(gen->Fo[rhsmid], gen->Fo[nonterminal]);
           }
         }
+        // if w' has length 0
         if (gen->rules[i].noactcnt == 0 || j == gen->rules[i].noactcnt - 1U)
         {
+          // ...then add FO(Aj) to FO(Ai)
           if (!firstset_issubset(gen->Fo[nonterminal], gen->Fo[rhsmid]))
           {
             changed = 1;
-           firstset_update(gen->Fo[rhsmid], gen->Fo[nonterminal]);
+            firstset_update(gen->Fo[rhsmid], gen->Fo[nonterminal]);
           }
         }
       }
     }
   }
+  // ==VARIANT2==
+  // Computing follow-sets, step 2:
+  // 2. if there is a rule of the form Aj -> w Ai w' then ...
+  // And step 3:
+  // 3. repeat step 2 until all FO sets stay the same
   changed = 1;
   while (changed)
   {
@@ -1341,8 +1372,9 @@ void gen_parser(struct ParserGen *gen)
         {
           continue;
         }
-        firstrhsright =
+        firstrhsright = // fi(w')
           firstset_func2(gen, &gen->rules[i].rhsnoact[j+1], gen->rules[i].noactcnt - j - 1);
+        // if terminal a is in fi(w'), then add a to FO(Ai)
         for (terminal = 0; terminal < gen->tokencnt; terminal++)
         {
           if (has_firstset(&firstrhsright, terminal))
@@ -1367,8 +1399,10 @@ void gen_parser(struct ParserGen *gen)
             }
           }
         }
+        // if epsilon is in fi(w')
         if (has_firstset(&firstrhsright, gen->epsilon))
         {
+          // ...then add FO(Aj) to FO(Ai)
           int changedtmp = 0;
           firstset2_update(gen, &gen->Fo2[rhsmid], &gen->Fo2[nonterminal], 0,
                            &changedtmp);
@@ -1377,8 +1411,10 @@ void gen_parser(struct ParserGen *gen)
             changed = 1;
           }
         }
+        // if w' has length 0
         if (gen->rules[i].noactcnt == 0 || j == gen->rules[i].noactcnt - 1U)
         {
+          // ...then add FO(Aj) to FO(Ai)
           int changedtmp = 0;
           firstset2_update(gen, &gen->Fo2[rhsmid], &gen->Fo2[nonterminal], 0,
                            &changedtmp);
@@ -1391,6 +1427,7 @@ void gen_parser(struct ParserGen *gen)
       }
     }
   }
+  // T[A,a] contains the rule A->w if and only if...
   for (i = 0; i < gen->rulecnt; i++)
   {
     yale_uint_t rhs[gen->rules[i].noactcnt];
@@ -1407,7 +1444,7 @@ void gen_parser(struct ParserGen *gen)
       struct firstset_value *fval = NULL;
       struct dict *fo = gen->Fo[A];
       struct firstset_values *fo2 = &gen->Fo2[A];
-      if (has_bitset(&fi->dict.has, a))
+      if (has_bitset(&fi->dict.has, a)) // a is in FI(w)
       {
         for (j = 0; j < fi2->values.valuessz; j++)
         {
@@ -1419,6 +1456,7 @@ void gen_parser(struct ParserGen *gen)
         lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a), fval->cbs, fval->cbsz);
       }
       fval = NULL;
+      // ...or epsilon is in FI(w) and a is in FO(A)
       if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
       {
         for (j = 0; j < fo2->valuessz; j++)
@@ -1438,7 +1476,7 @@ void gen_parser(struct ParserGen *gen)
       struct firstset_value *fval = NULL;
       struct dict *fo = gen->Fo[A];
       struct firstset_values *fo2 = &gen->Fo2[A];
-      if (has_bitset(&fi->dict.has, a))
+      if (has_bitset(&fi->dict.has, a)) // a is in FI(w)
       {
         for (j = 0; j < fi2->values.valuessz; j++)
         {
@@ -1450,6 +1488,7 @@ void gen_parser(struct ParserGen *gen)
         lookuptbl_put(gen, A, a, gen->rules[i].cond, i, get_sole_cb(&fi->dict, a), fval->cbs, fval->cbsz);
       }
       fval = NULL;
+      // ...or epsilon is in FI(w) and a is in FO(A)
       if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
       {
         for (j = 0; j < fo2->valuessz; j++)
