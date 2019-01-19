@@ -18,10 +18,11 @@ int main(int argc, char **argv)
   int c = 0;
   int h = 0;
   size_t iters = 1;
+  int test = 0;
 
   if (argc != 3)
   {
-    fprintf(stderr, "Usage: %s file.txt [c|h|b|p]\n", argv[0]);
+    fprintf(stderr, "Usage: %s file.txt [c|h|b|p|t]\n", argv[0]);
     exit(1);
   }
   if (strcmp(argv[2], "c") == 0)
@@ -34,6 +35,12 @@ int main(int argc, char **argv)
   }
   else if (strcmp(argv[2], "b") == 0)
   {
+    c = 1;
+    h = 1;
+  }
+  else if (strcmp(argv[2], "t") == 0)
+  {
+    test = 1;
     c = 1;
     h = 1;
   }
@@ -67,7 +74,7 @@ int main(int argc, char **argv)
 
   snprintf(cnamebuf, sizeof(cnamebuf), "%s%s", yale.parsername, "cparser.c");
   snprintf(hnamebuf, sizeof(hnamebuf), "%s%s", yale.parsername, "cparser.h");
-  if (iters > 1)
+  if (iters > 1 || test)
   {
     snprintf(cnamebuf, sizeof(cnamebuf), "/dev/null");
     snprintf(hnamebuf, sizeof(hnamebuf), "/dev/null");
