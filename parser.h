@@ -31,13 +31,6 @@ struct LookupTblEntry {
   struct bitset cbs;
 };
 
-struct firstset_entry {
-  struct yale_hash_list_node node;
-  yale_uint_t rhs[YALE_UINT_MAX_LEGAL]; // 0.25 KB
-  yale_uint_t rhssz;
-  struct dict dict; // 8 KB
-};
-
 struct firstset_value {
   uint8_t is_bytes:1;
   yale_uint_t token;
@@ -107,11 +100,9 @@ struct ParserGen {
   yale_uint_t condcnt;
   size_t Tcnt;
   struct numbers_sets numbershash;
-  struct yale_hash_table Fi_hash;
   struct yale_hash_table Fi2_hash;
   struct yale_hash_table stackconfigs_hash;
   struct firstset_values Fo2[YALE_UINT_MAX_LEGAL + 1];
-  struct dict *Fo[YALE_UINT_MAX_LEGAL + 1]; // 2 kB
   struct REGen re_gen;
   //yale_uint_t pick_thoses_id_by_nonterminal_cond[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
   struct pick_those_struct pick_thoses[YALE_UINT_MAX_LEGAL];

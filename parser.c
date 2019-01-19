@@ -29,75 +29,6 @@ static int fprints(FILE *f, const char *s)
   return fputs(s, f);
 }
 
-void firstset_update(struct dict *da, struct dict *db)
-{
-  size_t i;
-  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; i++)
-  {
-    bitset_update(&da->bitset[i], &db->bitset[i]);
-  }
-  bitset_update(&da->has, &db->has);
-}
-
-void firstset_update_one(struct dict *da, struct dict *db, yale_uint_t one)
-{
-  if (!has_bitset(&db->has, one))
-  {
-    abort();
-  }
-  set_bitset(&da->has, one);
-  bitset_update(&da->bitset[one], &db->bitset[one]);
-}
-
-void firstset_settoken(struct dict *da, const struct ruleitem *ri)
-{
-  if (ri->is_action)
-  {
-    abort();
-  }
-  if (ri->cb != YALE_UINT_MAX_LEGAL)
-  {
-    set_bitset(&da->bitset[ri->value], ri->cb);
-  }
-  set_bitset(&da->has, ri->value);
-}
-
-void firstset_setsingleton(struct dict *da, struct ruleitem *ri)
-{
-  memset(da, 0, sizeof(*da));
-  firstset_settoken(da, ri);
-}
-
-int firstset_issubset(struct dict *da, struct dict *db)
-{
-  size_t i;
-  for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
-  {
-    yale_uint_t wordoff = i/64;
-    yale_uint_t bitoff = i%64;
-    if (da->has.bitset[wordoff] & (1ULL<<bitoff))
-    {
-      if (!(db->has.bitset[wordoff] & (1ULL<<bitoff)))
-      {
-        return 0;
-      }
-      if (!bitset_issubset(&da->bitset[i], &db->bitset[i]))
-      {
-        return 0;
-      }
-    }
-    if (bitoff != 63)
-    { 
-      i = (wordoff*64) + myffsll(da->has.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-    }
-    else
-    {
-      i++;
-    }
-  }
-  return 1;
-}
-
 uint32_t stack_cb_hash(const struct stackconfigitem *stack, yale_uint_t sz, yale_uint_t cbsz)
 {
   struct yalemurmurctx ctx = YALEMURMURCTX_INITER(0x12345678U);
@@ -181,11 +112,6 @@ void lookuptbl_put(struct ParserGen *gen,
   gen->nonterminal_conds[nonterminal].condcnt++;
 }
 
-uint32_t firstset_hash(const yale_uint_t *rhs, size_t sz)
-{
-  return yalemurmur_buf(0x12345678U, rhs, sz);
-}
-
 uint32_t firstset2_hash(const struct ruleitem *rhs, size_t sz)
 {
   struct yalemurmurctx ctx = YALEMURMURCTX_INITER(0x12345678U);
@@ -197,12 +123,6 @@ uint32_t firstset2_hash(const struct ruleitem *rhs, size_t sz)
     yalemurmurctx_feed32(&ctx, rhs[i].cb);
   }
   return yalemurmurctx_get(&ctx);
-}
-
-uint32_t firstset_hash_fn(struct yale_hash_list_node *node, void *ud)
-{
-  struct firstset_entry *cfg = YALE_CONTAINER_OF(node, struct firstset_entry, node);
-  return firstset_hash(cfg->rhs, cfg->rhssz);
 }
 
 uint32_t firstset2_hash_fn(struct yale_hash_list_node *node, void *ud)
@@ -256,12 +176,8 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   memset(gen->T, 0xff, sizeof(gen->T));
 #endif
 #endif
-  //memset(gen->Fo, 0, sizeof(gen->Fo)); // This is the overhead!
   transitionbufs_init(&gen->bufs, parsergen_alloc_fn, gen);
   gen->pick_thoses_cnt = 0;
-  // leave gen->Fi purposefully uninitiailized as it's 66 MB
-  yale_hash_table_init(&gen->Fi_hash, 8192, firstset_hash_fn, NULL,
-                       parsergen_alloc_fn, gen);
   yale_hash_table_init(&gen->Fi2_hash, 8192, firstset2_hash_fn, NULL,
                        parsergen_alloc_fn, gen);
   yale_hash_table_init(&gen->stackconfigs_hash, 32768, stack_cb_hash_fn, NULL,
@@ -292,11 +208,6 @@ void parsergen_free(struct ParserGen *gen)
   free(gen->init_include_str);
   free(gen->parsername);
   transitionbufs_fini(&gen->bufs);
-  YALE_HASH_TABLE_FOR_EACH_SAFE(&gen->Fi_hash, bucket, n, x)
-  {
-    yale_hash_table_delete(&gen->Fi_hash, n);
-  }
-  yale_hash_table_free(&gen->Fi_hash);
   YALE_HASH_TABLE_FOR_EACH_SAFE(&gen->Fi2_hash, bucket, n, x)
   {
     struct firstset_entry2 *e2 = YALE_CONTAINER_OF(n, struct firstset_entry2, node);
@@ -313,31 +224,6 @@ void parsergen_free(struct ParserGen *gen)
     yale_hash_table_delete(&gen->stackconfigs_hash, n);
   }
   yale_hash_table_free(&gen->stackconfigs_hash);
-}
-
-struct firstset_entry *firstset_lookup_hashval(
-    struct ParserGen *gen, const yale_uint_t *rhs, size_t rhssz, uint32_t hashval)
-{
-  struct yale_hash_list_node *node;
-  YALE_HASH_TABLE_FOR_EACH_POSSIBLE(&gen->Fi_hash, node, hashval)
-  {
-    struct firstset_entry *e = YALE_CONTAINER_OF(node, struct firstset_entry, node);
-    if (e->rhssz != rhssz)
-    {
-      continue;
-    }
-    if (memcmp(e->rhs, rhs, rhssz*sizeof(*rhs)) != 0)
-    {
-      continue;
-    }
-    return e;
-  }
-  return NULL;
-}
-
-struct firstset_entry *firstset_lookup(struct ParserGen *gen, const yale_uint_t *rhs, size_t rhssz)
-{
-  return firstset_lookup_hashval(gen, rhs, rhssz, firstset_hash(rhs, rhssz));
 }
 
 int rhseq(const struct ruleitem *rhs1, const struct ruleitem *rhs2, size_t sz)
@@ -398,54 +284,7 @@ void firstset2_setdefault(struct ParserGen *gen, const struct ruleitem *rhs, siz
   yale_hash_table_add_nogrow(&gen->Fi2_hash, &Fi->node, hashval);
 }
 
-void firstset_setdefault(struct ParserGen *gen, const yale_uint_t *rhs, size_t rhssz)
-{
-  uint32_t hashval = firstset_hash(rhs, rhssz);
-  if (firstset_lookup_hashval(gen, rhs, rhssz, hashval) != NULL)
-  {
-    return;
-  }
-  struct firstset_entry *Fi;
-  Fi = parsergen_alloc(gen, sizeof(*Fi));
-  Fi->rhssz = rhssz;
-  memcpy(Fi->rhs, rhs, rhssz*sizeof(*rhs));
-  memset(&Fi->dict, 0, sizeof(Fi->dict));
-  yale_hash_table_add_nogrow(&gen->Fi_hash, &Fi->node, hashval);
-}
-
 int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs);
-
-struct firstset_entry firstset_func(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
-{
-  struct firstset_entry result;
-  if (rhssz == 0)
-  {
-    struct ruleitem ri = {};
-    memset(&result, 0, sizeof(result));
-    ri.value = gen->epsilon;
-    firstset_settoken(&result.dict, &ri);
-    return result;
-  }
-  if (parsergen_is_rhs_terminal(gen, &rhs[0]))
-  {
-    memset(&result, 0, sizeof(result));
-    firstset_settoken(&result.dict, &rhs[0]);
-    return result;
-  }
-  result = *firstset_lookup(gen, &rhs[0].value, 1);
-  if (!has_bitset(&result.dict.has, gen->epsilon))
-  {
-    return result;
-  }
-  else
-  {
-    struct firstset_entry result2;
-    clr_bitset(&result.dict.has, gen->epsilon);
-    result2 = firstset_func(gen, rhs+1, rhssz-1);
-    firstset_update(&result.dict, &result2.dict);
-    return result;
-  }
-}
 
 struct firstset_value firstset_value_deep_copy(struct firstset_value orig)
 {
@@ -1117,28 +956,6 @@ void gen_parser(struct ParserGen *gen)
   size_t tmpsz;
   ssize_t tmpssz;
 
-  //memset(gen->Fo, 0, sizeof(gen->Fo[0])*(gen->tokencnt + gen->nonterminalcnt));
-  for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
-  {
-    gen->Fo[i] = parsergen_alloc(gen, sizeof(*gen->Fo[i]));
-    memset(gen->Fo[i], 0, sizeof(*gen->Fo[i]));
-  }
-
-  // ==VARIANT1==
-  // Computing first-sets, step 1:
-  // 1. initialize every FI(Ai) with the empty set
-  for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
-  {
-    yale_uint_t rhsit = i;
-    uint32_t hashval = firstset_hash(&rhsit, 1);
-    struct firstset_entry *Fi;
-    Fi = parsergen_alloc(gen, sizeof(*Fi));
-    Fi->rhssz = 1;
-    Fi->rhs[0] = i;
-    memset(&Fi->dict, 0, sizeof(Fi->dict));
-    yale_hash_table_add_nogrow(&gen->Fi_hash, &Fi->node, hashval);
-  }
-  // ==VARIANT2==
   // Computing first-sets, step 1:
   // 1. initialize every FI(Ai) with the empty set
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
@@ -1155,51 +972,6 @@ void gen_parser(struct ParserGen *gen)
     Fi->values.valuessz = 0;
     yale_hash_table_add_nogrow(&gen->Fi2_hash, &Fi->node, hashval);
   }
-  // ==VARIANT1==
-  // Computing first-sets, steps 2 and 3:
-  // 2. add fi(wi) to FI(wi) for every rule Ai -> wi,
-  //    where fi is defined as follows...
-  // 3. add FI(wi) to FI(Ai) for every rule Ai -> wi
-  changed = 1;
-  while (changed)
-  {
-    changed = 0;
-    for (i = 0; i < gen->rulecnt; i++)
-    {
-      struct firstset_entry fs =
-        firstset_func(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
-      yale_uint_t rhs[gen->rules[i].noactcnt];
-      for (j = 0; j < gen->rules[i].noactcnt; j++)
-      {
-        rhs[j] = gen->rules[i].rhsnoact[j].value;
-      }
-      firstset_setdefault(gen, rhs, gen->rules[i].noactcnt);
-      if (firstset_issubset(&fs.dict, &firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict))
-      {
-        continue;
-      }
-      firstset_update(&firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict, &fs.dict);
-      changed = 1;
-    }
-    for (i = 0; i < gen->rulecnt; i++)
-    {
-      yale_uint_t nonterminal = gen->rules[i].lhs;
-      yale_uint_t rhs[gen->rules[i].noactcnt];
-      for (j = 0; j < gen->rules[i].noactcnt; j++)
-      {
-        rhs[j] = gen->rules[i].rhsnoact[j].value;
-      }
-      struct firstset_entry *fa = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
-      struct firstset_entry *fb = firstset_lookup(gen, &nonterminal, 1);
-      if (firstset_issubset(&fa->dict, &fb->dict))
-      {
-        continue;
-      }
-      firstset_update(&firstset_lookup(gen, &nonterminal, 1)->dict, &firstset_lookup(gen, rhs, gen->rules[i].noactcnt)->dict);
-      changed = 1;
-    }
-  }
-  // ==VARIANT2==
   // Computing first-sets, steps 2 and 3:
   // 2. add fi(wi) to FI(wi) for every rule Ai -> wi,
   //    where fi is defined as follows...
@@ -1239,81 +1011,6 @@ void gen_parser(struct ParserGen *gen)
       }
     }
   }
-  // ==VARIANT1==
-  // Computing follow-sets, step 2:
-  // 2. if there is a rule of the form Aj -> w Ai w' then ...
-  // And step 3:
-  // 3. repeat step 2 until all FO sets stay the same
-  changed = 1;
-  while (changed)
-  {
-    changed = 0;
-    for (i = 0; i < gen->rulecnt; i++)
-    {
-      yale_uint_t nonterminal = gen->rules[i].lhs;
-      yale_uint_t rhs[gen->rules[i].noactcnt];
-      for (j = 0; j < gen->rules[i].noactcnt; j++)
-      {
-        rhs[j] = gen->rules[i].rhsnoact[j].value;
-      }
-      for (j = 0; j < gen->rules[i].noactcnt; j++)
-      {
-        yale_uint_t rhsmid = rhs[j];
-        struct firstset_entry firstrhsright;
-        yale_uint_t terminal;
-        if (parsergen_is_terminal(gen, rhsmid))
-        {
-          continue;
-        }
-        firstrhsright = // fi(w')
-          firstset_func(gen, &gen->rules[i].rhsnoact[j+1], gen->rules[i].noactcnt - j - 1);
-        // if terminal a is in fi(w'), then add a to FO(Ai)
-        for (terminal = 0; terminal < gen->tokencnt; terminal++)
-        {
-          if (has_bitset(&firstrhsright.dict.has, terminal))
-          {
-            if (!has_bitset(&gen->Fo[rhsmid]->has, terminal))
-            {
-              changed = 1;
-              firstset_update_one(gen->Fo[rhsmid], &firstrhsright.dict, terminal);
-            }
-          }
-        }
-        for (terminal = YALE_UINT_MAX_LEGAL - 1; terminal < YALE_UINT_MAX_LEGAL; terminal++)
-        {
-          if (has_bitset(&firstrhsright.dict.has, terminal))
-          {
-            if (!has_bitset(&gen->Fo[rhsmid]->has, terminal))
-            {
-              changed = 1;
-              firstset_update_one(gen->Fo[rhsmid], &firstrhsright.dict, terminal);
-            }
-          }
-        }
-        // if epsilon is in fi(w')
-        if (has_bitset(&firstrhsright.dict.has, gen->epsilon))
-        {
-          // ...then add FO(Aj) to FO(Ai)
-          if (!firstset_issubset(gen->Fo[nonterminal], gen->Fo[rhsmid]))
-          {
-            changed = 1;
-            firstset_update(gen->Fo[rhsmid], gen->Fo[nonterminal]);
-          }
-        }
-        // if w' has length 0
-        if (gen->rules[i].noactcnt == 0 || j == gen->rules[i].noactcnt - 1U)
-        {
-          // ...then add FO(Aj) to FO(Ai)
-          if (!firstset_issubset(gen->Fo[nonterminal], gen->Fo[rhsmid]))
-          {
-            changed = 1;
-            firstset_update(gen->Fo[rhsmid], gen->Fo[nonterminal]);
-          }
-        }
-      }
-    }
-  }
-  // ==VARIANT2==
   // Computing follow-sets, step 2:
   // 2. if there is a rule of the form Aj -> w Ai w' then ...
   // And step 3:
@@ -1406,14 +1103,12 @@ void gen_parser(struct ParserGen *gen)
     }
     for (a = 0; a < gen->tokencnt; a++)
     {
-      struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
       struct firstset_entry2 *fi2 = firstset2_lookup(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
       struct firstset_value *fval = NULL;
-      struct dict *fo = gen->Fo[A];
       int found;
       int conflict;
       struct firstset_values *fo2 = &gen->Fo2[A];
-      if (has_bitset(&fi->dict.has, a)) // a is in FI(w)
+      if (has_firstset(&fi2->values, a)) // a is in FI(w)
       {
         found = 0;
         conflict = 0;
@@ -1433,7 +1128,7 @@ void gen_parser(struct ParserGen *gen)
       }
       fval = NULL;
       // ...or epsilon is in FI(w) and a is in FO(A)
-      if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
+      if (has_firstset(&fi2->values, gen->epsilon) && has_firstset(fo2, a))
       {
         found = 0;
         conflict = 0;
@@ -1454,14 +1149,12 @@ void gen_parser(struct ParserGen *gen)
     }
     for (a = YALE_UINT_MAX_LEGAL - 1; a < YALE_UINT_MAX_LEGAL; a++)
     {
-      struct firstset_entry *fi = firstset_lookup(gen, rhs, gen->rules[i].noactcnt);
       struct firstset_entry2 *fi2 = firstset2_lookup(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
       struct firstset_value *fval = NULL;
-      struct dict *fo = gen->Fo[A];
       int found;
       int conflict;
       struct firstset_values *fo2 = &gen->Fo2[A];
-      if (has_bitset(&fi->dict.has, a)) // a is in FI(w)
+      if (has_firstset(&fi2->values, a)) // a is in FI(w)
       {
         found = 0;
         conflict = 0;
@@ -1481,7 +1174,7 @@ void gen_parser(struct ParserGen *gen)
       }
       fval = NULL;
       // ...or epsilon is in FI(w) and a is in FO(A)
-      if (has_bitset(&fi->dict.has, gen->epsilon) && has_bitset(&fo->has, a))
+      if (has_firstset(&fi2->values, gen->epsilon) && has_firstset(fo2, a))
       {
         found = 0;
         conflict = 0;
