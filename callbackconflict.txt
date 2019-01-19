@@ -1,0 +1,12 @@
+token c = "c" ;
+
+stateinclude %{ uint8_t condval; %};
+
+A = B ;
+B<cond = %{ pctx->condval == 0 %}> = c<cb=f1>;
+B<cond = %{ pctx->condval != 0 %}> = c<cb=f2>;
+
+directive shortcutting;
+
+directive main = A;
+directive parsername = callbackconflict;
