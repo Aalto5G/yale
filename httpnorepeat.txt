@@ -1,4 +1,4 @@
-token<prio=1> hosttoken = "[Hh][Oo][Ss][Tt]" ;
+token<prio=1,i> hosttoken = "Host" ;
 token crlf = "\r?\n" ;
 token onespace = " " ;
 token httpname = "HTTP" ;

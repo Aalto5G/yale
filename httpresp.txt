@@ -2,8 +2,7 @@
 #include "httprespcommon.h"
 %}
 
-token<prio=1> cltk =
-  "[Cc][Oo][Nn][Tt][Ee][Nn][Tt]-[Ll][Ee][Nn][Gg][Tt][Hh]" ;
+token<prio=1,i> cltk = "Content-Length" ;
 token crlf = "\r?\n" ;
 token onesp = " " ;
 token vers = 
