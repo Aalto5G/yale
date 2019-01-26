@@ -1304,7 +1304,8 @@ void gen_parser(struct ParserGen *gen)
   }
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
-    pick(gen->ns, gen->ds, gen->re_by_idx, &gen->pick_thoses[i], gen->priorities);
+    pick(gen->ns, gen->ds, gen->re_by_idx, &gen->pick_thoses[i], gen->priorities,
+         gen->caseis);
   }
   collect(gen->pick_thoses, gen->pick_thoses_cnt, &gen->bufs, parsergen_alloc_fn, gen);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
@@ -2452,7 +2453,7 @@ static void *memdup(const void *base, size_t sz)
   return result;
 }
 
-yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio)
+yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio, int casei)
 {
   if (gen->tokens_finalized)
   {
@@ -2470,6 +2471,7 @@ yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, in
   gen->re_by_idx[gen->tokencnt].iov_base = memdup(re, resz);
   gen->re_by_idx[gen->tokencnt].iov_len = resz;
   gen->priorities[gen->tokencnt] = prio;
+  gen->caseis[gen->tokencnt] = casei;
   return gen->tokencnt++;
 }
 

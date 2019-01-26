@@ -110,6 +110,7 @@ struct ParserGen {
   struct nonterminal_conds nonterminal_conds[YALE_UINT_MAX_LEGAL];
   struct iovec re_by_idx[YALE_UINT_MAX_LEGAL];
   int priorities[YALE_UINT_MAX_LEGAL];
+  int caseis[YALE_UINT_MAX_LEGAL];
   struct rule rules[YALE_UINT_MAX_LEGAL]; // 382 kB
   struct cb cbs[YALE_UINT_MAX_LEGAL];
   struct nfa_node ns[YALE_UINT_MAX_LEGAL]; // 2 MB
@@ -145,7 +146,7 @@ void parsergen_set_bytessizetype(struct ParserGen *gen, char *type);
 
 void parsergen_set_start_state(struct ParserGen *gen, yale_uint_t start_state);
 
-yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio);
+yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio, int casei);
 
 void parsergen_finalize_tokens(struct ParserGen *gen);
 

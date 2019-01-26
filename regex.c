@@ -798,7 +798,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
   return curdfanode;
 }
 
-struct re *parse_re(const char *re, size_t resz, size_t *remainderstart);
+struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart);
 
 static inline void set_char(uint64_t bitmask[4], unsigned char ch)
 {
@@ -808,7 +808,7 @@ static inline void set_char(uint64_t bitmask[4], unsigned char ch)
 }
 
 struct re *
-parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
+parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart)
 {
   uint64_t bitmask[4] = {};
   const char *start;
@@ -843,6 +843,10 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
   while (i < len)
   {
     char first = start[i];
+    if (casei && first >= 'A' && first <= 'Z')
+    {
+      first = tolower((unsigned char)first);
+    }
     i++;
     if (first == '\\')
     {
@@ -900,6 +904,10 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
       char lastlast;
       has_last = 0;
       first = start[i];
+      if (casei && first >= 'A' && first <= 'Z')
+      {
+        first = tolower((unsigned char)first);
+      }
       i++;
       if (first == '\\')
       {
@@ -958,6 +966,10 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
       for (j = (unsigned char)last; j <= (unsigned char)lastlast; j++)
       {
         set_char(bitmask, j);
+        if (casei && j >= 'a' && j <= 'z')
+        {
+          set_char(bitmask, toupper((unsigned char)j));
+        }
       }
     }
     else
@@ -965,6 +977,10 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
       if (has_last)
       {
         set_char(bitmask, last);
+        if (casei && last >= 'a' && last <= 'z')
+        {
+          set_char(bitmask, toupper((unsigned char)last));
+        }
       }
       last = first;
       has_last = 1;
@@ -973,6 +989,10 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
   if (has_last)
   {
     set_char(bitmask, last);
+    if (casei && last >= 'a' && last <= 'z')
+    {
+      set_char(bitmask, toupper((unsigned char)last));
+    }
   }
   if (inverse)
   {
@@ -1001,7 +1021,7 @@ parse_bracketexpr(const char *re, size_t resz, size_t *remainderstart)
   return result;
 }
 
-struct re *parse_atom(const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainderstart)
 {
   struct re *result;
   if (resz == 0 || re[0] == ')' || re[0] == '|')
@@ -1014,7 +1034,7 @@ struct re *parse_atom(const char *re, size_t resz, size_t *remainderstart)
   else if (re[0] == '[')
   {
     size_t bracketexprsz;
-    result = parse_bracketexpr(re+1, resz-1, &bracketexprsz);
+    result = parse_bracketexpr(casei, re+1, resz-1, &bracketexprsz);
     *remainderstart = bracketexprsz + 1;
     return result;
   }
@@ -1029,7 +1049,7 @@ struct re *parse_atom(const char *re, size_t resz, size_t *remainderstart)
   else if (re[0] == '(')
   {
     size_t resz = 0;
-    result = parse_re(re+1, resz-1, &resz);
+    result = parse_re(casei, re+1, resz-1, &resz);
     if (re[1+resz] != ')')
     {
       printf("error: unterminated parenthesis in regexp\n");
@@ -1041,24 +1061,35 @@ struct re *parse_atom(const char *re, size_t resz, size_t *remainderstart)
   else
   {
     unsigned char uch = re[0];
+    if (casei && uch >= 'A' && uch <= 'Z')
+    {
+      uch = tolower((unsigned char)uch);
+    }
     yale_uint_t wordoff = uch/64;
     yale_uint_t bitoff = uch%64;
     result = alloc_re();
     result->type = LITERALS;
     memset(&result->u.lit, 0, sizeof(result->u.lit));
     result->u.lit.bitmask.bitset[wordoff] |= (1ULL<<bitoff);
+    if (casei && uch >= 'a' && uch <= 'z')
+    {
+      uch = toupper((unsigned char)uch);
+    }
+    wordoff = uch/64;
+    bitoff = uch%64;
+    result->u.lit.bitmask.bitset[wordoff] |= (1ULL<<bitoff);
     *remainderstart = 1;
     return result;
   }
 }
 
-struct re *parse_piece(const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_piece(int casei, const char *re, size_t resz, size_t *remainderstart)
 {
   size_t atomsz;
   struct re *re1;
   struct re *result;
   struct re *intermediate;
-  re1 = parse_atom(re, resz, &atomsz);
+  re1 = parse_atom(casei, re, resz, &atomsz);
   if (atomsz < resz)
   {
     if (re[atomsz] == '*')
@@ -1098,14 +1129,14 @@ struct re *parse_piece(const char *re, size_t resz, size_t *remainderstart)
 }
 
 // branch: piece branch
-struct re *parse_branch(const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_branch(int casei, const char *re, size_t resz, size_t *remainderstart)
 {
   size_t piecesz, branchsz2;
   struct re *re1, *re2, *result;
-  re1 = parse_piece(re, resz, &piecesz);
+  re1 = parse_piece(casei, re, resz, &piecesz);
   if (piecesz < resz && re[piecesz] != '|' && re[piecesz] != ')')
   {
-    re2 = parse_branch(re+piecesz, resz-piecesz, &branchsz2);
+    re2 = parse_branch(casei, re+piecesz, resz-piecesz, &branchsz2);
     result = alloc_re();
     result->type = CONCAT;
     result->u.cat.re1 = re1;
@@ -1122,15 +1153,15 @@ struct re *parse_branch(const char *re, size_t resz, size_t *remainderstart)
 
 // RE: branch | RE
 
-struct re *parse_re(const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart)
 {
   struct re *result;
   size_t branchsz, branchsz2;
   struct re *re1, *re2;
-  re1 = parse_branch(re, resz, &branchsz);
+  re1 = parse_branch(casei, re, resz, &branchsz);
   if (branchsz < resz && re[branchsz] == '|')
   {
-    re2 = parse_re(re+branchsz+1, resz-branchsz-1, &branchsz2);
+    re2 = parse_re(casei, re+branchsz+1, resz-branchsz-1, &branchsz2);
     result = alloc_re();
     result->type = ALTERN;
     result->u.alt.re1 = re1;
@@ -1145,7 +1176,7 @@ struct re *parse_re(const char *re, size_t resz, size_t *remainderstart)
   }
 }
 
-struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz)
+struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz, int *caseis)
 {
   struct re **res;
   struct re *result;
@@ -1162,7 +1193,7 @@ struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz
   {
     size_t regexplen = regexps[pick_those[i]].iov_len;
     size_t remainderstart;
-    res[i] = parse_re((const char*)regexps[pick_those[i]].iov_base, regexplen, &remainderstart);
+    res[i] = parse_re(caseis[pick_those[i]], (const char*)regexps[pick_those[i]].iov_base, regexplen, &remainderstart);
     if (remainderstart != regexplen)
     {
       printf("error: regexp not fully parsed to end\n");
@@ -1316,7 +1347,8 @@ perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
 
 void
 pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
-     struct iovec *res, struct pick_those_struct *pick_those, int *priorities)
+     struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
+     int *caseis)
 {
   yale_uint_t ncnt;
   struct re *re;
@@ -1326,7 +1358,7 @@ pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
     dfa_init_empty(&dsglobal[i]);
   }
   ncnt = 0;
-  re = parse_res(res, pick_those->pick_those, pick_those->len);
+  re = parse_res(res, pick_those->pick_those, pick_those->len, caseis);
   gennfa_alternmulti(re, nsglobal, &ncnt);
   free_re(re);
   pick_those->dscnt = nfa2dfa(nsglobal, dsglobal, 0);

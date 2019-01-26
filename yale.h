@@ -54,6 +54,7 @@ static inline void csaddstr(struct CSnippet *cs, char *str)
 
 struct token {
   int priority;
+  uint8_t i:1;
   yale_uint_t nsitem;
   struct escaped_string re;
 };

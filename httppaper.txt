@@ -2,7 +2,7 @@
 #include "httpcommon.h"
 %}
 
-token<prio=1> hosttk = "[Hh][Oo][Ss][Tt]" ;
+token<prio=1,i> hosttk = "Host" ;
 token crlf = "\r?\n" ;
 token onesp = " " ;
 token spvcrlf =

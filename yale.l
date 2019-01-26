@@ -36,6 +36,7 @@ struct CSnippet cSnippet = {
 };
 %}
 
+i         return I;
 bytessizetype return BYTESSIZETYPE;
 stateinclude return STATEINCLUDE;
 parserinclude return PARSERINCLUDE;
@@ -69,6 +70,7 @@ uint64le  return UINT64LE;
 
 
 ;         return SEMICOLON;
+,         return COMMA;
 =         return EQUALS;
 ==        return EQUALSEQUALS;
 [[]       return OPEN_BRACKET;

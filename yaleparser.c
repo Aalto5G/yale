@@ -96,7 +96,8 @@ int main(int argc, char **argv)
     for (i = 0; i < yale.tokencnt; i++)
     {
       yale.ns[yale.tokens[i].nsitem].val =
-        parsergen_add_token(&gen, yale.tokens[i].re.str, yale.tokens[i].re.sz, yale.tokens[i].priority); // FIXME '\0'
+        parsergen_add_token(&gen, yale.tokens[i].re.str, yale.tokens[i].re.sz, yale.tokens[i].priority,
+                            yale.tokens[i].i); // FIXME '\0'
     }
     parsergen_finalize_tokens(&gen);
     for (i = 0; i < yale.nscnt; i++)

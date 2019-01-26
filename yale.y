@@ -43,6 +43,15 @@ int yaleyywrap(yyscan_t scanner)
     int i;
     char *s;
   } both;
+  struct {
+    uint8_t has_i:1;
+    uint8_t has_prio:1;
+    int prio;
+  } tokenoptstmp;
+  struct {
+    uint8_t i:1;
+    int prio;
+  } tokenopts;
 }
 
 %destructor { free ($$.str); } STRING_LITERAL
@@ -74,6 +83,7 @@ int yaleyywrap(yyscan_t scanner)
 %token PARSERNAME
 %token EQUALS
 %token SEMICOLON
+%token COMMA
 %token STRING_LITERAL
 %token INT_LITERAL
 %token FREEFORM_TOKEN
@@ -89,6 +99,7 @@ int yaleyywrap(yyscan_t scanner)
 %token MINUS
 %token CB
 %token COND
+%token I
 
 %token UINT8
 %token UINT16BE
@@ -109,7 +120,9 @@ int yaleyywrap(yyscan_t scanner)
 %token ERROR_TOK
 
 %type<i> INT_LITERAL
-%type<i> maybe_prio
+%type<tokenopts> token_opts
+%type<tokenoptstmp> token_optlist
+%type<tokenoptstmp> token_opt
 %type<i> maybe_minus
 %type<i> token_ltgtexp
 %type<i> cond_ltgtexp
@@ -129,7 +142,7 @@ yalerules:
 ;
 
 yalerule:
-  TOKEN maybe_prio FREEFORM_TOKEN EQUALS STRING_LITERAL SEMICOLON
+  TOKEN token_opts FREEFORM_TOKEN EQUALS STRING_LITERAL SEMICOLON
 {
   struct token *tk;
   yale_uint_t i;
@@ -164,7 +177,8 @@ yalerule:
     yale->nscnt++;
   }
   tk = &yale->tokens[yale->tokencnt++];
-  tk->priority = $2;
+  tk->priority = $2.prio;
+  tk->i = $2.i;
   tk->nsitem = i;
   tk->re = $5;
 }
@@ -249,13 +263,60 @@ elements SEMICOLON
 };
 ;
 
-maybe_prio:
+token_opts:
 {
-  $$ = 0;
+  $$.prio = 0;
+  $$.i = 0;
 }
-| LT PRIO EQUALS maybe_minus INT_LITERAL GT
+| LT token_optlist GT
 {
-  $$ = $4 * $5;
+  $$.prio = $2.prio;
+  $$.i = $2.has_i;
+}
+;
+
+token_optlist:
+token_opt
+{
+  $$.has_i = 0;
+  $$.has_prio = 0;
+  $$.prio = 0;
+  if ($1.has_i)
+  {
+    $$.has_i = 1;
+  }
+  if ($1.has_prio)
+  {
+    $$.has_prio = 1;
+    $$.prio = $1.prio;
+  }
+}
+| token_optlist COMMA token_opt
+{
+  $$ = $1;
+  if ($3.has_i)
+  {
+    $$.has_i = 1;
+  }
+  if ($3.has_prio)
+  {
+    $$.has_prio = 1;
+    $$.prio = $3.prio;
+  }
+}
+;
+
+token_opt:
+  PRIO EQUALS maybe_minus INT_LITERAL
+{
+  $$.prio = $3 * $4;
+  $$.has_prio = 1;
+  $$.has_i = 0;
+}
+| I
+{
+  $$.has_prio = 0;
+  $$.has_i = 1;
 }
 ;
 

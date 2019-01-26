@@ -72,6 +72,17 @@ int main(int argc, char **argv)
     0,
     0,
   };
+  int caseis[] = {
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+  };
   yale_uint_t pick_those0[] = {0};
   yale_uint_t pick_those1[] = {0,1,5};
   yale_uint_t pick_those2[] = {0,5};
@@ -218,7 +229,7 @@ int main(int argc, char **argv)
   {
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
     {
-      pick(ns, ds, http_res, &pick_thoses[i], priorities);
+      pick(ns, ds, http_res, &pick_thoses[i], priorities, caseis);
     }
     collect(pick_thoses, sizeof(pick_thoses)/sizeof(*pick_thoses), &bufs, malloc_fn, NULL);
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
