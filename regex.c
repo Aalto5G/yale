@@ -1719,17 +1719,23 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        {\n");
   fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
   fprints(f, "          ssize_t cbr;\n");
-  fprints(f, "          size_t cbidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "          size_t cbidx;\n");
+  }
   //fprints(f, "          size_t taintidx;\n");
   fprints(f, "          uint16_t bitoff;\n");
   //fprints(f, "          for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "          {\n");
   //fprints(f, "            const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
   fprints(f, "            const struct callbacks *mycb = &cb2[st->acceptid];\n");
+  fprintf(f, "            cbmask |= mycb->cbsmask;\n");
+#if 0
   fprints(f, "            for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
   fprints(f, "            {\n");
   fprints(f, "              cbmask |= 1ULL<<mycb->cbs[cbidx];\n");
   fprints(f, "            }\n");
+#endif
   fprints(f, "          }\n");
   if (cbssz)
   {
@@ -1941,17 +1947,23 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          {\n");
   fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
   fprints(f, "            ssize_t cbr;\n");
-  fprints(f, "            size_t cbidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "            size_t cbidx;\n");
+  }
   //fprints(f, "            size_t taintidx;\n");
   fprints(f, "            uint16_t bitoff;\n");
   //fprints(f, "            for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "            {\n");
   //fprints(f, "              const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
   fprints(f, "              const struct callbacks *mycb = &cb2[st->acceptid];\n");
+  fprintf(f, "              cbmask |= mycb->cbsmask;\n");
+#if 0
   fprints(f, "              for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
   fprints(f, "              {\n");
   fprints(f, "                cbmask |= 1ULL<<mycb->cbs[cbidx];\n");
   fprints(f, "              }\n");
+#endif
   fprints(f, "            }\n");
   if (cbssz)
   {
@@ -2157,15 +2169,22 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    {\n");
   fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
   fprints(f, "      ssize_t cbr;\n");
-  fprints(f, "      size_t cbidx, taintidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "      size_t cbidx;\n");
+  }
+  fprints(f, "      size_t taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
   fprints(f, "      for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "      {\n");
   fprints(f, "        const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
+  fprintf(f, "        cbmask |= mycb->cbsmask;\n");
+#if 0
   fprints(f, "        for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
   fprints(f, "        {\n");
   fprints(f, "          cbmask |= 1ULL<<mycb->cbs[cbidx];\n");
   fprints(f, "        }\n");
+#endif
   fprints(f, "      }\n");
   if (cbssz)
   {
@@ -2440,7 +2459,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      ctx->state = 0;\n");
   fprints(f, "      if (cb2 && st->accepting && i > 0)\n");
   fprints(f, "      {\n");
-  fprints(f, "        size_t cbidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "        size_t cbidx;\n");
+  }
   fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
   fprintf(f, "        enum yale_flags flags = 0;\n");
   if (cbssz || 1)
@@ -2465,10 +2487,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
       fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
       fprints(f, "        }\n");
     }
+    fprintf(f, "        cbmask |= mycb->cbsmask;\n");
+#if 0
     fprints(f, "        for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
     fprints(f, "        {\n");
     fprints(f, "          cbmask |= (1ULL<<mycb->cbs[cbidx]);\n");
     fprints(f, "        }\n");
+#endif
     fprintf(f, "        if (cbmask)\n");
     fprintf(f, "        {\n");
     fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
@@ -2639,7 +2664,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     //fprints(f, "          uint16_t bitoff;\n");
   }
   fprintf(f, "          ssize_t cbr;\n");
-  fprints(f, "          size_t cbidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "          size_t cbidx;\n");
+  }
   fprints(f, "          const struct callbacks *mycb = &cb2[st->acceptid];\n");
   fprintf(f, "          if (start)\n");
   fprintf(f, "          {\n");
@@ -2655,10 +2683,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
       fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
       fprints(f, "          }\n");
     }
+    fprintf(f, "          cbmask |= mycb->cbsmask;\n");
+#if 0
     fprints(f, "          for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
     fprints(f, "          {\n");
     fprints(f, "            cbmask |= (1ULL << mycb->cbs[cbidx]);\n");
     fprints(f, "          }\n");
+#endif
     fprintf(f, "          if (cbmask)\n");
     fprintf(f, "          {\n");
     fprintf(f, "            cbr = %s_call_cbs1(pctx, cbmask, buf, i + 1, cbtbl);\n", parsername);
@@ -2823,7 +2854,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      ctx->state = 0;\n");
   fprints(f, "      if (cb2 && st->accepting && i > 0)\n");
   fprints(f, "      {\n");
-  fprints(f, "        size_t cbidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "        size_t cbidx;\n");
+  }
   fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
   fprints(f, "        enum yale_flags flags = 0;\n");
   fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
@@ -2842,10 +2876,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
     fprints(f, "        }\n");
   }
+  fprintf(f, "        cbmask |= mycb->cbsmask;\n");
+#if 0
   fprints(f, "        for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
   fprints(f, "        {\n");
   fprints(f, "          cbmask |= (1ULL<<mycb->cbs[cbidx]);\n");
   fprints(f, "        }\n");
+#endif
   fprints(f, "        if (cbmask)\n");
   fprints(f, "        {\n");
   fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
@@ -2988,7 +3025,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    ctx->state = 0;\n");
   fprints(f, "    if (cb2 && st->accepting && i > 0)\n");
   fprints(f, "    {\n");
-  fprints(f, "      size_t cbidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "      size_t cbidx;\n");
+  }
   fprints(f, "      const struct callbacks *mycb = &cb2[st->acceptid];\n");
   fprintf(f, "      enum yale_flags flags = 0;\n");
   if (cbssz || 1)
@@ -3011,10 +3051,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        cbmask |= (1ULL << cbstack[cbidx]);\n");
     fprints(f, "      }\n");
   }
+  fprintf(f, "      cbmask |= mycb->cbsmask;\n");
+#if 0
   fprints(f, "      for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
   fprints(f, "      {\n");
   fprints(f, "        cbmask |= (1ULL<<mycb->cbs[cbidx]);\n");
   fprints(f, "      }\n");
+#endif
   fprintf(f, "      if (cbmask)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
@@ -3144,7 +3187,11 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    uint64_t endmask = 0;\n"); // FIXME may need a bigger one
   fprints(f, "    uint64_t mismask = 0;\n"); // FIXME may need a bigger one
   fprintf(f, "    enum yale_flags flags = 0;\n");
-  fprints(f, "    size_t cbidx, taintidx;\n");
+  if (cbssz)
+  {
+    fprints(f, "    size_t cbidx;\n");
+  }
+  fprints(f, "    size_t taintidx;\n");
   //fprints(f, "    uint16_t bitoff;\n");
   fprintf(f, "    ssize_t cbr;\n");
   fprintf(f, "    if (start)\n");
@@ -3154,10 +3201,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "    {\n");
   fprints(f, "      const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
+  fprintf(f, "      cbmask |= mycb->cbsmask;\n");
+#if 0
   fprints(f, "      for (cbidx = 0; cbidx < mycb->cbsz; cbidx++)\n");
   fprints(f, "      {\n");
   fprints(f, "        cbmask |= 1ULL<<mycb->cbs[cbidx];\n");
   fprints(f, "      }\n");
+#endif
   fprints(f, "    }\n");
   if (cbssz)
   {

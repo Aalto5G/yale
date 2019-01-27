@@ -1578,6 +1578,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       {
         fprintf(f, ".special_flags = YALE_SPECIAL_FLAG_BYTES, ");
         fprintf(f, ".bytes_cb2 = {\n");
+        fprintf(f, ".cbsmask = 0x%llx,\n", (unsigned long long)bytes_cbs.bitset[0]);
         fprintf(f, ".cbs = taintidsetarray");
         for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
         {
@@ -1700,7 +1701,9 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
                     j++;
                   }
                 }
-                fprintf(f, ")/sizeof(parser_uint_t),}, ");
+                fprintf(f, ")/sizeof(parser_uint_t), ");
+                fprintf(f, ".cbsmask = 0x%llx,\n", (unsigned long long)e->cbs.bitset[0]);
+                fprintf(f, "}, ");
                 found = 1;
                 break;
               }
@@ -2011,7 +2014,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       //fprintf(f, "        parser_uint_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parsername);
       fprintf(f, "        uint64_t cbmask = 0, endmask = 0, mismask = 0;\n");
       fprintf(f, "        ssize_t cbr;\n");
-      fprintf(f, "        size_t cbidx;\n");
+      if (gen->max_cb_stack_size)
+      {
+        fprintf(f, "        size_t cbidx;\n");
+      }
       //fprintf(f, "        uint16_t bitoff;\n");
       fprintf(f, "        const struct callbacks *bytes_cb2 = &%s_parserstatetblentries[curstateoff].bytes_cb2;\n", gen->parsername);
       fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
@@ -2019,10 +2025,13 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "        {\n");
       fprintf(f, "          cbmask |= 1ULL<<curcb;\n");
       fprintf(f, "        }\n");
+      fprintf(f, "        cbmask |= bytes_cb2->cbsmask;\n");
+#if 0
       fprintf(f, "        for (cbidx = 0; cbidx < bytes_cb2->cbsz; cbidx++)\n");
       fprintf(f, "        {\n");
       fprintf(f, "          cbmask |= 1ULL<<bytes_cb2->cbs[cbidx];\n");
       fprintf(f, "        }\n");
+#endif
       if (gen->max_cb_stack_size)
       {
         fprintf(f, "        for (cbidx = 0; cbidx < pctx->cbstacksz; cbidx++)\n");
