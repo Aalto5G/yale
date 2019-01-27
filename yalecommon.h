@@ -52,8 +52,10 @@ struct state {
 
 struct callbacks {
   uint64_t cbsmask;
+#if 0
   const parser_uint_t *cbs;
   parser_uint_t cbsz;
+#endif
 };
 
 struct ruleentry {

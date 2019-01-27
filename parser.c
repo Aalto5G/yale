@@ -1499,7 +1499,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
               e->cond == cond &&
               e->val != YALE_UINT_MAX_LEGAL)
           {
-            numbers_sets_emit(f, &gen->numbershash, &e->cbs, parsergen_alloc_fn, gen);
+            //numbers_sets_emit(f, &gen->numbershash, &e->cbs, parsergen_alloc_fn, gen);
             break;
           }
         }
@@ -1515,7 +1515,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
           if (e->nonterminal == X && e->terminal == x &&
               e->cond == cond)
           {
-            numbers_sets_emit(f, &gen->numbershash, &e->cbs, parsergen_alloc_fn, gen);
+            //numbers_sets_emit(f, &gen->numbershash, &e->cbs, parsergen_alloc_fn, gen);
             break;
           }
         }
@@ -1579,6 +1579,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         fprintf(f, ".special_flags = YALE_SPECIAL_FLAG_BYTES, ");
         fprintf(f, ".bytes_cb2 = {\n");
         fprintf(f, ".cbsmask = 0x%llx,\n", (unsigned long long)bytes_cbs.bitset[0]);
+#if 0
         fprintf(f, ".cbs = taintidsetarray");
         for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
         {
@@ -1616,6 +1617,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
           }
         }
         fprintf(f, ")/sizeof(parser_uint_t),");
+#endif
         fprintf(f, "},\n");
       }
       else
@@ -1665,7 +1667,9 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
                   e->cond == cond &&
                   e->val != YALE_UINT_MAX_LEGAL)
               {
-                fprintf(f, "{.cbs = taintidsetarray");
+                fprintf(f, "{");
+#if 0
+                fprintf(".cbs = taintidsetarray");
                 for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
                 {
                   yale_uint_t wordoff = j/64;
@@ -1702,6 +1706,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
                   }
                 }
                 fprintf(f, ")/sizeof(parser_uint_t), ");
+#endif
                 fprintf(f, ".cbsmask = 0x%llx,\n", (unsigned long long)e->cbs.bitset[0]);
                 fprintf(f, "}, ");
                 found = 1;
@@ -1710,7 +1715,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
             }
             if (!found)
             {
-              fprintf(f, "{.cbs = NULL, .cbsz = 0}, ");
+              fprintf(f, "{.cbsmask = 0}, ");
             }
           }
           fprints(f, "},\n");
