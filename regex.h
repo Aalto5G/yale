@@ -91,7 +91,6 @@ struct dfa_node {
 
 struct nfa_node {
   struct bitset d[256];
-  struct bitset defaults;
   struct bitset epsilon;
   uint8_t accepting:1;
   yale_uint_t taintid;

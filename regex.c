@@ -125,13 +125,6 @@ void nfa_connect_epsilon(struct nfa_node *n, yale_uint_t node2)
   n->epsilon.bitset[wordoff] |= (1ULL<<bitoff);
 }
 
-void nfa_connect_default(struct nfa_node *n, yale_uint_t node2)
-{
-  yale_uint_t wordoff = node2/64;
-  yale_uint_t bitoff = node2%64;
-  n->defaults.bitset[wordoff] |= (1ULL<<bitoff);
-}
-
 void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
                     struct bitset *closurep, int *tainted,
                     struct bitset *acceptidsetp,
@@ -564,8 +557,6 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
   int tainted;
   struct bitset acceptidset = {};
   struct bitset taintidset = {};
-  struct bitset defaults = {};
-  const struct bitset defaults_empty = {};
   yale_uint_t wordoff = begin/64;
   yale_uint_t bitoff = begin%64;
   yale_uint_t curdfanode = 0;
@@ -614,17 +605,13 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
     struct bitset nns = queue[--queuesz];
     struct bitset d2[256] = {};
     struct bitset d2epsilon = {};
-    struct bitset defaultsec;
     //printf("Iter\n");
-    defaults = defaults_empty;
     for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/) // for nn in nns
     {
       wordoff = i/64;
       bitoff = i%64;
       if (nns.bitset[wordoff] & (1ULL<<bitoff))
       {
-        bitset_update(&defaults, &ns[i].defaults);
-        //defaults.bitset[wordoff] |= (1ULL<<bitoff);
         for (j = 0; j < 256; j++) // for ch,nns2 in nn.d.items()
         {
           bitset_update(&d2[j], &ns[i].d[j]);
@@ -640,73 +627,6 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         i++;
       }
     }
-    epsilonclosure(ns, defaults, &defaultsec, &tainted, &acceptidset, &taintidset);
-    if (!bitset_empty(&defaultsec))
-    {
-      dfanodeid = YALE_UINT_MAX_LEGAL;
-      for (i = 0; i < d.tblsz; i++)
-      {
-        if (bitset_equal(&d.tbl[i].key, &defaultsec))
-        {
-          dfanodeid = d.tbl[i].dfanodeid;
-          break;
-        }
-      }
-      if (dfanodeid == YALE_UINT_MAX_LEGAL)
-      {
-        accepting = 0;
-        for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
-        {
-          wordoff = i/64;
-          bitoff = i%64;
-          if (defaultsec.bitset[wordoff] & (1ULL<<bitoff))
-          {
-            if (ns[i].accepting)
-            {
-              accepting = 1;
-              break;
-            }
-          }
-          if (bitoff != 63)
-          {
-            i = (wordoff*64) + myffsll(defaultsec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-          }
-          else
-          {
-            i++;
-          }
-        }
-        if (curdfanode >= YALE_UINT_MAX_LEGAL)
-        {
-          abort();
-        }
-        d.tbl[d.tblsz].dfanodeid = curdfanode;
-        memcpy(&d.tbl[d.tblsz++].key, &defaultsec, sizeof(defaultsec));
-        dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset, &taintidset);
-        dfanodeid = curdfanode++;
-        if (queuesz >= sizeof(queue)/sizeof(*queue))
-        {
-          abort();
-        }
-        queue[queuesz++] = defaultsec;
-      }
-
-      dfanodeid2 = YALE_UINT_MAX_LEGAL;
-      for (i = 0; i < d.tblsz; i++)
-      {
-        if (bitset_equal(&d.tbl[i].key, &nns))
-        {
-          dfanodeid2 = d.tbl[i].dfanodeid;
-          break;
-        }
-      }
-      if (dfanodeid2 == YALE_UINT_MAX_LEGAL)
-      {
-        abort(); // FIXME fails
-      }
-      dfa_connect_default(&ds[dfanodeid2], dfanodeid);
-      printf("Connected default\n");
-    }
     for (i = 0; i < 256; i++)
     {
       struct bitset ec;
@@ -714,7 +634,6 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
       {
         continue;
       }
-      bitset_update(&d2[i], &defaults);
       epsilonclosure(ns, d2[i], &ec, &tainted, &acceptidset, &taintidset);
 
       dfanodeid = YALE_UINT_MAX_LEGAL;
