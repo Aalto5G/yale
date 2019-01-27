@@ -5,3 +5,4 @@ bytecontainer in lenprefix.txt and callback system, now fixed
 Shortcut for SCCLL(1)
 - done
 end marker for nested parsers
+store callbacks internally in bitsets
