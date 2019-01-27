@@ -374,4 +374,5 @@ distclean: clean
 	rm -f condtest
 	rm -f unit
 	rm -f tokentheft1main
+	rm -f tokentheft1smain
 	rm -f parserunit
