@@ -28,7 +28,7 @@ int main(int argc, char **argv)
     "\x00\x01\x00\x00";
 
   condparser_parserctx_init(&pctx);
-  consumed = condparser_parse_block(&pctx, msggood, sizeof(msggood)-1);
+  consumed = condparser_parse_block(&pctx, msggood, sizeof(msggood)-1, 1);
   printf("Consumed: %zd\n", consumed);
   if (consumed != sizeof(msggood)-1 && consumed != -EAGAIN)
   {
@@ -37,7 +37,7 @@ int main(int argc, char **argv)
   }
 
   condparser_parserctx_init(&pctx);
-  consumed = condparser_parse_block(&pctx, msgbad, sizeof(msgbad)-1);
+  consumed = condparser_parse_block(&pctx, msgbad, sizeof(msgbad)-1, 1);
   printf("Consumed: %zd\n", consumed);
   if (consumed == sizeof(msgbad)-1 || consumed == -EAGAIN)
   {

@@ -90,7 +90,7 @@ int main(int argc, char **argv)
   backtracktestcb_parserctx_init(&pctx);
   for (i = 0; i < sizeof(input1)-1; i++)
   {
-    consumed = backtracktestcb_parse_block(&pctx, &input1[i], 1);
+    consumed = backtracktestcb_parse_block(&pctx, &input1[i], 1, i == sizeof(input1) - 2);
     if (consumed != 1 && consumed != -EAGAIN)
     {
       printf("Fail i = %zu\n", i);

@@ -126,7 +126,7 @@ int main(int argc, char **argv)
   {
     pctx = pctx2;
     reprefix_parserctx_init(&pctx);
-    consumed = reprefix_parse_block(&pctx, reprefix, sizeof(reprefix)-1);
+    consumed = reprefix_parse_block(&pctx, reprefix, sizeof(reprefix)-1, 1);
     if (consumed != -EAGAIN)
     {
       printf("Consumed %zd expected -EAGAIN\n", consumed);
@@ -139,7 +139,7 @@ int main(int argc, char **argv)
   reprefix_parserctx_init(&pctx);
   for (i = 0; i < sizeof(reprefix)-1; i++)
   {
-    consumed = reprefix_parse_block(&pctx, reprefix+i, 1);
+    consumed = reprefix_parse_block(&pctx, reprefix+i, 1, i == sizeof(reprefix) - 2);
     if (consumed != -EAGAIN)
     {
       printf("Consumed %zd expected -EAGAIN\n", consumed);

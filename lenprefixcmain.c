@@ -137,7 +137,7 @@ int main(int argc, char **argv)
   {
     pctx = pctx2;
     lenprefix_parserctx_init(&pctx);
-    consumed = lenprefix_parse_block(&pctx, lenprefix, sizeof(lenprefix)-1);
+    consumed = lenprefix_parse_block(&pctx, lenprefix, sizeof(lenprefix)-1, 1);
     if (consumed != -EAGAIN)
     {
       printf("Consumed %zd expected -EAGAIN\n", consumed);
@@ -150,7 +150,7 @@ int main(int argc, char **argv)
   lenprefix_parserctx_init(&pctx);
   for (i = 0; i < sizeof(lenprefix)-1; i++)
   {
-    consumed = lenprefix_parse_block(&pctx, lenprefix+i, 1);
+    consumed = lenprefix_parse_block(&pctx, lenprefix+i, 1, i == sizeof(lenprefix) - 2);
     if (consumed != -EAGAIN)
     {
       printf("Consumed %zd expected -EAGAIN\n", consumed);

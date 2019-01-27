@@ -14,7 +14,7 @@ int main(int argc, char **argv)
   backtracktest_parserctx_init(&pctx);
   for (i = 0; i < sizeof(input1)-1; i++)
   {
-    consumed = backtracktest_parse_block(&pctx, &input1[i], 1);
+    consumed = backtracktest_parse_block(&pctx, &input1[i], 1, i == sizeof(input1) - 2);
     if (consumed != 1 && consumed != -EAGAIN)
     {
       printf("Fail i = %zu\n", i);
@@ -25,7 +25,7 @@ int main(int argc, char **argv)
   backtracktest_parserctx_init(&pctx);
   for (i = 0; i < sizeof(input2)-1; i++)
   {
-    consumed = backtracktest_parse_block(&pctx, &input2[i], 1);
+    consumed = backtracktest_parse_block(&pctx, &input2[i], 1, i == sizeof(input2) - 2);
     if (consumed != 1 && consumed != -EAGAIN)
     {
       printf("Fail i = %zu\n", i);
@@ -36,7 +36,7 @@ int main(int argc, char **argv)
   backtracktest_parserctx_init(&pctx);
   for (i = 0; i < sizeof(input3)-1; i++)
   {
-    consumed = backtracktest_parse_block(&pctx, &input3[i], 1);
+    consumed = backtracktest_parse_block(&pctx, &input3[i], 1, i == sizeof(input3) - 2);
     if (consumed != 1 && consumed != -EAGAIN)
     {
       printf("Fail i = %zu\n", i);
@@ -47,7 +47,7 @@ int main(int argc, char **argv)
   backtracktest_parserctx_init(&pctx);
   for (i = 0; i < sizeof(input4)-1; i++)
   {
-    consumed = backtracktest_parse_block(&pctx, &input4[i], 1);
+    consumed = backtracktest_parse_block(&pctx, &input4[i], 1, i == sizeof(input4) - 2);
     if (consumed != 1 && consumed != -EAGAIN)
     {
       printf("Fail i = %zu\n", i);

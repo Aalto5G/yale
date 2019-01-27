@@ -62,7 +62,7 @@ int main(int argc, char **argv)
   ssize_t consumed;
 
   recursivecb_parserctx_init(&pctx);
-  consumed = recursivecb_parse_block(&pctx, input, sizeof(input)-1);
+  consumed = recursivecb_parse_block(&pctx, input, sizeof(input)-1, 1);
   if (consumed != sizeof(input)-1)
   {
     abort();

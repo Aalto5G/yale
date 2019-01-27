@@ -1772,7 +1772,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "};\n");
   fprints(f, "static inline ssize_t\n");
   fprintf(f, "%s_get_saved_token(struct %s_parserctx *pctx, const struct state *restates,\n", gen->parsername, gen->parsername);
-  fprints(f, "                const char *blkoff, size_t szoff, parser_uint_t *state,\n"
+  fprints(f, "                const char *blkoff, size_t szoff, int eofindicator, parser_uint_t *state,\n"
              "                const struct callbacks *cb2, parser_uint_t cb1)//, void *baton)\n"
              "{\n"
              "  if (pctx->saved_token != PARSER_UINT_MAX)\n"
@@ -1783,17 +1783,17 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  }\n");
   if (gen->max_cb_stack_size)
   {
-    fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1, pctx->cbstack, pctx->cbstacksz);//, baton);\n", gen->parsername, gen->parsername);
+    fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, eofindicator, state, %s_callbacks, cb2, cb1, pctx->cbstack, pctx->cbstacksz);//, baton);\n", gen->parsername, gen->parsername);
   }
   else
   {
-    fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, state, %s_callbacks, cb2, cb1);//, baton);\n", gen->parsername, gen->parsername);
+    fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, eofindicator, state, %s_callbacks, cb2, cb1);//, baton);\n", gen->parsername, gen->parsername);
   }
   fprints(f, "}\n"
              "\n"
              "#define EXTRA_SANITY\n"
              "\n");
-  fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz)//, void *baton)\n", gen->parsername, gen->parsername);
+  fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator)//, void *baton)\n", gen->parsername, gen->parsername);
   fprints(f, "{\n"
              "  size_t off = 0;\n"
              "  ssize_t ret;\n"
@@ -1909,7 +1909,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "    {\n");
   fprintf(f, "      restates = %s_reentries[curstate].re;\n", gen->parsername);
   fprints(f, "      cb1 = curcb;\n");
-  fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, NULL, cb1);//, baton);\n", gen->parsername);
+  fprintf(f, "      ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, eofindicator, &state, NULL, cb1);//, baton);\n", gen->parsername);
   fprints(f, "      if (ret == -EAGAIN)\n"
              "      {\n"
              "        //off = sz;\n"
@@ -2090,7 +2090,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "      else\n");
   }
   fprintf(f, "      {\n");
-  fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, &state, cb2, curcb);//, baton);\n", gen->parsername);
+  fprintf(f, "        ret = %s_get_saved_token(pctx, restates, blk+off, sz-off, eofindicator, &state, cb2, curcb);//, baton);\n", gen->parsername);
   fprints(f, "        if (ret == -EAGAIN)\n"
              "        {\n"
              "          //off = sz;\n"
@@ -2416,7 +2416,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "}\n");
   fprints(f, "\n");
-  fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz);//, void *baton);\n", gen->parsername, gen->parsername);
+  fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator);//, void *baton);\n", gen->parsername, gen->parsername);
 }
 
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude)

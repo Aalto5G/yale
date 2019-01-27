@@ -1883,58 +1883,58 @@ char peer1_12[] = { /* Packet 18 */
   for (i = 0; i < 1000 * 1000 /* 1 */; i++)
   {
     httpresp_parserctx_init(&pctx);
-    consumed = httpresp_parse_block(&pctx, peer1_2, sizeof(peer1_2));
+    consumed = httpresp_parse_block(&pctx, peer1_2, sizeof(peer1_2), 0);
     if (consumed != sizeof(peer1_2) && consumed != -EAGAIN)
     {
       printf("Fail 1 %zd\n", consumed);
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_3, sizeof(peer1_3));
+    consumed = httpresp_parse_block(&pctx, peer1_3, sizeof(peer1_3), 0);
     if (consumed != sizeof(peer1_3) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_4, sizeof(peer1_4));
+    consumed = httpresp_parse_block(&pctx, peer1_4, sizeof(peer1_4), 0);
     if (consumed != sizeof(peer1_4) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_5, sizeof(peer1_5));
+    consumed = httpresp_parse_block(&pctx, peer1_5, sizeof(peer1_5), 0);
     if (consumed != sizeof(peer1_5) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_6, sizeof(peer1_6));
+    consumed = httpresp_parse_block(&pctx, peer1_6, sizeof(peer1_6), 0);
     if (consumed != sizeof(peer1_6) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_7, sizeof(peer1_7));
+    consumed = httpresp_parse_block(&pctx, peer1_7, sizeof(peer1_7), 0);
     if (consumed != sizeof(peer1_7) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_8, sizeof(peer1_8));
+    consumed = httpresp_parse_block(&pctx, peer1_8, sizeof(peer1_8), 0);
     if (consumed != sizeof(peer1_8) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_9, sizeof(peer1_9));
+    consumed = httpresp_parse_block(&pctx, peer1_9, sizeof(peer1_9), 0);
     if (consumed != sizeof(peer1_9) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_10, sizeof(peer1_10));
+    consumed = httpresp_parse_block(&pctx, peer1_10, sizeof(peer1_10), 0);
     if (consumed != sizeof(peer1_10) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_11, sizeof(peer1_11));
+    consumed = httpresp_parse_block(&pctx, peer1_11, sizeof(peer1_11), 0);
     if (consumed != sizeof(peer1_11) && consumed != -EAGAIN)
     {
       abort();
     }
-    consumed = httpresp_parse_block(&pctx, peer1_12, sizeof(peer1_12));
+    consumed = httpresp_parse_block(&pctx, peer1_12, sizeof(peer1_12), 1);
     if (consumed != sizeof(peer1_12) && consumed != -EAGAIN)
     {
       abort();
