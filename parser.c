@@ -133,12 +133,7 @@ uint32_t firstset2_hash_fn(struct yale_hash_list_node *node, void *ud)
 
 void parsergen_init(struct ParserGen *gen, char *parsername)
 {
-#if 1
   size_t i;
-#if 0
-  size_t j;
-#endif
-#endif
   gen->userareaptr = gen->userarea;
   gen->tokencnt = 0;
   gen->nonterminalcnt = 0;
@@ -162,20 +157,6 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
     gen->nonterminal_conds[i].condcnt = 0;
     gen->nonterminal_conds[i].is_shortcut = 0;
   }
-#if 0
-#if 1
-  for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
-  {
-    for (j = 0; j < YALE_UINT_MAX_LEGAL; j++)
-    {
-      gen->T[i][j].val = YALE_UINT_MAX_LEGAL;
-      gen->T[i][j].cb = YALE_UINT_MAX_LEGAL;
-    }
-  }
-#else
-  memset(gen->T, 0xff, sizeof(gen->T));
-#endif
-#endif
   transitionbufs_init(&gen->bufs, parsergen_alloc_fn, gen);
   gen->pick_thoses_cnt = 0;
   yale_hash_table_init(&gen->Fi2_hash, 8192, firstset2_hash_fn, NULL,
@@ -1579,45 +1560,6 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         fprintf(f, ".special_flags = YALE_SPECIAL_FLAG_BYTES, ");
         fprintf(f, ".bytes_cb2 = {\n");
         fprintf(f, ".cbsmask = 0x%llx,\n", (unsigned long long)bytes_cbs.bitset[0]);
-#if 0
-        fprintf(f, ".cbs = taintidsetarray");
-        for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
-        {
-          yale_uint_t wordoff = j/64;
-          yale_uint_t bitoff = j%64;
-          if (bytes_cbs.bitset[wordoff] & (1ULL<<bitoff))
-          {
-            fprintf(f, "_%d", (int)j);
-          }
-          if (bitoff != 63)
-          {
-            j = (wordoff*64) + myffsll(bytes_cbs.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-          }
-          else
-          {
-            j++;
-          }
-        }
-        fprintf(f, ", .cbsz = sizeof(taintidsetarray");
-        for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
-        {
-          yale_uint_t wordoff = j/64;
-          yale_uint_t bitoff = j%64;
-          if (bytes_cbs.bitset[wordoff] & (1ULL<<bitoff))
-          {
-            fprintf(f, "_%d", (int)j);
-          }
-          if (bitoff != 63)
-          {
-            j = (wordoff*64) + myffsll(bytes_cbs.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-          }
-          else
-          {
-            j++;
-          }
-        }
-        fprintf(f, ")/sizeof(parser_uint_t),");
-#endif
         fprintf(f, "},\n");
       }
       else
@@ -1668,45 +1610,6 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
                   e->val != YALE_UINT_MAX_LEGAL)
               {
                 fprintf(f, "{");
-#if 0
-                fprintf(".cbs = taintidsetarray");
-                for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
-                {
-                  yale_uint_t wordoff = j/64;
-                  yale_uint_t bitoff = j%64;
-                  if (e->cbs.bitset[wordoff] & (1ULL<<bitoff))
-                  {
-                    fprintf(f, "_%d", (int)j);
-                  }
-                  if (bitoff != 63)
-                  {
-                    j = (wordoff*64) + myffsll(e->cbs.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-                  }
-                  else
-                  {
-                    j++;
-                  }
-                }
-                fprintf(f, ", .cbsz = sizeof(taintidsetarray");
-                for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
-                {
-                  yale_uint_t wordoff = j/64;
-                  yale_uint_t bitoff = j%64;
-                  if (e->cbs.bitset[wordoff] & (1ULL<<bitoff))
-                  {
-                    fprintf(f, "_%d", (int)j);
-                  }
-                  if (bitoff != 63)
-                  {
-                    j = (wordoff*64) + myffsll(e->cbs.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-                  }
-                  else
-                  {
-                    j++;
-                  }
-                }
-                fprintf(f, ")/sizeof(parser_uint_t), ");
-#endif
                 fprintf(f, ".cbsmask = 0x%llx,\n", (unsigned long long)e->cbs.bitset[0]);
                 fprintf(f, "}, ");
                 found = 1;
@@ -2031,12 +1934,6 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "          cbmask |= 1ULL<<curcb;\n");
       fprintf(f, "        }\n");
       fprintf(f, "        cbmask |= bytes_cb2->cbsmask;\n");
-#if 0
-      fprintf(f, "        for (cbidx = 0; cbidx < bytes_cb2->cbsz; cbidx++)\n");
-      fprintf(f, "        {\n");
-      fprintf(f, "          cbmask |= 1ULL<<bytes_cb2->cbs[cbidx];\n");
-      fprintf(f, "        }\n");
-#endif
       if (gen->max_cb_stack_size)
       {
         fprintf(f, "        for (cbidx = 0; cbidx < pctx->cbstacksz; cbidx++)\n");
