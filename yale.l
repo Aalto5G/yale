@@ -21,14 +21,11 @@
 
 %option reentrant bison-bridge bison-locations
 %x COMMENTS
-%x CCOMMENTS
-%x C
 %x PERCENTCCOMMENTS
 %x PERCENTC
 %%
 
 %{
-int openBraceCount = 0;
 struct CSnippet cSnippet = {
   .data = NULL,
   .len = 0,
@@ -48,40 +45,19 @@ directive return DIRECTIVE;
 nofastpath return NOFASTPATH;
 shortcutting return SHORTCUTTING;
 main      return MAIN;
-entry     return ENTRY;
 bytes     return BYTES;
-feed      return FEED;
-reinit_feed return REINIT_FEED;
-val       return VAL;
 prio      return PRIO;
 cb        return CB;
 parsername return PARSERNAME;
 cond      return COND;
 
-uint8     return UINT8;
-uint16be  return UINT16BE;
-uint16le  return UINT16LE;
-uint24be  return UINT24BE;
-uint24le  return UINT24LE;
-uint32be  return UINT32BE;
-uint32le  return UINT32LE;
-uint64be  return UINT64BE;
-uint64le  return UINT64LE;
-
 
 ;         return SEMICOLON;
 ,         return COMMA;
 =         return EQUALS;
-==        return EQUALSEQUALS;
-[[]       return OPEN_BRACKET;
-[]]       return CLOSE_BRACKET;
-\(        return OPEN_PAREN;
-\)        return CLOSE_PAREN;
 \|        return PIPE;
-\*        return ASTERISK;
 \<        return LT;
 \>        return GT;
-\.        return PERIOD;
 -         return MINUS;
 
 
@@ -134,53 +110,7 @@ uint64le  return UINT64LE;
   return INT_LITERAL;
 }
 
-\$[0-9]+       {
-  char *endptr;
-  long l;
-  errno = 0;
-  l=strtol(yytext+1, &endptr, 10);
-  if (errno == ERANGE)
-  {
-    return ERROR_TOK;
-  }
-  if (l > INT_MAX || l < INT_MIN)
-  {
-    return ERROR_TOK;
-  }
-  if (*endptr != '\0')
-  {
-    return ERROR_TOK;
-  }
-  yylval->i = l;
-  return DOLLAR_LITERAL;
-}
-
-"{"              { BEGIN(C); openBraceCount++; cSnippet.capacity = 0; cSnippet.len = 0; cSnippet.data = NULL; }
 "%{"             { BEGIN(PERCENTC); cSnippet.capacity = 0; cSnippet.len = 0; cSnippet.data = NULL; }
-<C>"{"           { csadd(&cSnippet, yytext[0]); openBraceCount++; }
-<C>"/*"          BEGIN(CCOMMENTS);
-<C>\/\/.*        /* ignore single-line comments */;
-<CCOMMENTS>"*/"  BEGIN(C);
-<CCOMMENTS>"/*"  return ERROR_TOK;
-<CCOMMENTS><<EOF>> return ERROR_TOK;
-<CCOMMENTS>.     ;
-<CCOMMENTS>"\n"  { ++yylineno; yycolumn=1; }
-<C>\}            {
-                   openBraceCount--;
-                   if (!openBraceCount) {
-                     BEGIN(INITIAL);
-                     yylval->s = cSnippet.data;
-                     cSnippet.data = NULL;
-                     cSnippet.capacity = 0;
-                     cSnippet.len = 0;
-                     return C_LITERAL;
-                   }
-                   else {
-                     csadd(&cSnippet, yytext[0]);
-                   }
-                 }
-<C>.             { csadd(&cSnippet, yytext[0]); }
-<C>"\n"          { csadd(&cSnippet, yytext[0]); ++yylineno; yycolumn=1; }
 <PERCENTC>"/*"          BEGIN(PERCENTCCOMMENTS);
 <PERCENTC>\/\/.*        /* ignore single-line comments */;
 <PERCENTCCOMMENTS>"*/"  BEGIN(PERCENTC);

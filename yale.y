@@ -56,10 +56,8 @@ int yaleyywrap(yyscan_t scanner)
 
 %destructor { free ($$.str); } STRING_LITERAL
 %destructor { free ($$); } FREEFORM_TOKEN
-%destructor { free ($$); } C_LITERAL
 %destructor { free ($$); } PERCENTC_LITERAL
 
-%token C_LITERAL
 %token PERCENTC_LITERAL
 %token STATEINCLUDE
 %token PARSERINCLUDE
@@ -74,11 +72,8 @@ int yaleyywrap(yyscan_t scanner)
 %token NOFASTPATH
 %token SHORTCUTTING
 %token MAIN
-%token ENTRY
 
 %token BYTES
-%token FEED
-%token REINIT_FEED
 
 %token PARSERNAME
 %token EQUALS
@@ -87,34 +82,13 @@ int yaleyywrap(yyscan_t scanner)
 %token STRING_LITERAL
 %token INT_LITERAL
 %token FREEFORM_TOKEN
-%token ASTERISK
-%token OPEN_PAREN
-%token CLOSE_PAREN
-%token OPEN_BRACKET
-%token CLOSE_BRACKET
 %token LT
 %token GT
 %token PIPE
-%token DOLLAR_LITERAL
 %token MINUS
 %token CB
 %token COND
 %token I
-
-%token UINT8
-%token UINT16BE
-%token UINT16LE
-%token UINT24BE
-%token UINT24LE
-%token UINT32BE
-%token UINT32LE
-%token UINT64BE
-%token UINT64LE
-
-
-%token VAL
-%token EQUALSEQUALS
-%token PERIOD
 
 
 %token ERROR_TOK
@@ -132,7 +106,6 @@ int yaleyywrap(yyscan_t scanner)
 %type<i> maybe_bytes_ltgt
 %type<str> STRING_LITERAL
 %type<s> FREEFORM_TOKEN
-%type<s> C_LITERAL
 %type<s> PERCENTC_LITERAL
 
 %%
@@ -363,10 +336,6 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
   yale->startns = i;
   yale->startns_present = 1;
 }
-| ENTRY EQUALS FREEFORM_TOKEN SEMICOLON
-{
-  free($3);
-}
 | PARSERNAME EQUALS FREEFORM_TOKEN SEMICOLON
 {
   yale->parsername = $3;
@@ -502,8 +471,6 @@ ACTION maybe_token_ltgt
   it2 = &rule->rhsnoact[rule->noactcnt++];
   *it2 = *it;
 }
-| group
-| option
 ;
 
 maybe_cond_ltgt:
@@ -573,15 +540,7 @@ maybe_bytes_ltgt:
 ;
 
 bytes_ltgtexp:
-  FEED EQUALS FREEFORM_TOKEN
-{
-  free($3); // FIXME actually implement!
-}
-| REINIT_FEED EQUALS FREEFORM_TOKEN
-{
-  free($3); // FIXME actually implement!
-}
-| CB EQUALS FREEFORM_TOKEN
+  CB EQUALS FREEFORM_TOKEN
 {
   yale_uint_t i;
   for (i = 0; i < yale->cbcnt; i++)
@@ -604,12 +563,4 @@ bytes_ltgtexp:
   }
   $$ = i;
 }
-;
-
-group:
-OPEN_PAREN alternation CLOSE_PAREN
-;
-
-option:
-OPEN_BRACKET alternation CLOSE_BRACKET
 ;
