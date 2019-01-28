@@ -3,9 +3,17 @@
 CC = clang
 CFLAGS = -Ofast -g -Wall -Wextra -Werror -Wno-unused-parameter -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -msse4 -mavx -mavx2 -msse4a -mbmi -mbmi2 -march=skylake -fomit-frame-pointer
 
+ifeq ($(WITH_PYTHON),yes)
+  CFLAGS += -I/usr/include/python3.6 -fPIC
+endif
+
 SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c reprefixcmain.c tokentheft1main.c tokentheft1smain.c parserunit.c
 LEXSRC := yale.l
 YACCSRC := yale.y
+
+ifeq ($(WITH_PYTHON),yes)
+  SRC += httpcpy.c
+endif
 
 LEXGEN := $(patsubst %.l,%.lex.c,$(LEXSRC))
 YACCGEN := $(patsubst %.y,%.tab.c,$(YACCSRC))
@@ -19,6 +27,10 @@ DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
 all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain backtracktestmain backtracktestcbmain reprefixcmain tokentheft1main tokentheft1smain parserunit
+
+ifeq ($(WITH_PYTHON),yes)
+all: httpparser.so
+endif
 
 $(DEP): %.d: %.c Makefile
 	$(CC) $(CFLAGS) -MM -MP -MT "$*.d $*.o" -o $*.d $*.c
@@ -61,6 +73,9 @@ httpcmain: httpcmain.o httpcparser.o Makefile
 httpcmainprint: httpcmainprint.o httpcparser.o Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
+httpparser.so: httpcpy.o httppycparser.o Makefile
+	$(CC) $(CFLAGS) -shared -o $@ $(filter %.o,$^) $(filter %.a,$^)
+
 lenprefixcmain: lenprefixcmain.o lenprefixcparser.o Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
@@ -101,6 +116,11 @@ httpcmainprint.d: httpcparser.h Makefile
 httpcmainprint.o: httpcparser.h Makefile
 httpcparser.d: httpcparser.h Makefile
 httpcparser.o: httpcparser.h Makefile
+
+httpcpy.d: httppycparser.h Makefile
+httpcpy.o: httppycparser.h Makefile
+httppycparser.d: httppycparser.h Makefile
+httppycparser.o: httppycparser.h Makefile
 
 recursivecbmain.d: recursivecbcparser.h Makefile
 recursivecbmain.o: recursivecbcparser.h Makefile
@@ -172,6 +192,12 @@ httpcparser.h: httppaper.txt yaleparser Makefile
 	./yaleparser $< h
 
 httpcparser.c: httppaper.txt yaleparser Makefile
+	./yaleparser $< c
+
+httppycparser.h: httppy.txt yaleparser Makefile
+	./yaleparser $< h
+
+httppycparser.c: httppy.txt yaleparser Makefile
 	./yaleparser $< c
 
 httprespcparser.h: httpresp.txt yaleparser Makefile
@@ -353,6 +379,8 @@ clean:
 	rm -f tokentheft1cparser.h
 	rm -f tokentheft1scparser.c
 	rm -f tokentheft1scparser.h
+	rm -f httppycparser.c
+	rm -f httppycparser.h
 
 distclean: clean
 	rm -f yaletest
@@ -376,3 +404,4 @@ distclean: clean
 	rm -f tokentheft1main
 	rm -f tokentheft1smain
 	rm -f parserunit
+	rm -f httpparser.so

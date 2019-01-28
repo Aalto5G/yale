@@ -68,3 +68,6 @@ perf.data.old
 /tokentheft1scparser.h
 /tokentheft1smain
 /parserunit
+/httpparser.so
+/httppycparser.c
+/httppycparser.h
