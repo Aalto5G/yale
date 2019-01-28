@@ -1628,6 +1628,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          return -EINVAL;\n");
   fprints(f, "        }\n");
   fprints(f, "        ctx->state = ctx->last_accept;\n");
+  fprints(f, "        ctx->confirm_status |= ctx->lastack_status;\n"); // FIXME???
   fprints(f, "        ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "        ctx->lastack_status = 0;\n");
   fprints(f, "        st = &stbl[ctx->state];\n");
@@ -1636,7 +1637,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        ctx->backtrackmid = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "        if (st && cb2)\n");
   fprints(f, "        {\n");
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
+  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig;\n");
   fprints(f, "          ssize_t cbr;\n");
   if (cbssz)
   {
@@ -1657,6 +1658,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "          }\n");
   }
+  fprints(f, "          cbmask_orig = cbmask;\n");
   fprints(f, "          cbmask &= ~ctx->btbuf_status;\n");
   fprintf(f, "          if (cbmask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
@@ -1715,16 +1717,19 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
   fprints(f, "          ctx->start_status |= cbmask;\n");
+  //fprints(f, "          ctx->confirm_status |= cbmask_orig;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
   fprints(f, "          ctx->start_status &= ~mismask;\n");
   fprints(f, "          ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "          ctx->btbuf_status = 0;\n");
   fprints(f, "        }\n");
   fprints(f, "        if (st && !cb2)\n");
   fprints(f, "        {\n");
   fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "          uint64_t endmask = 0, mismask = 0;\n");
+  fprints(f, "          uint64_t endmask = 0, mismask = 0, cbmask_orig;\n");
   fprints(f, "          uint16_t bitoff;\n");
   fprints(f, "          ssize_t cbr;\n");
   if (cbssz)
@@ -1735,6 +1740,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "          }\n");
   }
+  fprints(f, "          cbmask_orig = cbmask;\n");
   fprints(f, "          cbmask &= ~ctx->btbuf_status;\n");
   fprintf(f, "          if (cbmask)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
@@ -1793,10 +1799,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
   fprints(f, "          ctx->start_status |= cbmask;\n");
+  //fprints(f, "          ctx->confirm_status |= cbmask_orig;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
   fprints(f, "          ctx->start_status &= ~mismask;\n");
   fprints(f, "          ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "          ctx->btbuf_status = 0;\n");
   fprints(f, "        }\n");
   fprints(f, "        ctx->backtrackstart = new_backtrackstart;\n"); // FIXME correct?
@@ -1818,7 +1827,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->lastack_status = 0;\n");
   fprints(f, "          if (st && cb2)\n");
   fprints(f, "          {\n");
-  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
+  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig;\n");
   fprints(f, "            ssize_t cbr;\n");
   if (cbssz)
   {
@@ -1839,6 +1848,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "              cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "            }\n");
   }
+  fprints(f, "            cbmask_orig = cbmask;\n");
   fprints(f, "            cbmask &= ~ctx->btbuf_status;\n");
   fprintf(f, "            if (cbmask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
@@ -1897,16 +1907,19 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "              }\n");
   fprintf(f, "            }\n");
   fprints(f, "            ctx->start_status |= cbmask;\n");
+  //fprints(f, "            ctx->confirm_status |= cbmask_orig;\n");
   fprints(f, "            ctx->start_status &= ~endmask;\n");
   fprints(f, "            ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "            ctx->lastack_status &= ~endmask;\n");
   fprints(f, "            ctx->start_status &= ~mismask;\n");
   fprints(f, "            ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "            ctx->lastack_status &= ~mismask;\n");
   fprints(f, "            ctx->btbuf_status = 0;\n");
   fprints(f, "          }\n");
   fprints(f, "          if (st && !cb2)\n");
   fprints(f, "          {\n");
   fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "            uint64_t endmask = 0, mismask = 0;\n");
+  fprints(f, "            uint64_t endmask = 0, mismask = 0, cbmask_orig;\n");
   fprints(f, "            uint16_t bitoff;\n");
   fprints(f, "            ssize_t cbr;\n");
   if (cbssz)
@@ -1917,6 +1930,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "              cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "            }\n");
   }
+  fprints(f, "            cbmask_orig = cbmask;\n");
   fprints(f, "            cbmask &= ~ctx->btbuf_status;\n");
   fprintf(f, "            if (cbmask)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
@@ -1975,10 +1989,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "              }\n");
   fprintf(f, "            }\n");
   fprints(f, "            ctx->start_status |= cbmask;\n");
+  //fprints(f, "            ctx->confirm_status |= cbmask_orig;\n");
   fprints(f, "            ctx->start_status &= ~endmask;\n");
   fprints(f, "            ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "            ctx->lastack_status &= ~endmask;\n");
   fprints(f, "            ctx->start_status &= ~mismask;\n");
   fprints(f, "            ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "            ctx->lastack_status &= ~mismask;\n");
   fprints(f, "            ctx->btbuf_status = 0;\n");
   fprints(f, "          }\n");
   fprints(f, "          ctx->backtrackstart = ctx->backtrackmid;\n");
@@ -1994,7 +2011,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    }\n");
   fprints(f, "    if (st && cb2)\n");
   fprints(f, "    {\n");
-  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0;\n");
+  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig;\n");
   fprints(f, "      ssize_t cbr;\n");
   if (cbssz)
   {
@@ -2014,6 +2031,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "      }\n");
   }
+  fprints(f, "      cbmask_orig = cbmask;\n");
   fprints(f, "      cbmask &= ~ctx->btbuf_status;\n");
   fprintf(f, "      if (cbmask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
@@ -2072,16 +2090,19 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        }\n");
   fprintf(f, "      }\n");
   fprints(f, "      ctx->start_status |= cbmask;\n");
+  //fprints(f, "      ctx->confirm_status |= cbmask_orig;\n");
   fprints(f, "      ctx->start_status &= ~endmask;\n");
   fprints(f, "      ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "      ctx->lastack_status &= ~endmask;\n");
   fprints(f, "      ctx->start_status &= ~mismask;\n");
   fprints(f, "      ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "      ctx->lastack_status &= ~mismask;\n");
   fprints(f, "      ctx->btbuf_status = 0;\n");
   fprints(f, "    }\n");
   fprints(f, "    if (st && !cb2)\n");
   fprints(f, "    {\n");
   fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "      uint64_t endmask = 0, mismask = 0;\n");
+  fprints(f, "      uint64_t endmask = 0, mismask = 0, cbmask_orig;\n");
   fprints(f, "      uint16_t bitoff;\n");
   fprints(f, "      ssize_t cbr;\n");
   if (cbssz)
@@ -2092,6 +2113,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        cbmask |= 1ULL<<cbstack[cbidx];\n");
     fprints(f, "      }\n");
   }
+  fprints(f, "      cbmask_orig = cbmask;\n");
   fprints(f, "      cbmask &= ~ctx->btbuf_status;\n");
   fprintf(f, "      if (cbmask)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
@@ -2150,10 +2172,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        }\n");
   fprintf(f, "      }\n");
   fprints(f, "      ctx->start_status |= cbmask;\n");
+  //fprints(f, "      ctx->confirm_status |= cbmask_orig;\n");
   fprints(f, "      ctx->start_status &= ~endmask;\n");
   fprints(f, "      ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "      ctx->lastack_status &= ~endmask;\n");
   fprints(f, "      ctx->start_status &= ~mismask;\n");
   fprints(f, "      ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "      ctx->lastack_status &= ~mismask;\n");
   fprints(f, "      ctx->btbuf_status = 0;\n");
   fprints(f, "    }\n");
   fprints(f, "    ctx->backtrackstart = new_backtrackstart;\n"); // FIXME correct?
@@ -2230,6 +2255,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        return -EINVAL;\n");
   fprints(f, "      }\n");
   fprints(f, "      ctx->state = ctx->last_accept;\n");
+  fprints(f, "      ctx->confirm_status |= ctx->lastack_status;\n"); // FIXME???
   fprints(f, "      ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "      ctx->lastack_status = 0;\n"); // FIXME correct?
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
@@ -2299,7 +2325,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
+  fprints(f, "          ctx->start_status &= ~mismask;\n"); // XXX confirm?
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
@@ -2370,7 +2398,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
   fprints(f, "          ctx->start_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
@@ -2448,7 +2478,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
   fprints(f, "          ctx->start_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "        }\n");
   fprints(f, "        if (!cb2 && st->accepting)\n");
   fprints(f, "        {\n");
@@ -2503,7 +2535,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
   fprints(f, "          ctx->start_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "        }\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "        ctx->backtrackstart = ctx->backtrackend;\n");
@@ -2612,7 +2646,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
   fprints(f, "          ctx->start_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
@@ -2685,7 +2721,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "          ctx->start_status &= ~endmask;\n");
   fprints(f, "          ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
   fprints(f, "          ctx->start_status &= ~mismask;\n");
+  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
@@ -2708,6 +2746,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      return -EINVAL;\n");
   fprints(f, "    }\n");
   fprints(f, "    ctx->state = ctx->last_accept;\n");
+  fprints(f, "    ctx->confirm_status |= ctx->lastack_status;\n"); // FIXME???
   fprints(f, "    ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "    ctx->lastack_status = 0;\n"); // FIXME correct?
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
@@ -2777,7 +2816,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        ctx->confirm_status |= cbmask;\n");
   fprints(f, "        ctx->start_status &= ~endmask;\n");
   fprints(f, "        ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "        ctx->lastack_status &= ~endmask;\n");
   fprints(f, "        ctx->start_status &= ~mismask;\n");
+  fprints(f, "        ctx->lastack_status &= ~mismask;\n");
   fprints(f, "      }\n");
   fprints(f, "      else\n");
   fprints(f, "      {\n");
@@ -2849,7 +2890,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        ctx->confirm_status |= cbmask;\n");
   fprints(f, "        ctx->start_status &= ~endmask;\n");
   fprints(f, "        ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "        ctx->lastack_status &= ~endmask;\n");
   fprints(f, "        ctx->start_status &= ~mismask;\n");
+  fprints(f, "        ctx->lastack_status &= ~mismask;\n");
   fprints(f, "      }\n");
   fprints(f, "      else\n");
   fprints(f, "      {\n");
@@ -2922,8 +2965,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    ctx->start_status |= cbmask;\n");
   fprints(f, "    ctx->start_status &= ~endmask;\n");
   fprints(f, "    ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "    ctx->lastack_status &= ~endmask;\n");
   fprints(f, "    ctx->start_status &= ~mismask;\n");
   fprints(f, "    ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "    ctx->lastack_status &= ~mismask;\n");
   fprints(f, "  }\n");
   fprints(f, "  if (st && !cb2)\n"); // RFE correct not to have st->accepting?
   fprints(f, "  {\n");
@@ -2977,8 +3022,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    ctx->start_status |= cbmask;\n");
   fprints(f, "    ctx->start_status &= ~endmask;\n");
   fprints(f, "    ctx->confirm_status &= ~endmask;\n");
+  fprints(f, "    ctx->lastack_status &= ~endmask;\n");
   fprints(f, "    ctx->start_status &= ~mismask;\n");
   fprints(f, "    ctx->confirm_status &= ~mismask;\n");
+  fprints(f, "    ctx->lastack_status &= ~mismask;\n");
   fprints(f, "  }\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  if (ctx->backtrackstart != ctx->backtrackend)\n");

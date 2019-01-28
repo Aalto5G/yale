@@ -1801,7 +1801,9 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "      pctx->rctx.confirm_status |= cbmask;\n");
     fprintf(f, "      pctx->rctx.start_status &= ~endmask;\n");
     fprintf(f, "      pctx->rctx.confirm_status &= ~endmask;\n");
+    fprintf(f, "      pctx->rctx.lastack_status &= ~endmask;\n");
     fprintf(f, "      pctx->rctx.start_status &= ~mismask;\n");
+    fprintf(f, "      pctx->rctx.lastack_status &= ~mismask;\n");
     fprintf(f, "      pctx->bytes_sz -= ret;\n");
     fprintf(f, "      off += ret;\n");
     fprintf(f, "      if (pctx->bytes_sz)\n");
@@ -1971,7 +1973,9 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "        pctx->rctx.confirm_status |= cbmask;\n");
       fprintf(f, "        pctx->rctx.start_status &= ~endmask;\n");
       fprintf(f, "        pctx->rctx.confirm_status &= ~endmask;\n");
+      fprintf(f, "        pctx->rctx.lastack_status &= ~endmask;\n");
       fprintf(f, "        pctx->rctx.start_status &= ~mismask;\n");
+      fprintf(f, "        pctx->rctx.lastack_status &= ~mismask;\n");
       fprintf(f, "        pctx->bytes_sz -= ret;\n");
       fprintf(f, "        off += ret;\n");
       fprintf(f, "        if (pctx->bytes_sz)\n");
