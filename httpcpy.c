@@ -133,6 +133,10 @@ ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *b
   memcpy(pyctx->buf+pyctx->sz, buf, siz);
   pyctx->sz += siz;
   pyctx->buf[pyctx->sz] = '\0';
+  if (start & YALE_FLAG_MAJOR_MISTAKE)
+  {
+    abort();
+  }
   if (start & YALE_FLAG_END)
   {
     if (pyctx->sz > 0 && pyctx->buf[pyctx->sz - 1] == '\n')

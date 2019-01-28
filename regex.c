@@ -2339,6 +2339,34 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
+  fprints(f, "      if (!cb2 && st->accepting && i == 0)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
+  if (cbssz)
+  {
+    fprints(f, "        size_t cbidx;\n");
+    fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
+    fprints(f, "        {\n");
+    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprints(f, "        }\n");
+  }
+  fprints(f, "        ctx->confirm_status |= cbmask & ctx->start_status;\n");
+  fprints(f, "      }\n");
+  fprints(f, "      if (cb2 && st->accepting && i == 0)\n");
+  fprints(f, "      {\n");
+  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
+  fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
+  if (cbssz)
+  {
+    fprints(f, "        size_t cbidx;\n");
+    fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
+    fprints(f, "        {\n");
+    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprints(f, "        }\n");
+  }
+  fprintf(f, "        cbmask |= mycb->cbsmask;\n");
+  fprints(f, "        ctx->confirm_status |= cbmask & ctx->start_status;\n");
+  fprints(f, "      }\n");
   fprints(f, "      if (!cb2 && st->accepting && i > 0)\n");
   fprints(f, "      {\n");
   if (cbssz)

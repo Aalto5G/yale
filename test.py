@@ -9,6 +9,6 @@ print("----")
 h=httpparser.Http()
 print(h.feed("GET / HTTP/1.1\r\n", 0))
 print(h.feed("Host: localhost\r\n", 0))
-print(h.feed("Foo: localhost\r\n", 0)) # FIXME if commented, breaks!
+#print(h.feed("Foo: localhost\r\n", 0))
 print(h.feed("\r\n", 1))
 print(h.host())
