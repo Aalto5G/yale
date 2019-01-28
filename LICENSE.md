@@ -1,3 +1,6 @@
+This code will be available until the following license in the near future. It
+doesn't apply yet. So, please don't redistribute the code!
+
 Copyright (c) 2018-2019 Aalto University
 
 Copyright (c) 2018 Juha-Matti Tilli
