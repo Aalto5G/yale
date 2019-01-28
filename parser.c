@@ -1720,7 +1720,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  const struct callbacks *cb2;\n");
   fprintf(f, "  ssize_t (*cb1f)(const char *, size_t, int, struct %s_parserctx*);\n", gen->parsername);
   fprints(f, "\n"
-             "  while (off < sz || pctx->saved_token != PARSER_UINT_MAX)\n"
+             "  for (;;)\n"
              "  {\n"
              "    if (unlikely(pctx->stacksz == 0))\n"
              "    {\n"
@@ -2228,6 +2228,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        }\n"
              "        pctx->stacksz--;\n"
              "      }\n"
+             "    }\n"
+             "    if (off >= sz && pctx->saved_token == PARSER_UINT_MAX)\n"
+             "    {\n"
+             "      break;\n"
              "    }\n"
              "  }\n"
              "  if (pctx->stacksz == 0)\n"
