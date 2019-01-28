@@ -54,7 +54,7 @@ Http_host(HttpObject *self, PyObject *Py_UNUSED(ignored))
 {
     if (!self->pyctx.ok)
     {
-        return Py_None;
+        return Py_BuildValue("");
     }
     return PyUnicode_FromFormat("%s", self->pyctx.buf);
 }
