@@ -122,6 +122,8 @@ httpcparser.o: httpcparser.h Makefile
 
 httpcpy.d: httppycparser.h Makefile
 httpcpy.o: httppycparser.h Makefile
+httpcpytest.d: httppycparser.h Makefile
+httpcpytest.o: httppycparser.h Makefile
 httppycparser.d: httppycparser.h Makefile
 httppycparser.o: httppycparser.h Makefile
 
