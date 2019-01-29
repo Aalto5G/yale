@@ -1635,9 +1635,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
   fprints(f, "        ctx->backtrackmid = new_backtrackstart;\n"); // FIXME correct?
-  fprints(f, "        if (st && cb2)\n");
+  fprints(f, "        if (st)\n");
   fprints(f, "        {\n");
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig;\n");
+  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig, negendmis;\n");
   fprints(f, "          ssize_t cbr;\n");
   if (cbssz)
   {
@@ -1648,8 +1648,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   //fprints(f, "          for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "          {\n");
   //fprints(f, "            const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprints(f, "            const struct callbacks *mycb = &cb2[st->acceptid];\n");
-  fprintf(f, "            cbmask |= mycb->cbsmask;\n");
+  fprintf(f, "            cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
   fprints(f, "          }\n");
   if (cbssz)
   {
@@ -1718,94 +1717,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          }\n");
   fprints(f, "          ctx->start_status |= cbmask;\n");
   //fprints(f, "          ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
-  fprints(f, "          ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "          ctx->btbuf_status = 0;\n");
-  fprints(f, "        }\n");
-  fprints(f, "        if (st && !cb2)\n");
-  fprints(f, "        {\n");
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "          uint64_t endmask = 0, mismask = 0, cbmask_orig;\n");
-  fprints(f, "          uint16_t bitoff;\n");
-  fprints(f, "          ssize_t cbr;\n");
-  if (cbssz)
-  {
-    fprints(f, "          size_t cbidx;\n");
-    fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "          {\n");
-    fprints(f, "            cbmask |= 1ULL<<cbstack[cbidx];\n");
-    fprints(f, "          }\n");
-  }
-  fprints(f, "          cbmask_orig = cbmask;\n");
-  fprints(f, "          cbmask &= ~ctx->btbuf_status;\n");
-  fprintf(f, "          if (cbmask)\n");
-  fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
-  fprints(f, "          {\n");
-  fprints(f, "            int ffsres;\n");
-  fprints(f, "            if (cbmask & (1ULL<<bitoff))\n");
-  fprints(f, "            {\n");
-  fprints(f, "              if (ctx->backtrackmid > ctx->backtrackstart)\n");
-  fprints(f, "              {\n");
-  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackmid - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "                if (cbr != (ssize_t)(ctx->backtrackmid - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "                {\n");
-  fprints(f, "                  return cbr;\n");
-  fprints(f, "                }\n");
-  fprints(f, "              }\n");
-  fprints(f, "              else\n");
-  fprints(f, "              {\n");
-  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "                if (cbr != (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "                {\n");
-  fprints(f, "                  return cbr;\n");
-  fprints(f, "                }\n");
-  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "                if (cbr != (ssize_t)ctx->backtrackmid && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "                {\n");
-  fprints(f, "                  return cbr;\n");
-  fprints(f, "                }\n");
-  fprints(f, "              }\n");
-  fprints(f, "            }\n");
-  fprints(f, "            ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
-  fprints(f, "            if (ffsres == 0)\n");
-  fprints(f, "            {\n");
-  fprints(f, "              bitoff = 64;\n");
-  fprints(f, "            }\n");
-  fprints(f, "            else\n");
-  fprints(f, "            {\n");
-  fprints(f, "              bitoff = ffsres - 1;\n");
-  fprints(f, "            }\n");
-  fprints(f, "          }\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
-  fprintf(f, "          if (endmask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != (ssize_t)0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
-  fprintf(f, "          if (mismask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != (ssize_t)0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  //fprints(f, "          ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
-  fprints(f, "          ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "          negendmis = ~(endmask | mismask);");
+  fprints(f, "          ctx->start_status &= negendmis;\n");
+  fprints(f, "          ctx->confirm_status &= negendmis;\n");
+  fprints(f, "          ctx->lastack_status &= negendmis;\n");
   fprints(f, "          ctx->btbuf_status = 0;\n");
   fprints(f, "        }\n");
   fprints(f, "        ctx->backtrackstart = new_backtrackstart;\n"); // FIXME correct?
@@ -1825,9 +1740,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->state = 0;\n");
   fprints(f, "          ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "          ctx->lastack_status = 0;\n");
-  fprints(f, "          if (st && cb2)\n");
+  fprints(f, "          if (st)\n");
   fprints(f, "          {\n");
-  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig;\n");
+  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig, negendmis;\n");
   fprints(f, "            ssize_t cbr;\n");
   if (cbssz)
   {
@@ -1838,8 +1753,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   //fprints(f, "            for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "            {\n");
   //fprints(f, "              const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprints(f, "              const struct callbacks *mycb = &cb2[st->acceptid];\n");
-  fprintf(f, "              cbmask |= mycb->cbsmask;\n");
+  fprintf(f, "              cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
   fprints(f, "            }\n");
   if (cbssz)
   {
@@ -1908,94 +1822,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "            }\n");
   fprints(f, "            ctx->start_status |= cbmask;\n");
   //fprints(f, "            ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "            ctx->start_status &= ~endmask;\n");
-  fprints(f, "            ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "            ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "            ctx->start_status &= ~mismask;\n");
-  fprints(f, "            ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "            ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "            ctx->btbuf_status = 0;\n");
-  fprints(f, "          }\n");
-  fprints(f, "          if (st && !cb2)\n");
-  fprints(f, "          {\n");
-  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "            uint64_t endmask = 0, mismask = 0, cbmask_orig;\n");
-  fprints(f, "            uint16_t bitoff;\n");
-  fprints(f, "            ssize_t cbr;\n");
-  if (cbssz)
-  {
-    fprints(f, "            size_t cbidx;\n");
-    fprints(f, "            for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "            {\n");
-    fprints(f, "              cbmask |= 1ULL<<cbstack[cbidx];\n");
-    fprints(f, "            }\n");
-  }
-  fprints(f, "            cbmask_orig = cbmask;\n");
-  fprints(f, "            cbmask &= ~ctx->btbuf_status;\n");
-  fprintf(f, "            if (cbmask)\n");
-  fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
-  fprints(f, "            {\n");
-  fprints(f, "              int ffsres;\n");
-  fprints(f, "              if (cbmask & (1ULL<<bitoff))\n");
-  fprints(f, "              {\n");
-  fprints(f, "                if (ctx->backtrackmid > ctx->backtrackstart)\n");
-  fprints(f, "                {\n");
-  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackmid - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "                  if (cbr != (ssize_t)(ctx->backtrackmid - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "                  {\n");
-  fprints(f, "                    return cbr;\n");
-  fprints(f, "                  }\n");
-  fprints(f, "                }\n");
-  fprints(f, "                else\n");
-  fprints(f, "                {\n");
-  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "                  if (cbr != (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "                  {\n");
-  fprints(f, "                    return cbr;\n");
-  fprints(f, "                  }\n");
-  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "                  if (cbr != (ssize_t)ctx->backtrackmid && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "                  {\n");
-  fprints(f, "                    return cbr;\n");
-  fprints(f, "                  }\n");
-  fprints(f, "                }\n");
-  fprints(f, "              }\n");
-  fprints(f, "              ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
-  fprints(f, "              if (ffsres == 0)\n");
-  fprints(f, "              {\n");
-  fprints(f, "                bitoff = 64;\n");
-  fprints(f, "              }\n");
-  fprints(f, "              else\n");
-  fprints(f, "              {\n");
-  fprints(f, "                bitoff = ffsres - 1;\n");
-  fprints(f, "              }\n");
-  fprints(f, "            }\n");
-  fprints(f, "            endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
-  fprintf(f, "            if (endmask)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "              if (cbr != -EAGAIN)\n");
-  fprintf(f, "              {\n");
-  fprintf(f, "                return cbr;\n");
-  fprintf(f, "              }\n");
-  fprintf(f, "            }\n");
-  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
-  fprintf(f, "            if (mismask)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "              if (cbr != -EAGAIN)\n");
-  fprintf(f, "              {\n");
-  fprintf(f, "                return cbr;\n");
-  fprintf(f, "              }\n");
-  fprintf(f, "            }\n");
-  fprints(f, "            ctx->start_status |= cbmask;\n");
-  //fprints(f, "            ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "            ctx->start_status &= ~endmask;\n");
-  fprints(f, "            ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "            ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "            ctx->start_status &= ~mismask;\n");
-  fprints(f, "            ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "            ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "            negendmis = ~(endmask | mismask);");
+  fprints(f, "            ctx->start_status &= negendmis;\n");
+  fprints(f, "            ctx->confirm_status &= negendmis;\n");
+  fprints(f, "            ctx->lastack_status &= negendmis;\n");
   fprints(f, "            ctx->btbuf_status = 0;\n");
   fprints(f, "          }\n");
   fprints(f, "          ctx->backtrackstart = ctx->backtrackmid;\n");
@@ -2009,9 +1839,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "    }\n");
-  fprints(f, "    if (st && cb2)\n");
+  fprints(f, "    if (st)\n");
   fprints(f, "    {\n");
-  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig;\n");
+  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig, negendmis;\n");
   fprints(f, "      ssize_t cbr;\n");
   if (cbssz)
   {
@@ -2021,8 +1851,8 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      uint16_t bitoff;\n");
   fprints(f, "      for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "      {\n");
-  fprints(f, "        const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprintf(f, "        cbmask |= mycb->cbsmask;\n");
+  //fprints(f, "        const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
+  fprintf(f, "        cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
   fprints(f, "      }\n");
   if (cbssz)
   {
@@ -2091,94 +1921,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "      }\n");
   fprints(f, "      ctx->start_status |= cbmask;\n");
   //fprints(f, "      ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "      ctx->start_status &= ~endmask;\n");
-  fprints(f, "      ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "      ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "      ctx->start_status &= ~mismask;\n");
-  fprints(f, "      ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "      ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "      ctx->btbuf_status = 0;\n");
-  fprints(f, "    }\n");
-  fprints(f, "    if (st && !cb2)\n");
-  fprints(f, "    {\n");
-  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "      uint64_t endmask = 0, mismask = 0, cbmask_orig;\n");
-  fprints(f, "      uint16_t bitoff;\n");
-  fprints(f, "      ssize_t cbr;\n");
-  if (cbssz)
-  {
-    fprints(f, "      size_t cbidx;\n");
-    fprints(f, "      for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "      {\n");
-    fprints(f, "        cbmask |= 1ULL<<cbstack[cbidx];\n");
-    fprints(f, "      }\n");
-  }
-  fprints(f, "      cbmask_orig = cbmask;\n");
-  fprints(f, "      cbmask &= ~ctx->btbuf_status;\n");
-  fprintf(f, "      if (cbmask)\n");
-  fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
-  fprints(f, "      {\n");
-  fprints(f, "        int ffsres;\n");
-  fprints(f, "        if (cbmask & (1ULL<<bitoff))\n");
-  fprints(f, "        {\n");
-  fprints(f, "          if (ctx->backtrackend > ctx->backtrackstart)\n");
-  fprints(f, "          {\n");
-  fprints(f, "            cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackend - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "            if (cbr != (ssize_t)(ctx->backtrackend - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "            {\n");
-  fprints(f, "              return cbr;\n");
-  fprints(f, "            }\n");
-  fprints(f, "          }\n");
-  fprints(f, "          else\n");
-  fprints(f, "          {\n");
-  fprints(f, "            cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "            if (cbr != (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "            {\n");
-  fprints(f, "              return cbr;\n");
-  fprints(f, "            }\n");
-  fprints(f, "            cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackend, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprints(f, "            if (cbr != (ssize_t)ctx->backtrackend && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
-  fprints(f, "            {\n");
-  fprints(f, "              return cbr;\n");
-  fprints(f, "            }\n");
-  fprints(f, "          }\n");
-  fprints(f, "        }\n");
-  fprints(f, "        ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
-  fprints(f, "        if (ffsres == 0)\n");
-  fprints(f, "        {\n");
-  fprints(f, "          bitoff = 64;\n");
-  fprints(f, "        }\n");
-  fprints(f, "        else\n");
-  fprints(f, "        {\n");
-  fprints(f, "          bitoff = ffsres - 1;\n");
-  fprints(f, "        }\n");
-  fprints(f, "      }\n");
-  fprints(f, "      endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
-  fprintf(f, "      if (endmask)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "        if (cbr != -EAGAIN)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          return cbr;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "      }\n");
-  fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
-  fprintf(f, "      if (mismask)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "        if (cbr != -EAGAIN)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          return cbr;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "      }\n");
-  fprints(f, "      ctx->start_status |= cbmask;\n");
-  //fprints(f, "      ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "      ctx->start_status &= ~endmask;\n");
-  fprints(f, "      ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "      ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "      ctx->start_status &= ~mismask;\n");
-  fprints(f, "      ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "      ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "      negendmis = ~(endmask | mismask);");
+  fprints(f, "      ctx->start_status &= negendmis;\n");
+  fprints(f, "      ctx->confirm_status &= negendmis;\n");
+  fprints(f, "      ctx->lastack_status &= negendmis;\n");
   fprints(f, "      ctx->btbuf_status = 0;\n");
   fprints(f, "    }\n");
   fprints(f, "    ctx->backtrackstart = new_backtrackstart;\n"); // FIXME correct?
@@ -2269,182 +2015,99 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprintf(f, "      if (j >= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1) j -= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1;\n", parserupper, parserupper, parserupper, parserupper);
   fprintf(f, "#endif\n");
-  fprints(f, "      if (cb2 && st->accepting && j > 0)\n");
+  fprints(f, "      if (st->accepting)\n");
   fprints(f, "      {\n");
-  if (cbssz)
-  {
-    fprints(f, "        size_t cbidx;\n");
-  }
-  fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
-  fprintf(f, "        enum yale_flags flags = 0;\n");
-  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
-  fprints(f, "        uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "        uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  fprintf(f, "        ssize_t cbr;\n");
-  fprintf(f, "        if (start)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          flags |= YALE_FLAG_START;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        flags |= YALE_FLAG_END;\n");
-  if (cbssz)
-  {
-    fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "        {\n");
-    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
-    fprints(f, "        }\n");
-  }
-  fprintf(f, "        cbmask |= mycb->cbsmask;\n");
-  fprintf(f, "        if (cbmask)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, j, cbtbl);\n", parsername);
-  fprintf(f, "          if (cbr != -EAGAIN)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            return cbr;\n");
-  fprintf(f, "          }\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "        if (ctx->backtrackend == ctx->backtrackstart)\n");
-  fprintf(f, "#else\n");
-  fprints(f, "        if (1)\n");
-  fprintf(f, "#endif\n");
+  fprints(f, "        if (j == 0)\n");
   fprints(f, "        {\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "          if (endmask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "          if (mismask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n"); // XXX confirm?
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
+  if (cbssz)
+  {
+    fprints(f, "          size_t cbidx;\n");
+    fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
+    fprints(f, "          {\n");
+    fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprints(f, "          }\n");
+  }
+  fprintf(f, "          cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
+  fprints(f, "          ctx->confirm_status |= cbmask & ctx->start_status;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask;\n");
-  // FIXME or?
-  fprints(f, "          mismask = ctx->start_status | cbmask;\n");
-  fprints(f, "          ctx->btbuf_status = mismask;\n");
-  fprints(f, "          if (j != i) ctx->btbuf_status = 0;\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "        }\n");
-  fprints(f, "      }\n");
-  fprints(f, "      if (!cb2 && st->accepting && j == 0)\n");
-  fprints(f, "      {\n");
-  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
   if (cbssz)
   {
-    fprints(f, "        size_t cbidx;\n");
-    fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "        {\n");
-    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
-    fprints(f, "        }\n");
+    fprints(f, "          size_t cbidx;\n");
   }
-  fprints(f, "        ctx->confirm_status |= cbmask & ctx->start_status;\n");
-  fprints(f, "      }\n");
-  fprints(f, "      if (cb2 && st->accepting && j == 0)\n");
-  fprints(f, "      {\n");
-  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
-  if (cbssz)
-  {
-    fprints(f, "        size_t cbidx;\n");
-    fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "        {\n");
-    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
-    fprints(f, "        }\n");
-  }
-  fprintf(f, "        cbmask |= mycb->cbsmask;\n");
-  fprints(f, "        ctx->confirm_status |= cbmask & ctx->start_status;\n");
-  fprints(f, "      }\n");
-  fprints(f, "      if (!cb2 && st->accepting && j > 0)\n");
-  fprints(f, "      {\n");
-  if (cbssz)
-  {
-    fprints(f, "        size_t cbidx;\n");
-  }
-  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "        uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "        uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  fprintf(f, "        enum yale_flags flags = 0;\n");
-  fprintf(f, "        ssize_t cbr;\n");
-  fprintf(f, "        if (start)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          flags |= YALE_FLAG_START;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        flags |= YALE_FLAG_END;\n");
-  if (cbssz)
-  {
-    fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "        {\n");
-    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
-    fprints(f, "        }\n");
-  }
-  fprintf(f, "        if (cbmask)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, j, cbtbl);\n", parsername);
-  fprintf(f, "          if (cbr != -EAGAIN)\n");
+  fprintf(f, "          enum yale_flags flags = 0;\n");
+  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
+  fprints(f, "          uint64_t endmask = 0;\n"); // FIXME may need a bigger one
+  fprints(f, "          uint64_t mismask = 0;\n"); // FIXME may need a bigger one
+  fprints(f, "          uint64_t negendmis;\n"); // FIXME may need a bigger one
+  fprintf(f, "          ssize_t cbr;\n");
+  fprintf(f, "          if (start)\n");
   fprintf(f, "          {\n");
-  fprintf(f, "            return cbr;\n");
+  fprintf(f, "            flags |= YALE_FLAG_START;\n");
   fprintf(f, "          }\n");
-  fprintf(f, "        }\n");
+  fprintf(f, "          flags |= YALE_FLAG_END;\n");
+  if (cbssz)
+  {
+    fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
+    fprints(f, "          {\n");
+    fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprints(f, "          }\n");
+  }
+  fprintf(f, "          cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
+  fprintf(f, "          if (cbmask)\n");
+  fprintf(f, "          {\n");
+  fprintf(f, "            cbr = %s_call_cbs1(pctx, cbmask, buf, j, cbtbl);\n", parsername);
+  fprintf(f, "            if (cbr != -EAGAIN)\n");
+  fprintf(f, "            {\n");
+  fprintf(f, "              return cbr;\n");
+  fprintf(f, "            }\n");
+  fprintf(f, "          }\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "        if (ctx->backtrackend == ctx->backtrackstart)\n");
+  fprints(f, "          if (ctx->backtrackend == ctx->backtrackstart)\n");
   fprintf(f, "#else\n");
-  fprints(f, "        if (1)\n");
+  fprints(f, "          if (1)\n");
   fprintf(f, "#endif\n");
-  fprints(f, "        {\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "          if (endmask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
+  fprints(f, "          {\n");
+  fprints(f, "            endmask = ctx->confirm_status & ~cbmask;\n");
+  fprintf(f, "            if (endmask)\n");
   fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
+  fprintf(f, "              cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "              if (cbr != -EAGAIN)\n");
+  fprintf(f, "              {\n");
+  fprintf(f, "                return cbr;\n");
+  fprintf(f, "              }\n");
   fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "          if (mismask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
+  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
+  fprintf(f, "            if (mismask)\n");
   fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
+  fprintf(f, "              cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "              if (cbr != -EAGAIN)\n");
+  fprintf(f, "              {\n");
+  fprintf(f, "                return cbr;\n");
+  fprintf(f, "              }\n");
   fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "        }\n");
-  fprints(f, "        else\n");
-  fprints(f, "        {\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask;\n");
+  fprints(f, "            ctx->start_status |= cbmask;\n");
+  fprints(f, "            ctx->confirm_status |= cbmask;\n");
+  fprints(f, "            negendmis = ~(endmask | mismask);");
+  fprints(f, "            ctx->start_status &= negendmis;\n");
+  fprints(f, "            ctx->confirm_status &= negendmis;\n");
+  fprints(f, "            ctx->lastack_status &= negendmis;\n");
+  fprints(f, "          }\n");
+  fprints(f, "          else\n");
+  fprints(f, "          {\n");
+  fprints(f, "            mismask = ctx->start_status & ~cbmask;\n");
   // FIXME or?
-  fprints(f, "          mismask = ctx->start_status | cbmask;\n");
-  fprints(f, "          ctx->btbuf_status = mismask;\n");
-  fprints(f, "          if (j != i) ctx->btbuf_status = 0;\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
+  fprints(f, "            mismask = ctx->start_status | cbmask;\n");
+  fprints(f, "            ctx->btbuf_status = mismask;\n");
+  fprints(f, "            if (j != i)\n");
+  fprints(f, "            {\n");
+  fprints(f, "              ctx->btbuf_status = 0;\n");
+  fprints(f, "            }\n");
+  fprints(f, "            ctx->start_status |= cbmask;\n");
+  fprints(f, "            ctx->confirm_status |= cbmask;\n");
+  fprints(f, "          }\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "      return i;\n");
@@ -2458,18 +2121,18 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        ctx->state = 0;\n");
   fprints(f, "        ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "        ctx->lastack_status = 0;\n"); // FIXME correct?
-  fprints(f, "        if (cb2 && st->accepting)\n");
+  fprints(f, "        if (st->accepting)\n");
   fprints(f, "        {\n");
   fprintf(f, "          enum yale_flags flags = 0;\n");
   fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
   fprints(f, "          uint64_t endmask = 0;\n"); // FIXME may need a bigger one
   fprints(f, "          uint64_t mismask = 0;\n"); // FIXME may need a bigger one
+  fprints(f, "          uint64_t negendmis;\n"); // FIXME may need a bigger one
   fprintf(f, "          ssize_t cbr;\n");
   if (cbssz)
   {
     fprints(f, "          size_t cbidx;\n");
   }
-  fprints(f, "          const struct callbacks *mycb = &cb2[st->acceptid];\n");
   fprintf(f, "          if (start)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            flags |= YALE_FLAG_START;\n");
@@ -2482,7 +2145,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
     fprints(f, "          }\n");
   }
-  fprintf(f, "          cbmask |= mycb->cbsmask;\n");
+  fprintf(f, "          cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
   fprintf(f, "          if (cbmask)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            cbr = %s_call_cbs1(pctx, cbmask, buf, i + 1, cbtbl);\n", parsername);
@@ -2511,68 +2174,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          }\n");
   fprints(f, "          ctx->start_status |= cbmask;\n");
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "        }\n");
-  fprints(f, "        if (!cb2 && st->accepting)\n");
-  fprints(f, "        {\n");
-  if (cbssz)
-  {
-    fprints(f, "          size_t cbidx;\n");
-  }
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "          uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "          uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  fprintf(f, "          enum yale_flags flags = 0;\n");
-  fprintf(f, "          ssize_t cbr;\n");
-  fprintf(f, "          if (start)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            flags |= YALE_FLAG_START;\n");
-  fprintf(f, "          }\n");
-  fprintf(f, "          flags |= YALE_FLAG_END;\n");
-  if (cbssz)
-  {
-    fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "          {\n");
-    fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
-    fprints(f, "          }\n");
-  }
-  fprintf(f, "          if (cbmask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbs1(pctx, cbmask, buf, i + 1, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "          if (endmask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "          if (mismask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "          negendmis = ~(endmask | mismask);");
+  fprints(f, "          ctx->start_status &= negendmis;\n");
+  fprints(f, "          ctx->confirm_status &= negendmis;\n");
+  fprints(f, "          ctx->lastack_status &= negendmis;\n");
   fprints(f, "        }\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "        ctx->backtrackstart = ctx->backtrackend;\n");
@@ -2620,17 +2225,17 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    {\n");
   fprints(f, "      *state = st->acceptid;\n");
   fprints(f, "      ctx->state = 0;\n");
-  fprints(f, "      if (cb2 && st->accepting && i > 0)\n");
+  fprints(f, "      if (st->accepting && i > 0)\n");
   fprints(f, "      {\n");
   if (cbssz)
   {
     fprints(f, "        size_t cbidx;\n");
   }
-  fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
   fprints(f, "        enum yale_flags flags = 0;\n");
   fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
   fprints(f, "        uint64_t endmask = 0;\n");
   fprints(f, "        uint64_t mismask = 0;\n");
+  fprints(f, "        uint64_t negendmis;\n");
   fprints(f, "        ssize_t cbr;\n");
   fprints(f, "        if (start)\n");
   fprints(f, "        {\n");
@@ -2644,7 +2249,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
     fprints(f, "        }\n");
   }
-  fprintf(f, "        cbmask |= mycb->cbsmask;\n");
+  fprintf(f, "        cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
   fprints(f, "        if (cbmask)\n");
   fprints(f, "        {\n");
   fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
@@ -2679,11 +2284,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          }\n");
   fprints(f, "          ctx->start_status |= cbmask;\n");
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "          negendmis = ~(endmask | mismask);");
+  fprints(f, "          ctx->start_status &= negendmis;\n");
+  fprints(f, "          ctx->confirm_status &= negendmis;\n");
+  fprints(f, "          ctx->lastack_status &= negendmis;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
@@ -2695,85 +2299,8 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-
-  fprints(f, "      if (!cb2 && st->accepting && i > 0)\n");
-  fprints(f, "      {\n");
-  if (cbssz)
-  {
-    fprints(f, "        size_t cbidx;\n");
-  }
-  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "        uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "        uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  //fprints(f, "        uint16_t bitoff;\n");
-  fprintf(f, "        enum yale_flags flags = 0;\n");
-  fprintf(f, "        ssize_t cbr;\n");
-  fprintf(f, "        if (start)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          flags |= YALE_FLAG_START;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "        flags |= YALE_FLAG_END;\n");
-  if (cbssz)
-  {
-    fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "        {\n");
-    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
-    fprints(f, "        }\n");
-  }
-  fprintf(f, "        if (cbmask)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
-  fprintf(f, "          if (cbr != -EAGAIN)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            return cbr;\n");
-  fprintf(f, "          }\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "        if (ctx->backtrackend == ctx->backtrackstart)\n");
-  fprintf(f, "#else\n");
-  fprints(f, "        if (1)\n");
-  fprintf(f, "#endif\n");
-  fprints(f, "        {\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "          if (endmask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "          if (mismask)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "            if (cbr != -EAGAIN)\n");
-  fprintf(f, "            {\n");
-  fprintf(f, "              return cbr;\n");
-  fprintf(f, "            }\n");
-  fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          ctx->start_status &= ~endmask;\n");
-  fprints(f, "          ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "          ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "          ctx->start_status &= ~mismask;\n");
-  fprints(f, "          ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "        }\n");
-  fprints(f, "        else\n");
-  fprints(f, "        {\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask;\n");
-  // FIXME or?
-  fprints(f, "          mismask = ctx->start_status | cbmask;\n");
-  fprints(f, "          ctx->btbuf_status = mismask;\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "        }\n");
-  fprints(f, "      }\n");
-
   fprints(f, "      return i;\n"); // FIXME what to return?
   fprints(f, "    }\n");
-
   fprints(f, "    if (ctx->last_accept == LEXER_UINT_MAX)\n");
   fprints(f, "    {\n");
   fprints(f, "      *state = PARSER_UINT_MAX;\n");
@@ -2790,17 +2317,17 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    st = &stbl[ctx->state];\n");
   fprints(f, "    *state = st->acceptid;\n");
   fprints(f, "    ctx->state = 0;\n");
-  fprints(f, "    if (cb2 && st->accepting && i > 0)\n");
+  fprints(f, "    if (st->accepting && i > 0)\n");
   fprints(f, "    {\n");
   if (cbssz)
   {
     fprints(f, "      size_t cbidx;\n");
   }
-  fprints(f, "      const struct callbacks *mycb = &cb2[st->acceptid];\n");
   fprintf(f, "      enum yale_flags flags = 0;\n");
   fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
   fprints(f, "      uint64_t endmask = 0;\n"); // FIXME may need a bigger one
   fprints(f, "      uint64_t mismask = 0;\n"); // FIXME may need a bigger one
+  fprints(f, "      uint64_t negendmis;\n"); // FIXME may need a bigger one
   fprintf(f, "      ssize_t cbr;\n");
   fprintf(f, "      if (start)\n");
   fprintf(f, "      {\n");
@@ -2814,7 +2341,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        cbmask |= (1ULL << cbstack[cbidx]);\n");
     fprints(f, "      }\n");
   }
-  fprintf(f, "      cbmask |= mycb->cbsmask;\n");
+  fprintf(f, "      cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
   fprintf(f, "      if (cbmask)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
@@ -2849,85 +2376,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        }\n");
   fprints(f, "        ctx->start_status |= cbmask;\n");
   fprints(f, "        ctx->confirm_status |= cbmask;\n");
-  fprints(f, "        ctx->start_status &= ~endmask;\n");
-  fprints(f, "        ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "        ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "        ctx->start_status &= ~mismask;\n");
-  fprints(f, "        ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "      }\n");
-  fprints(f, "      else\n");
-  fprints(f, "      {\n");
-  fprints(f, "        mismask = ctx->start_status & ~cbmask;\n");
-  // FIXME or?
-  fprints(f, "        mismask = ctx->start_status | cbmask;\n");
-  fprints(f, "        ctx->btbuf_status = mismask;\n");
-  fprints(f, "        ctx->start_status |= cbmask;\n");
-  fprints(f, "        ctx->confirm_status |= cbmask;\n");
-  fprints(f, "      }\n");
-  fprints(f, "    }\n");
-  fprints(f, "    if (!cb2 && st->accepting && i > 0)\n");
-  fprints(f, "    {\n");
-  if (cbssz)
-  {
-    fprints(f, "      size_t cbidx;\n");
-  }
-  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "      uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "      uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  //fprints(f, "      uint16_t bitoff;\n");
-  fprintf(f, "      enum yale_flags flags = 0;\n");
-  fprintf(f, "      ssize_t cbr;\n");
-  fprintf(f, "      if (start)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        flags |= YALE_FLAG_START;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      flags |= YALE_FLAG_END;\n");
-  if (cbssz)
-  {
-    fprints(f, "      for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "      {\n");
-    fprints(f, "        cbmask |= (1ULL << cbstack[cbidx]);\n");
-    fprints(f, "      }\n");
-  }
-  fprintf(f, "      if (cbmask)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
-  fprintf(f, "        if (cbr != -EAGAIN)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          return cbr;\n");
-  fprintf(f, "        }\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "      if (ctx->backtrackend == ctx->backtrackstart)\n");
-  fprintf(f, "#else\n");
-  fprints(f, "      if (1)\n");
-  fprintf(f, "#endif\n");
-  fprints(f, "      {\n");
-  fprints(f, "        endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "        if (endmask)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "          if (cbr != -EAGAIN)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            return cbr;\n");
-  fprintf(f, "          }\n");
-  fprintf(f, "        }\n");
-  fprints(f, "        mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "        if (mismask)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "          if (cbr != -EAGAIN)\n");
-  fprintf(f, "          {\n");
-  fprintf(f, "            return cbr;\n");
-  fprintf(f, "          }\n");
-  fprintf(f, "        }\n");
-  fprints(f, "        ctx->start_status |= cbmask;\n");
-  fprints(f, "        ctx->confirm_status |= cbmask;\n");
-  fprints(f, "        ctx->start_status &= ~endmask;\n");
-  fprints(f, "        ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "        ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "        ctx->start_status &= ~mismask;\n");
-  fprints(f, "        ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "        negendmis = ~(endmask | mismask);");
+  fprints(f, "        ctx->start_status &= negendmis;\n");
+  fprints(f, "        ctx->confirm_status &= negendmis;\n");
+  fprints(f, "        ctx->lastack_status &= negendmis;\n");
   fprints(f, "      }\n");
   fprints(f, "      else\n");
   fprints(f, "      {\n");
@@ -2942,11 +2394,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    return -EAGAIN;\n");
   fprints(f, "  }\n");
   // FIXME use taintid set:
-  fprints(f, "  if (st && cb2)\n");
+  fprints(f, "  if (st)\n");
   fprints(f, "  {\n");
   fprints(f, "    uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
   fprints(f, "    uint64_t endmask = 0;\n"); // FIXME may need a bigger one
   fprints(f, "    uint64_t mismask = 0;\n"); // FIXME may need a bigger one
+  fprints(f, "    uint64_t negendmis;\n"); // FIXME may need a bigger one
   fprintf(f, "    enum yale_flags flags = 0;\n");
   if (cbssz)
   {
@@ -2959,6 +2412,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "    {\n");
   fprintf(f, "      flags |= YALE_FLAG_START;\n");
   fprintf(f, "    }\n");
+  fprints(f, "    if (cb2)\n");
   fprints(f, "    for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "    {\n");
   fprints(f, "      const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
@@ -2998,69 +2452,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "      }\n");
   fprintf(f, "    }\n");
   fprints(f, "    ctx->start_status |= cbmask;\n");
-  fprints(f, "    ctx->start_status &= ~endmask;\n");
-  fprints(f, "    ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "    ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "    ctx->start_status &= ~mismask;\n");
-  fprints(f, "    ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "    ctx->lastack_status &= ~mismask;\n");
-  fprints(f, "  }\n");
-  fprints(f, "  if (st && !cb2)\n"); // RFE correct not to have st->accepting?
-  fprints(f, "  {\n");
-  fprintf(f, "    enum yale_flags flags = 0;\n");
-  fprintf(f, "    ssize_t cbr;\n");
-  fprints(f, "    uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "    uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "    uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  //fprints(f, "    uint16_t bitoff = 0;\n");
-  if (cbssz)
-  {
-    fprints(f, "    size_t cbidx;\n");
-  }
-  fprintf(f, "    if (start)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      flags |= YALE_FLAG_START;\n");
-  fprintf(f, "    }\n");
-  if (cbssz)
-  {
-    fprints(f, "    for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
-    fprints(f, "    {\n");
-    fprints(f, "      cbmask |= 1ULL<<cbstack[cbidx];\n");
-    fprints(f, "    }\n");
-  }
-  fprintf(f, "    if (cbmask)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      cbr = %s_call_cbs1(pctx, cbmask, buf, sz, cbtbl);\n", parsername);
-  fprintf(f, "      if (cbr != -EAGAIN)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        return cbr;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprints(f, "    endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "    if (endmask)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
-  fprintf(f, "      if (cbr != -EAGAIN)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        return cbr;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprints(f, "    mismask = ctx->start_status & ~cbmask & ~ctx->lastack_status;\n");
-  fprintf(f, "    if (mismask)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
-  fprintf(f, "      if (cbr != -EAGAIN)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        return cbr;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprints(f, "    ctx->start_status |= cbmask;\n");
-  fprints(f, "    ctx->start_status &= ~endmask;\n");
-  fprints(f, "    ctx->confirm_status &= ~endmask;\n");
-  fprints(f, "    ctx->lastack_status &= ~endmask;\n");
-  fprints(f, "    ctx->start_status &= ~mismask;\n");
-  fprints(f, "    ctx->confirm_status &= ~mismask;\n");
-  fprints(f, "    ctx->lastack_status &= ~mismask;\n");
+  fprints(f, "    negendmis = ~(endmask | mismask);");
+  fprints(f, "    ctx->start_status &= negendmis;\n");
+  fprints(f, "    ctx->confirm_status &= negendmis;\n");
+  fprints(f, "    ctx->lastack_status &= negendmis;\n");
+  //fprints(f, "    ctx->lastack_status &= ~endmask;\n");
+  //fprints(f, "    ctx->lastack_status &= ~mismask;\n"); // NOP
   fprints(f, "  }\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  if (ctx->backtrackstart != ctx->backtrackend)\n");
