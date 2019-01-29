@@ -71,3 +71,4 @@ perf.data.old
 /httpparser.so
 /httppycparser.c
 /httppycparser.h
+/httpcpytest
