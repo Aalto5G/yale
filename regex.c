@@ -2248,6 +2248,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    //printf(\"New state: %d\\n\", ctx->state);\n");
   fprints(f, "    if (unlikely(newstate == LEXER_UINT_MAX)) // use newstate here, not ctx->state, faster\n");
   fprints(f, "    {\n");
+  fprintf(f, "      size_t j;\n");
   fprints(f, "      if (ctx->last_accept == LEXER_UINT_MAX)\n");
   fprints(f, "      {\n");
   fprints(f, "        *state = PARSER_UINT_MAX;\n");
@@ -2264,7 +2265,11 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      *state = st->acceptid;\n");
   fprints(f, "      ctx->state = 0;\n");
-  fprints(f, "      if (cb2 && st->accepting && i > 0)\n");
+  fprints(f, "      j = i;\n");
+  fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
+  fprintf(f, "      if (j >= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1) j -= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1;\n", parserupper, parserupper, parserupper, parserupper);
+  fprintf(f, "#endif\n");
+  fprints(f, "      if (cb2 && st->accepting && j > 0)\n");
   fprints(f, "      {\n");
   if (cbssz)
   {
@@ -2291,7 +2296,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        cbmask |= mycb->cbsmask;\n");
   fprintf(f, "        if (cbmask)\n");
   fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
+  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, j, cbtbl);\n", parsername);
   fprintf(f, "          if (cbr != -EAGAIN)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            return cbr;\n");
@@ -2335,11 +2340,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   // FIXME or?
   fprints(f, "          mismask = ctx->start_status | cbmask;\n");
   fprints(f, "          ctx->btbuf_status = mismask;\n");
+  fprints(f, "          if (j != i) ctx->btbuf_status = 0;\n");
   fprints(f, "          ctx->start_status |= cbmask;\n");
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      if (!cb2 && st->accepting && i == 0)\n");
+  fprints(f, "      if (!cb2 && st->accepting && j == 0)\n");
   fprints(f, "      {\n");
   fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
   if (cbssz)
@@ -2352,7 +2358,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   }
   fprints(f, "        ctx->confirm_status |= cbmask & ctx->start_status;\n");
   fprints(f, "      }\n");
-  fprints(f, "      if (cb2 && st->accepting && i == 0)\n");
+  fprints(f, "      if (cb2 && st->accepting && j == 0)\n");
   fprints(f, "      {\n");
   fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
   fprints(f, "        const struct callbacks *mycb = &cb2[st->acceptid];\n");
@@ -2367,7 +2373,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        cbmask |= mycb->cbsmask;\n");
   fprints(f, "        ctx->confirm_status |= cbmask & ctx->start_status;\n");
   fprints(f, "      }\n");
-  fprints(f, "      if (!cb2 && st->accepting && i > 0)\n");
+  fprints(f, "      if (!cb2 && st->accepting && j > 0)\n");
   fprints(f, "      {\n");
   if (cbssz)
   {
@@ -2392,7 +2398,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   }
   fprintf(f, "        if (cbmask)\n");
   fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
+  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, j, cbtbl);\n", parsername);
   fprintf(f, "          if (cbr != -EAGAIN)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            return cbr;\n");
@@ -2436,6 +2442,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   // FIXME or?
   fprints(f, "          mismask = ctx->start_status | cbmask;\n");
   fprints(f, "          ctx->btbuf_status = mismask;\n");
+  fprints(f, "          if (j != i) ctx->btbuf_status = 0;\n");
   fprints(f, "          ctx->start_status |= cbmask;\n");
   fprints(f, "          ctx->confirm_status |= cbmask;\n");
   fprints(f, "        }\n");
