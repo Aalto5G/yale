@@ -7,7 +7,7 @@ ifeq ($(WITH_PYTHON),yes)
   CFLAGS += -I/usr/include/python3.6 -fPIC
 endif
 
-SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c reprefixcmain.c tokentheft1main.c tokentheft1smain.c parserunit.c httpcpytest.c
+SRC := yaletest.c yaletopy.c yyutils.c httpmain.c httpmainprint.c yaleparser.c parser.c regex.c regexmain.c httpcmain.c httpcmainprint.c sslcmain.c lenprefixcmain.c sslcmainprint.c condtest.c httprespcmain.c unit.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c reprefixcmain.c tokentheft1main.c tokentheft1smain.c parserunit.c httpcpytest.c httppyperf.c
 LEXSRC := yale.l
 YACCSRC := yale.y
 
@@ -26,7 +26,7 @@ OBJGEN := $(patsubst %.c,%.o,$(GEN))
 DEP := $(patsubst %.c,%.d,$(SRC))
 DEPGEN := $(patsubst %.c,%.d,$(GEN))
 
-all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain backtracktestmain backtracktestcbmain reprefixcmain tokentheft1main tokentheft1smain parserunit httpcpytest
+all: yaletest yaletopy httpmain httpmainprint httpcmain httpcmainprint yaleparser regexmain lenprefixcmain sslcmain sslcmainprint condtest httprespcmain unit recursivecbmain backtracktestmain backtracktestcbmain reprefixcmain tokentheft1main tokentheft1smain parserunit httpcpytest httppyperf
 
 ifeq ($(WITH_PYTHON),yes)
 all: httpparser.so
@@ -79,6 +79,9 @@ httpparser.so: httpcpy.o httppycparser.o Makefile
 httpcpytest: httpcpytest.o httppycparser.o Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
+httppyperf: httppyperf.o httppycparser.o Makefile
+	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
+
 lenprefixcmain: lenprefixcmain.o lenprefixcparser.o Makefile
 	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
@@ -124,6 +127,8 @@ httpcpy.d: httppycparser.h Makefile
 httpcpy.o: httppycparser.h Makefile
 httpcpytest.d: httppycparser.h Makefile
 httpcpytest.o: httppycparser.h Makefile
+httppyperf.d: httppycparser.h Makefile
+httppyperf.o: httppycparser.h Makefile
 httppycparser.d: httppycparser.h Makefile
 httppycparser.o: httppycparser.h Makefile
 
@@ -410,4 +415,5 @@ distclean: clean
 	rm -f tokentheft1smain
 	rm -f parserunit
 	rm -f httpcpytest
+	rm -f httppyperf
 	rm -f httpparser.so
