@@ -245,7 +245,7 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
         void *(*alloc)(void*, size_t), void *alloc_ud);
 
 void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz,
-                  const char *cbbitmasktype);
+                  const char *cbbitmasktype, int cbbitmaskcnt);
 
 void
 dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs);

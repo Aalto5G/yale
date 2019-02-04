@@ -1307,7 +1307,7 @@ static int fprints(FILE *f, const char *s)
   return fputs(s, f);
 }
 
-void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, const char *cbbitmasktype)
+void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, const char *cbbitmasktype, int cbbitmaskcnt)
 {
   char *parserupper = strdup(parsername);
   size_t len = strlen(parsername);
@@ -1320,14 +1320,20 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprintf(f, "#define %s_BACKTRACKLEN_PLUS_1 ((%s_BACKTRACKLEN) + 1)\n", parserupper, parserupper);
   fprints(f, "\n");
   fprintf(f, "struct %s_parserctx;", parsername);
+  fprintf(f, "struct %s_cbset {\n", parsername);
+  fprintf(f, "  %s elems[%d];\n", cbbitmasktype, cbbitmaskcnt);
+  fprintf(f, "};\n");
+  fprintf(f, "struct %s_callbacks {\n", parsername);
+  fprintf(f, "  struct %s_cbset cbsmask;\n", parsername);
+  fprintf(f, "};\n");
   fprints(f, "\n");
   fprintf(f, "struct %s_rectx {\n", parsername);
   fprints(f, "  lexer_uint_t state; // 0 is initial state\n");
   fprints(f, "  lexer_uint_t last_accept; // LEXER_UINT_MAX means never accepted\n");
-  fprintf(f, "  %s start_status;\n", cbbitmasktype);
-  fprintf(f, "  %s confirm_status;\n", cbbitmasktype);
-  fprintf(f, "  %s btbuf_status;\n", cbbitmasktype);
-  fprintf(f, "  %s lastack_status;\n", cbbitmasktype);
+  fprintf(f, "  struct %s_cbset start_status;\n", parsername);
+  fprintf(f, "  struct %s_cbset confirm_status;\n", parsername);
+  fprintf(f, "  struct %s_cbset btbuf_status;\n", parsername);
+  fprintf(f, "  struct %s_cbset lastack_status;\n", parsername);
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  uint8_t backtrackstart;\n"); // FIXME uint8_t
   fprints(f, "  uint8_t backtrackmid;\n"); // FIXME uint8_t
@@ -1339,12 +1345,13 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);
   fprints(f, "{\n");
+  fprintf(f, "  const struct %s_cbset empty = {};\n", parsername);
   fprints(f, "  ctx->state = 0;\n");
   fprints(f, "  ctx->last_accept = LEXER_UINT_MAX;\n");
-  fprints(f, "  ctx->start_status = 0;\n");
-  fprints(f, "  ctx->confirm_status = 0;\n");
-  fprints(f, "  ctx->btbuf_status = 0;\n");
-  fprints(f, "  ctx->lastack_status = 0;\n");
+  fprints(f, "  ctx->start_status = empty;\n");
+  fprints(f, "  ctx->confirm_status = empty;\n");
+  fprints(f, "  ctx->btbuf_status = empty;\n");
+  fprints(f, "  ctx->lastack_status = empty;\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "  ctx->backtrackstart = 0;\n");
   fprints(f, "  ctx->backtrackmid = 0;\n");
@@ -1355,12 +1362,12 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   if (cbssz)
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct callbacks *cb2, parser_uint_t cb1, const parser_uint_t *cbstack, parser_uint_t cbstacksz);//, void *baton);\n", parsername, parsername, parsername);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint_t cb1, const parser_uint_t *cbstack, parser_uint_t cbstacksz);//, void *baton);\n", parsername, parsername, parsername, parsername);
   }
   else
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct callbacks *cb2, parser_uint_t cb1);//, void *baton);\n", parsername, parsername, parsername);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint_t cb1);//, void *baton);\n", parsername, parsername, parsername, parsername);
   }
   fprints(f, "\n");
   free(parserupper);
@@ -1525,61 +1532,148 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "}\n");
     fprints(f, "\n");
   }
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitclear(struct %s_cbset *p1)\n", parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  for (i = 0; i < sizeof(p1->elems)/sizeof(*p1->elems); i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    p1->elems[i] = 0;\n");
+  fprints(f, "  }\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitnot(struct %s_cbset *p1)\n", parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  for (i = 0; i < sizeof(p1->elems)/sizeof(*p1->elems); i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    p1->elems[i] = ~p1->elems[i];\n");
+  fprints(f, "  }\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitcopy(struct %s_cbset *p1, const struct %s_cbset *p2)\n", parsername, parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  for (i = 0; i < sizeof(p1->elems)/sizeof(*p1->elems); i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    p1->elems[i] = p2->elems[i];\n");
+  fprints(f, "  }\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitor(struct %s_cbset *p1, const struct %s_cbset *p2)\n", parsername, parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  for (i = 0; i < sizeof(p1->elems)/sizeof(*p1->elems); i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    p1->elems[i] |= p2->elems[i];\n");
+  fprints(f, "  }\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitand(struct %s_cbset *p1, const struct %s_cbset *p2)\n", parsername, parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  for (i = 0; i < sizeof(p1->elems)/sizeof(*p1->elems); i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    p1->elems[i] &= p2->elems[i];\n");
+  fprints(f, "  }\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitset(struct %s_cbset *p1, int bit)\n", parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  p1->elems[bit/64] |= (1ULL<<(bit%64));\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitmaybeset(struct %s_cbset *p1, parser_uint_t bit)\n", parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  if (bit != PARSER_UINT_MAX)\n");
+  fprints(f, "  {\n");
+  fprintf(f, "    %s_bitset(p1, bit);\n", parsername);
+  fprints(f, "  }\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline int\n");
+  fprintf(f, "%s_bitnz(const struct %s_cbset *p1)\n", parsername, parsername),
+  fprints(f, "{\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  int ret = 0;\n");
+  fprints(f, "  for (i = 0; i < sizeof(p1->elems)/sizeof(*p1->elems); i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    ret = ret || p1->elems[i];\n");
+  fprints(f, "  }\n");
+  fprints(f, "  return ret;\n");
+  fprints(f, "}\n");
+  fprints(f, "static inline void\n");
+  fprintf(f, "%s_bitandnot(struct %s_cbset *p1, const struct %s_cbset *p2)\n", parsername, parsername, parsername);
+  fprints(f, "{\n");
+  fprints(f, "  size_t i;\n");
+  fprints(f, "  for (i = 0; i < sizeof(p1->elems)/sizeof(*p1->elems); i++)\n");
+  fprints(f, "  {\n");
+  fprints(f, "    p1->elems[i] &= ~p2->elems[i];\n");
+  fprints(f, "  }\n");
+  fprints(f, "}\n");
+  fprints(f, "\n");
   fprintf(f, "static ssize_t\n");
-  fprintf(f, "%s_call_cbs1(struct %s_parserctx *pctx, uint64_t cbmask, const void *buf, size_t sz,\n", parsername, parsername);
+  fprintf(f, "%s_call_cbs1(struct %s_parserctx *pctx, const struct %s_cbset *cbmask, const void *buf, size_t sz,\n", parsername, parsername, parsername);
   fprintf(f, "               ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
   fprintf(f, "{\n");
   fprintf(f, "  int bitoff;\n");
   fprintf(f, "  ssize_t cbr;\n");
-  fprintf(f, "  for (bitoff = 0; bitoff < 64; )\n");
+  fprintf(f, "  size_t elemidx;\n");
+  fprintf(f, "  for (elemidx = 0; elemidx < sizeof(cbmask->elems)/sizeof(*cbmask->elems); elemidx++)\n");
   fprintf(f, "  {\n");
-  fprintf(f, "    int ffsres;\n");
-  fprintf(f, "    if (cbmask & (1ULL<<bitoff))\n");
+  fprintf(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprintf(f, "    {\n");
-  fprintf(f, "      cbr = cbtbl[bitoff](buf, sz, (pctx->rctx.start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprintf(f, "      if (cbr != (ssize_t)sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprintf(f, "      int ffsres;\n");
+  fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
-  fprintf(f, "        return cbr;\n");
+  fprintf(f, "        cbr = cbtbl[64*elemidx + bitoff](buf, sz, (pctx->rctx.start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprintf(f, "        if (cbr != (ssize_t)sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprintf(f, "        {\n");
+  fprintf(f, "          return cbr;\n");
+  fprintf(f, "        }\n");
   fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
-  fprintf(f, "    if (ffsres == 0)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      bitoff = 64;\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    else\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      bitoff = ffsres - 1;\n");
+  fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
+  fprintf(f, "      if (ffsres == 0)\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        bitoff = 64;\n");
+  fprintf(f, "      }\n");
+  fprintf(f, "      else\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        bitoff = ffsres - 1;\n");
+  fprintf(f, "      }\n");
   fprintf(f, "    }\n");
   fprintf(f, "  }\n");
   fprintf(f, "  return -EAGAIN;\n");
   fprintf(f, "}\n");
   fprintf(f, "static ssize_t\n");
-  fprintf(f, "%s_call_cbsflg(struct %s_parserctx *pctx, uint64_t cbmask, const void *buf, size_t sz,\n", parsername, parsername);
+  fprintf(f, "%s_call_cbsflg(struct %s_parserctx *pctx, const struct %s_cbset *cbmask, const void *buf, size_t sz,\n", parsername, parsername, parsername);
   fprintf(f, "                 int flag,\n");
   fprintf(f, "                 ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
   fprintf(f, "{\n");
   fprintf(f, "  int bitoff;\n");
   fprintf(f, "  ssize_t cbr;\n");
-  fprintf(f, "  for (bitoff = 0; bitoff < 64; )\n");
+  fprintf(f, "  size_t elemidx;\n");
+  fprintf(f, "  for (elemidx = 0; elemidx < sizeof(cbmask->elems)/sizeof(*cbmask->elems); elemidx++)\n");
   fprintf(f, "  {\n");
-  fprintf(f, "    int ffsres;\n");
-  fprintf(f, "    if (cbmask & (1ULL<<bitoff))\n");
+  fprintf(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprintf(f, "    {\n");
-  fprintf(f, "      cbr = cbtbl[bitoff](buf, sz, flag, pctx);\n");
-  fprintf(f, "      if (cbr != (ssize_t)sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprintf(f, "      int ffsres;\n");
+  fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
-  fprintf(f, "        return cbr;\n");
+  fprintf(f, "        cbr = cbtbl[64*elemidx + bitoff](buf, sz, flag, pctx);\n");
+  fprintf(f, "        if (cbr != (ssize_t)sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
+  fprintf(f, "        {\n");
+  fprintf(f, "          return cbr;\n");
+  fprintf(f, "        }\n");
   fprintf(f, "      }\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
-  fprintf(f, "    if (ffsres == 0)\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      bitoff = 64;\n");
-  fprintf(f, "    }\n");
-  fprintf(f, "    else\n");
-  fprintf(f, "    {\n");
-  fprintf(f, "      bitoff = ffsres - 1;\n");
+  fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
+  fprintf(f, "      if (ffsres == 0)\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        bitoff = 64;\n");
+  fprintf(f, "      }\n");
+  fprintf(f, "      else\n");
+  fprintf(f, "      {\n");
+  fprintf(f, "        bitoff = ffsres - 1;\n");
+  fprintf(f, "      }\n");
   fprintf(f, "    }\n");
   fprintf(f, "  }\n");
   fprintf(f, "  return -EAGAIN;\n");
@@ -1587,12 +1681,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   if (cbssz)
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct callbacks *cb2, parser_uint_t cb1, const parser_uint_t *cbstack, parser_uint_t cbstacksz)//, void *baton)\n", parsername, parsername, parsername);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint_t cb1, const parser_uint_t *cbstack, parser_uint_t cbstacksz)//, void *baton)\n", parsername, parsername, parsername, parsername);
   }
   else
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct callbacks *cb2, parser_uint_t cb1)//, void *baton)\n", parsername, parsername, parsername);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state *stbl, const void *buf, size_t sz, int eofindicator, parser_uint_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint_t cb1)//, void *baton)\n", parsername, parsername, parsername, parsername);
   }
   fprints(f, "{\n");
   fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
@@ -1628,46 +1722,47 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          return -EINVAL;\n");
   fprints(f, "        }\n");
   fprints(f, "        ctx->state = ctx->last_accept;\n");
-  fprints(f, "        ctx->confirm_status |= ctx->lastack_status;\n"); // FIXME???
+  fprintf(f, "        %s_bitor(&ctx->confirm_status, &ctx->lastack_status);\n", parsername); // FIXME???
   fprints(f, "        ctx->last_accept = LEXER_UINT_MAX;\n");
-  fprints(f, "        ctx->lastack_status = 0;\n");
+  fprintf(f, "        %s_bitclear(&ctx->lastack_status);\n", parsername);
   fprints(f, "        st = &stbl[ctx->state];\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
   fprints(f, "        ctx->backtrackmid = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "        if (st)\n");
   fprints(f, "        {\n");
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig, negendmis;\n");
+  fprintf(f, "          struct %s_cbset cbmask = {}, endmask = {}, mismask = {}, cbmask_orig, negendmis;\n", parsername);
   fprints(f, "          ssize_t cbr;\n");
   if (cbssz)
   {
     fprints(f, "          size_t cbidx;\n");
   }
-  //fprints(f, "          size_t taintidx;\n");
   fprints(f, "          uint16_t bitoff;\n");
-  //fprints(f, "          for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
+  fprints(f, "          size_t elemidx;\n");
+  fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
+  fprints(f, "          if (cb2)\n");
   fprints(f, "          {\n");
-  //fprints(f, "            const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprintf(f, "            cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
+  fprintf(f, "            %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
   fprints(f, "          }\n");
   if (cbssz)
   {
     fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "          {\n");
-    fprints(f, "            cbmask |= 1ULL<<cbstack[cbidx];\n");
+    fprintf(f, "            %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "          }\n");
   }
   fprints(f, "          cbmask_orig = cbmask;\n");
-  fprints(f, "          cbmask &= ~ctx->btbuf_status;\n");
-  fprintf(f, "          if (cbmask)\n");
+  fprintf(f, "          %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "          if (%s_bitnz(&cbmask))\n", parsername);
+  fprints(f, "          for (elemidx = 0; elemidx < sizeof(cbmask.elems)/sizeof(*cbmask.elems); elemidx++)\n");
   fprints(f, "          for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "          {\n");
   fprints(f, "            int ffsres;\n");
-  fprints(f, "            if (cbmask & (1ULL<<bitoff))\n");
+  fprints(f, "            if (cbmask.elems[elemidx] & (1ULL<<bitoff))\n");
   fprints(f, "            {\n");
   fprints(f, "              if (ctx->backtrackmid > ctx->backtrackstart)\n");
   fprints(f, "              {\n");
-  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackmid - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackmid - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "                if (cbr != (ssize_t)(ctx->backtrackmid - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "                {\n");
   fprints(f, "                  return cbr;\n");
@@ -1675,19 +1770,19 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "              }\n");
   fprints(f, "              else\n");
   fprints(f, "              {\n");
-  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "                if (cbr != (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "                {\n");
   fprints(f, "                  return cbr;\n");
   fprints(f, "                }\n");
-  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "                if (cbr != (ssize_t)ctx->backtrackmid && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "                {\n");
   fprints(f, "                  return cbr;\n");
   fprints(f, "                }\n");
   fprints(f, "              }\n");
   fprints(f, "            }\n");
-  fprints(f, "            ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
+  fprints(f, "            ffsres = ffsll(cbmask.elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
   fprints(f, "            if (ffsres == 0)\n");
   fprints(f, "            {\n");
   fprints(f, "              bitoff = 64;\n");
@@ -1697,31 +1792,38 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "              bitoff = ffsres - 1;\n");
   fprints(f, "            }\n");
   fprints(f, "          }\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
-  fprintf(f, "          if (endmask)\n");
+  fprintf(f, "          %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&endmask, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "          if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "            cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
-  fprintf(f, "          if (mismask)\n");
+  fprintf(f, "          %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "          if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "            cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
+  fprintf(f, "          %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
   //fprints(f, "          ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "          negendmis = ~(endmask | mismask);");
-  fprints(f, "          ctx->start_status &= negendmis;\n");
-  fprints(f, "          ctx->confirm_status &= negendmis;\n");
-  fprints(f, "          ctx->lastack_status &= negendmis;\n");
-  fprints(f, "          ctx->btbuf_status = 0;\n");
+  fprintf(f, "          %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "          %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "          %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
+  fprintf(f, "          %s_bitclear(&ctx->btbuf_status);\n", parsername);
   fprints(f, "        }\n");
   fprints(f, "        ctx->backtrackstart = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "        return 0;\n"); // FIXME callbacks!!!
@@ -1739,40 +1841,41 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          *state = st->acceptid;\n");
   fprints(f, "          ctx->state = 0;\n");
   fprints(f, "          ctx->last_accept = LEXER_UINT_MAX;\n");
-  fprints(f, "          ctx->lastack_status = 0;\n");
+  fprintf(f, "          %s_bitclear(&ctx->lastack_status);\n", parsername);
   fprints(f, "          if (st)\n");
   fprints(f, "          {\n");
-  fprints(f, "            uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig, negendmis;\n");
+  fprintf(f, "            struct %s_cbset cbmask = {}, endmask = {}, mismask = {}, cbmask_orig, negendmis;\n", parsername);
   fprints(f, "            ssize_t cbr;\n");
   if (cbssz)
   {
     fprints(f, "            size_t cbidx;\n");
   }
-  //fprints(f, "            size_t taintidx;\n");
   fprints(f, "            uint16_t bitoff;\n");
-  //fprints(f, "            for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
+  fprints(f, "            size_t elemidx;\n");
+  fprintf(f, "            %s_bitmaybeset(&cbmask, cb1);\n", parsername);
+  fprints(f, "            if (cb2)\n");
   fprints(f, "            {\n");
-  //fprints(f, "              const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprintf(f, "              cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
+  fprintf(f, "              %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
   fprints(f, "            }\n");
   if (cbssz)
   {
     fprints(f, "            for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "            {\n");
-    fprints(f, "              cbmask |= 1ULL<<cbstack[cbidx];\n");
+    fprintf(f, "              %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "            }\n");
   }
   fprints(f, "            cbmask_orig = cbmask;\n");
-  fprints(f, "            cbmask &= ~ctx->btbuf_status;\n");
-  fprintf(f, "            if (cbmask)\n");
+  fprintf(f, "            %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "            if (%s_bitnz(&cbmask))\n", parsername);
+  fprints(f, "            for (elemidx = 0; elemidx < sizeof(cbmask.elems)/sizeof(*cbmask.elems); elemidx++)\n");
   fprints(f, "            for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "            {\n");
   fprints(f, "              int ffsres;\n");
-  fprints(f, "              if (cbmask & (1ULL<<bitoff))\n");
+  fprints(f, "              if (cbmask.elems[elemidx] & (1ULL<<bitoff))\n");
   fprints(f, "              {\n");
   fprints(f, "                if (ctx->backtrackmid > ctx->backtrackstart)\n");
   fprints(f, "                {\n");
-  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackmid - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                  cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackmid - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "                  if (cbr != (ssize_t)(ctx->backtrackmid - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "                  {\n");
   fprints(f, "                    return cbr;\n");
@@ -1780,19 +1883,19 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                }\n");
   fprints(f, "                else\n");
   fprints(f, "                {\n");
-  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                  cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "                  if (cbr != (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "                  {\n");
   fprints(f, "                    return cbr;\n");
   fprints(f, "                  }\n");
-  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "                  if (cbr != (ssize_t)ctx->backtrackmid && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "                  {\n");
   fprints(f, "                    return cbr;\n");
   fprints(f, "                  }\n");
   fprints(f, "                }\n");
   fprints(f, "              }\n");
-  fprints(f, "              ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
+  fprints(f, "              ffsres = ffsll(cbmask.elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
   fprints(f, "              if (ffsres == 0)\n");
   fprints(f, "              {\n");
   fprints(f, "                bitoff = 64;\n");
@@ -1802,31 +1905,38 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                bitoff = ffsres - 1;\n");
   fprints(f, "              }\n");
   fprints(f, "            }\n");
-  fprints(f, "            endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
-  fprintf(f, "            if (endmask)\n");
+  fprintf(f, "            %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&endmask, &cbmask);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "            if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "            {\n");
-  fprintf(f, "              cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "              cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "              if (cbr != -EAGAIN)\n");
   fprintf(f, "              {\n");
   fprintf(f, "                return cbr;\n");
   fprintf(f, "              }\n");
   fprintf(f, "            }\n");
-  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
-  fprintf(f, "            if (mismask)\n");
+  fprintf(f, "            %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&mismask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "            if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "            {\n");
-  fprintf(f, "              cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "              cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "              if (cbr != -EAGAIN)\n");
   fprintf(f, "              {\n");
   fprintf(f, "                return cbr;\n");
   fprintf(f, "              }\n");
   fprintf(f, "            }\n");
-  fprints(f, "            ctx->start_status |= cbmask;\n");
+  fprintf(f, "            %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
   //fprints(f, "            ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "            negendmis = ~(endmask | mismask);");
-  fprints(f, "            ctx->start_status &= negendmis;\n");
-  fprints(f, "            ctx->confirm_status &= negendmis;\n");
-  fprints(f, "            ctx->lastack_status &= negendmis;\n");
-  fprints(f, "            ctx->btbuf_status = 0;\n");
+  fprintf(f, "            %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "            %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "            %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "            %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "            %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "            %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
+  fprintf(f, "            %s_bitclear(&ctx->btbuf_status);\n", parsername);
   fprints(f, "          }\n");
   fprints(f, "          ctx->backtrackstart = ctx->backtrackmid;\n");
   fprints(f, "          return 0;\n"); // FIXME callbacks
@@ -1841,37 +1951,43 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    }\n");
   fprints(f, "    if (st)\n");
   fprints(f, "    {\n");
-  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0, endmask = 0, mismask = 0, cbmask_orig, negendmis;\n");
+  fprintf(f, "      struct %s_cbset cbmask = {}, endmask = {}, mismask = {}, cbmask_orig, negendmis;\n", parsername);
   fprints(f, "      ssize_t cbr;\n");
   if (cbssz)
   {
     fprints(f, "      size_t cbidx;\n");
   }
-  fprints(f, "      size_t taintidx;\n");
+  //fprints(f, "      size_t taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
-  fprints(f, "      for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
+  fprints(f, "      size_t elemidx;\n");
+  fprintf(f, "      %s_bitmaybeset(&cbmask, cb1);\n", parsername);
+  //fprints(f, "      for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n"); // FIXME ??????
   fprints(f, "      {\n");
   //fprints(f, "        const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprintf(f, "        cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
+  fprintf(f, "        if (cb2)\n");
+  fprintf(f, "        {\n");
+  fprintf(f, "          %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername); // FIXME or cb2[st->taintidx[taintidx]]; ???????
+  fprintf(f, "        }\n");
   fprints(f, "      }\n");
   if (cbssz)
   {
     fprints(f, "      for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "      {\n");
-    fprints(f, "        cbmask |= 1ULL<<cbstack[cbidx];\n");
+    fprintf(f, "        %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "      }\n");
   }
   fprints(f, "      cbmask_orig = cbmask;\n");
-  fprints(f, "      cbmask &= ~ctx->btbuf_status;\n");
-  fprintf(f, "      if (cbmask)\n");
+  fprintf(f, "      %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "      if (%s_bitnz(&cbmask))\n", parsername);
+  fprints(f, "      for (elemidx = 0; elemidx < sizeof(cbmask.elems)/sizeof(*cbmask.elems); elemidx++)\n");
   fprints(f, "      for (bitoff = 0; bitoff < 64; )\n");
   fprints(f, "      {\n");
   fprints(f, "        int ffsres;\n");
-  fprints(f, "        if (cbmask & (1ULL<<bitoff))\n");
+  fprints(f, "        if (cbmask.elems[elemidx] & (1ULL<<bitoff))\n");
   fprints(f, "        {\n");
   fprints(f, "          if (ctx->backtrackend > ctx->backtrackstart)\n");
   fprints(f, "          {\n");
-  fprints(f, "            cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackend - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "            cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrackend - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "            if (cbr != (ssize_t)(ctx->backtrackend - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "            {\n");
   fprints(f, "              return cbr;\n");
@@ -1879,19 +1995,19 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          }\n");
   fprints(f, "          else\n");
   fprints(f, "          {\n");
-  fprints(f, "            cbr = cbtbl[bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "            cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "            if (cbr != (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart) && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "            {\n");
   fprints(f, "              return cbr;\n");
   fprints(f, "            }\n");
-  fprints(f, "            cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackend, (ctx->start_status & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "            cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack, ctx->backtrackend, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprints(f, "            if (cbr != (ssize_t)ctx->backtrackend && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n");
   fprints(f, "            {\n");
   fprints(f, "              return cbr;\n");
   fprints(f, "            }\n");
   fprints(f, "          }\n");
   fprints(f, "        }\n");
-  fprints(f, "        ffsres = ffsll(cbmask & ~((1ULL<<(bitoff+1))-1));\n");
+  fprints(f, "        ffsres = ffsll(cbmask.elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
   fprints(f, "        if (ffsres == 0)\n");
   fprints(f, "        {\n");
   fprints(f, "          bitoff = 64;\n");
@@ -1901,31 +2017,38 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          bitoff = ffsres - 1;\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      endmask = ctx->confirm_status & ~cbmask & ~ctx->btbuf_status;\n");
-  fprintf(f, "      if (endmask)\n");
+  fprintf(f, "      %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "      %s_bitandnot(&endmask, &cbmask);\n", parsername);
+  fprintf(f, "      %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "      if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "      {\n");
-  fprintf(f, "        cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "        cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "        if (cbr != -EAGAIN)\n");
   fprintf(f, "        {\n");
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
   fprintf(f, "      }\n");
-  fprints(f, "      mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status & ~ctx->btbuf_status;\n");
-  fprintf(f, "      if (mismask)\n");
+  fprintf(f, "      %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "      %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "      %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "      %s_bitandnot(&mismask, &ctx->btbuf_status);\n", parsername);
+  fprintf(f, "      if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "      {\n");
-  fprintf(f, "        cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "        cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "        if (cbr != -EAGAIN)\n");
   fprintf(f, "        {\n");
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
   fprintf(f, "      }\n");
-  fprints(f, "      ctx->start_status |= cbmask;\n");
+  fprintf(f, "      %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
   //fprints(f, "      ctx->confirm_status |= cbmask_orig;\n");
-  fprints(f, "      negendmis = ~(endmask | mismask);");
-  fprints(f, "      ctx->start_status &= negendmis;\n");
-  fprints(f, "      ctx->confirm_status &= negendmis;\n");
-  fprints(f, "      ctx->lastack_status &= negendmis;\n");
-  fprints(f, "      ctx->btbuf_status = 0;\n");
+  fprintf(f, "      %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "      %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "      %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "      %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "      %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "      %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
+  fprintf(f, "      %s_bitclear(&ctx->btbuf_status);\n", parsername);
   fprints(f, "    }\n");
   fprints(f, "    ctx->backtrackstart = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "  }\n");
@@ -2002,9 +2125,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        return -EINVAL;\n");
   fprints(f, "      }\n");
   fprints(f, "      ctx->state = ctx->last_accept;\n");
-  fprints(f, "      ctx->confirm_status |= ctx->lastack_status;\n"); // FIXME???
+  fprintf(f, "      %s_bitor(&ctx->confirm_status, &ctx->lastack_status);\n", parsername); // FIXME???
   fprints(f, "      ctx->last_accept = LEXER_UINT_MAX;\n");
-  fprints(f, "      ctx->lastack_status = 0;\n"); // FIXME correct?
+  fprintf(f, "      %s_bitclear(&ctx->lastack_status);\n", parsername); // FIXME correct?
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "      ctx->backtrackmid = ctx->backtrackstart;\n");
   fprintf(f, "#endif\n");
@@ -2019,17 +2142,26 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      {\n");
   fprints(f, "        if (j == 0)\n");
   fprints(f, "        {\n");
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
+  fprintf(f, "          struct %s_cbset cbmask = {};\n", parsername);
   if (cbssz)
   {
     fprints(f, "          size_t cbidx;\n");
+  }
+  fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
+  if (cbssz)
+  {
     fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "          {\n");
-    fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprintf(f, "            %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "          }\n");
   }
-  fprintf(f, "          cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
-  fprints(f, "          ctx->confirm_status |= cbmask & ctx->start_status;\n");
+  fprintf(f, "          if (cb2)\n");
+  fprintf(f, "          {\n");
+  fprintf(f, "            %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
+  fprintf(f, "          }\n");
+  //fprints(f, "          ctx->confirm_status |= cbmask & ctx->start_status;\n");
+  fprintf(f, "          %s_bitand(&cbmask, &ctx->start_status);\n", parsername);
+  fprintf(f, "          %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
@@ -2038,11 +2170,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "          size_t cbidx;\n");
   }
   fprintf(f, "          enum yale_flags flags = 0;\n");
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
-  fprints(f, "          uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "          uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "          uint64_t negendmis;\n"); // FIXME may need a bigger one
+  fprintf(f, "          struct %s_cbset cbmask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset endmask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "          ssize_t cbr;\n");
+  fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "          if (start)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            flags |= YALE_FLAG_START;\n");
@@ -2052,13 +2185,16 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   {
     fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "          {\n");
-    fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprintf(f, "            %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "          }\n");
   }
-  fprintf(f, "          cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
-  fprintf(f, "          if (cbmask)\n");
+  fprintf(f, "          if (cb2)\n");
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbs1(pctx, cbmask, buf, j, cbtbl);\n", parsername);
+  fprintf(f, "            %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
+  fprintf(f, "          }\n");
+  fprintf(f, "          if (%s_bitnz(&cbmask))\n", parsername);
+  fprintf(f, "          {\n");
+  fprintf(f, "            cbr = %s_call_cbs1(pctx, &cbmask, buf, j, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
@@ -2070,43 +2206,50 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "          if (1)\n");
   fprintf(f, "#endif\n");
   fprints(f, "          {\n");
-  fprints(f, "            endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "            if (endmask)\n");
+  fprintf(f, "            %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&endmask, &cbmask);\n", parsername);
+  fprintf(f, "            if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "            {\n");
-  fprintf(f, "              cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "              cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "              if (cbr != -EAGAIN)\n");
   fprintf(f, "              {\n");
   fprintf(f, "                return cbr;\n");
   fprintf(f, "              }\n");
   fprintf(f, "            }\n");
-  fprints(f, "            mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "            if (mismask)\n");
+  fprintf(f, "            %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "            if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "            {\n");
-  fprintf(f, "              cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "              cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "              if (cbr != -EAGAIN)\n");
   fprintf(f, "              {\n");
   fprintf(f, "                return cbr;\n");
   fprintf(f, "              }\n");
   fprintf(f, "            }\n");
-  fprints(f, "            ctx->start_status |= cbmask;\n");
-  fprints(f, "            ctx->confirm_status |= cbmask;\n");
-  fprints(f, "            negendmis = ~(endmask | mismask);");
-  fprints(f, "            ctx->start_status &= negendmis;\n");
-  fprints(f, "            ctx->confirm_status &= negendmis;\n");
-  fprints(f, "            ctx->lastack_status &= negendmis;\n");
+  fprintf(f, "            %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "            %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
+  fprintf(f, "            %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "            %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "            %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "            %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "            %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "            %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
   fprints(f, "          }\n");
   fprints(f, "          else\n");
   fprints(f, "          {\n");
-  fprints(f, "            mismask = ctx->start_status & ~cbmask;\n");
+  fprintf(f, "            %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "            %s_bitandnot(&mismask, &cbmask);\n", parsername);
   // FIXME or?
-  fprints(f, "            mismask = ctx->start_status | cbmask;\n");
+  fprintf(f, "            %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "            %s_bitor(&mismask, &cbmask);\n", parsername);
   fprints(f, "            ctx->btbuf_status = mismask;\n");
   fprints(f, "            if (j != i)\n");
   fprints(f, "            {\n");
-  fprints(f, "              ctx->btbuf_status = 0;\n");
+  fprintf(f, "              %s_bitclear(&ctx->btbuf_status);\n", parsername);
   fprints(f, "            }\n");
-  fprints(f, "            ctx->start_status |= cbmask;\n");
-  fprints(f, "            ctx->confirm_status |= cbmask;\n");
+  fprintf(f, "            %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "            %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprints(f, "          }\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
@@ -2120,19 +2263,20 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
   fprints(f, "        ctx->last_accept = LEXER_UINT_MAX;\n");
-  fprints(f, "        ctx->lastack_status = 0;\n"); // FIXME correct?
+  fprintf(f, "        %s_bitclear(&ctx->lastack_status);\n", parsername); // FIXME correct?
   fprints(f, "        if (st->accepting)\n");
   fprints(f, "        {\n");
   fprintf(f, "          enum yale_flags flags = 0;\n");
-  fprints(f, "          uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
-  fprints(f, "          uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "          uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "          uint64_t negendmis;\n"); // FIXME may need a bigger one
+  fprintf(f, "          struct %s_cbset cbmask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset endmask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "          ssize_t cbr;\n");
   if (cbssz)
   {
     fprints(f, "          size_t cbidx;\n");
   }
+  fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "          if (start)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            flags |= YALE_FLAG_START;\n");
@@ -2142,42 +2286,50 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   {
     fprints(f, "          for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "          {\n");
-    fprints(f, "            cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprintf(f, "            %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "          }\n");
   }
-  fprintf(f, "          cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
-  fprintf(f, "          if (cbmask)\n");
+  fprintf(f, "          if (cb2)\n");
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbs1(pctx, cbmask, buf, i + 1, cbtbl);\n", parsername);
+  fprintf(f, "            %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
+  fprintf(f, "          }\n");
+  fprintf(f, "          if (%s_bitnz(&cbmask))\n", parsername);
+  fprintf(f, "          {\n");
+  fprintf(f, "            cbr = %s_call_cbs1(pctx, &cbmask, buf, i + 1, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "          if (endmask)\n");
+  fprintf(f, "          %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&endmask, &cbmask);\n", parsername);
+  fprintf(f, "          if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "            cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "          if (mismask)\n");
+  fprintf(f, "          %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "          if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "            cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          negendmis = ~(endmask | mismask);");
-  fprints(f, "          ctx->start_status &= negendmis;\n");
-  fprints(f, "          ctx->confirm_status &= negendmis;\n");
-  fprints(f, "          ctx->lastack_status &= negendmis;\n");
+  fprintf(f, "          %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "          %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "          %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
   fprints(f, "        }\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "        ctx->backtrackstart = ctx->backtrackend;\n");
@@ -2232,11 +2384,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "        size_t cbidx;\n");
   }
   fprints(f, "        enum yale_flags flags = 0;\n");
-  fprints(f, "        uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n");
-  fprints(f, "        uint64_t endmask = 0;\n");
-  fprints(f, "        uint64_t mismask = 0;\n");
-  fprints(f, "        uint64_t negendmis;\n");
+  fprintf(f, "        struct %s_cbset cbmask = {};\n", parsername);
+  fprintf(f, "        struct %s_cbset endmask = {};\n", parsername);
+  fprintf(f, "        struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "        struct %s_cbset negendmis;\n", parsername);
   fprints(f, "        ssize_t cbr;\n");
+  fprintf(f, "        %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprints(f, "        if (start)\n");
   fprints(f, "        {\n");
   fprints(f, "          flags |= YALE_FLAG_START;\n");
@@ -2246,13 +2399,16 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   {
     fprints(f, "        for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "        {\n");
-    fprints(f, "          cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprintf(f, "          %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "        }\n");
   }
-  fprintf(f, "        cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
-  fprints(f, "        if (cbmask)\n");
+  fprintf(f, "        if (cb2)\n");
+  fprintf(f, "        {\n");
+  fprintf(f, "          %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
+  fprintf(f, "        }\n");
+  fprintf(f, "        if (%s_bitnz(&cbmask))\n", parsername);
   fprints(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
+  fprintf(f, "          cbr = %s_call_cbs1(pctx, &cbmask, buf, i, cbtbl);\n", parsername);
   fprints(f, "          if (cbr != -EAGAIN)\n");
   fprints(f, "          {\n");
   fprints(f, "            return cbr;\n");
@@ -2264,39 +2420,46 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "        if (1)\n");
   fprintf(f, "#endif\n");
   fprints(f, "        {\n");
-  fprints(f, "          endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "          if (endmask)\n");
+  fprintf(f, "          %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&endmask, &cbmask);\n", parsername);
+  fprintf(f, "          if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "            cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "          if (mismask)\n");
+  fprintf(f, "          %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "          if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "          {\n");
-  fprintf(f, "            cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "            cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "            if (cbr != -EAGAIN)\n");
   fprintf(f, "            {\n");
   fprintf(f, "              return cbr;\n");
   fprintf(f, "            }\n");
   fprintf(f, "          }\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
-  fprints(f, "          negendmis = ~(endmask | mismask);");
-  fprints(f, "          ctx->start_status &= negendmis;\n");
-  fprints(f, "          ctx->confirm_status &= negendmis;\n");
-  fprints(f, "          ctx->lastack_status &= negendmis;\n");
+  fprintf(f, "          %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "          %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "          %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "          %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
-  fprints(f, "          mismask = ctx->start_status & ~cbmask;\n");
+  fprintf(f, "          %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &cbmask);\n", parsername);
   // FIXME or?
-  fprints(f, "          mismask = ctx->start_status | cbmask;\n");
+  fprintf(f, "          %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "          %s_bitor(&mismask, &cbmask);\n", parsername);
   fprints(f, "          ctx->btbuf_status = mismask;\n");
-  fprints(f, "          ctx->start_status |= cbmask;\n");
-  fprints(f, "          ctx->confirm_status |= cbmask;\n");
+  fprintf(f, "          %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "          %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprints(f, "        }\n");
   fprints(f, "      }\n");
   fprints(f, "      return i;\n"); // FIXME what to return?
@@ -2308,9 +2471,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      return -EINVAL;\n");
   fprints(f, "    }\n");
   fprints(f, "    ctx->state = ctx->last_accept;\n");
-  fprints(f, "    ctx->confirm_status |= ctx->lastack_status;\n"); // FIXME???
+  fprintf(f, "    %s_bitor(&ctx->confirm_status, &ctx->lastack_status);\n", parsername); // FIXME???
   fprints(f, "    ctx->last_accept = LEXER_UINT_MAX;\n");
-  fprints(f, "    ctx->lastack_status = 0;\n"); // FIXME correct?
+  fprintf(f, "    %s_bitclear(&ctx->lastack_status);\n", parsername); // FIXME correct?
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "    ctx->backtrackmid = ctx->backtrackstart;\n");
   fprintf(f, "#endif\n");
@@ -2324,11 +2487,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
     fprints(f, "      size_t cbidx;\n");
   }
   fprintf(f, "      enum yale_flags flags = 0;\n");
-  fprints(f, "      uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
-  fprints(f, "      uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "      uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "      uint64_t negendmis;\n"); // FIXME may need a bigger one
+  fprintf(f, "      struct %s_cbset cbmask = {};\n", parsername);
+  fprintf(f, "      struct %s_cbset endmask = {};\n", parsername);
+  fprintf(f, "      struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "      struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "      ssize_t cbr;\n");
+  fprintf(f, "      %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "      if (start)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        flags |= YALE_FLAG_START;\n");
@@ -2338,13 +2502,16 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   {
     fprints(f, "      for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "      {\n");
-    fprints(f, "        cbmask |= (1ULL << cbstack[cbidx]);\n");
+    fprintf(f, "        %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "      }\n");
   }
-  fprintf(f, "      cbmask |= (cb2 ? cb2[st->acceptid].cbsmask : 0);\n");
-  fprintf(f, "      if (cbmask)\n");
+  fprintf(f, "      if (cb2)\n");
   fprintf(f, "      {\n");
-  fprintf(f, "        cbr = %s_call_cbs1(pctx, cbmask, buf, i, cbtbl);\n", parsername);
+  fprintf(f, "        %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
+  fprintf(f, "      }\n");
+  fprintf(f, "      if (%s_bitnz(&cbmask))\n", parsername);
+  fprintf(f, "      {\n");
+  fprintf(f, "        cbr = %s_call_cbs1(pctx, &cbmask, buf, i, cbtbl);\n", parsername);
   fprintf(f, "        if (cbr != -EAGAIN)\n");
   fprintf(f, "        {\n");
   fprintf(f, "          return cbr;\n");
@@ -2356,39 +2523,46 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "      if (1)\n");
   fprintf(f, "#endif\n");
   fprints(f, "      {\n");
-  fprints(f, "        endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "        if (endmask)\n");
+  fprintf(f, "        %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "        %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "        if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "          cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "          if (cbr != -EAGAIN)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            return cbr;\n");
   fprintf(f, "          }\n");
   fprintf(f, "        }\n");
-  fprints(f, "        mismask = ctx->start_status & ~cbmask & ~ctx->confirm_status;\n");
-  fprintf(f, "        if (mismask)\n");
+  fprintf(f, "        %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "        %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "        %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "        if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "        {\n");
-  fprintf(f, "          cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "          cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "          if (cbr != -EAGAIN)\n");
   fprintf(f, "          {\n");
   fprintf(f, "            return cbr;\n");
   fprintf(f, "          }\n");
   fprintf(f, "        }\n");
-  fprints(f, "        ctx->start_status |= cbmask;\n");
-  fprints(f, "        ctx->confirm_status |= cbmask;\n");
-  fprints(f, "        negendmis = ~(endmask | mismask);");
-  fprints(f, "        ctx->start_status &= negendmis;\n");
-  fprints(f, "        ctx->confirm_status &= negendmis;\n");
-  fprints(f, "        ctx->lastack_status &= negendmis;\n");
+  fprintf(f, "        %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "        %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
+  fprintf(f, "        %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "        %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "        %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "        %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "        %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "        %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
   fprints(f, "      }\n");
   fprints(f, "      else\n");
   fprints(f, "      {\n");
-  fprints(f, "        mismask = ctx->start_status & ~cbmask;\n");
+  fprintf(f, "        %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "        %s_bitandnot(&mismask, &cbmask);\n", parsername);
   // FIXME or?
-  fprints(f, "        mismask = ctx->start_status | cbmask;\n");
+  fprintf(f, "        %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "        %s_bitor(&mismask, &cbmask);\n", parsername);
   fprints(f, "        ctx->btbuf_status = mismask;\n");
-  fprints(f, "        ctx->start_status |= cbmask;\n");
-  fprints(f, "        ctx->confirm_status |= cbmask;\n");
+  fprintf(f, "        %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "        %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "    return -EAGAIN;\n");
@@ -2396,10 +2570,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   // FIXME use taintid set:
   fprints(f, "  if (st)\n");
   fprints(f, "  {\n");
-  fprints(f, "    uint64_t cbmask = (cb1 != PARSER_UINT_MAX) ? (1ULL<<cb1) : 0;\n"); // FIXME may need a bigger one
-  fprints(f, "    uint64_t endmask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "    uint64_t mismask = 0;\n"); // FIXME may need a bigger one
-  fprints(f, "    uint64_t negendmis;\n"); // FIXME may need a bigger one
+  fprintf(f, "    struct %s_cbset cbmask = {};\n", parsername);
+  fprintf(f, "    struct %s_cbset endmask = {};\n", parsername);
+  fprintf(f, "    struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "    struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "    enum yale_flags flags = 0;\n");
   if (cbssz)
   {
@@ -2408,6 +2582,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    size_t taintidx;\n");
   //fprints(f, "    uint16_t bitoff;\n");
   fprintf(f, "    ssize_t cbr;\n");
+  fprintf(f, "    %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "    if (start)\n");
   fprintf(f, "    {\n");
   fprintf(f, "      flags |= YALE_FLAG_START;\n");
@@ -2415,47 +2590,52 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    if (cb2)\n");
   fprints(f, "    for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
   fprints(f, "    {\n");
-  fprints(f, "      const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprintf(f, "      cbmask |= mycb->cbsmask;\n");
+  fprintf(f, "      const struct %s_callbacks *mycb = &cb2[st->taintids[taintidx]];\n", parsername);
+  fprintf(f, "      %s_bitor(&cbmask, &mycb->cbsmask);\n", parsername);
   fprints(f, "    }\n");
   if (cbssz)
   {
     fprints(f, "    for (cbidx = 0; cbidx < cbstacksz; cbidx++)\n");
     fprints(f, "    {\n");
-    fprints(f, "      cbmask |= 1ULL<<cbstack[cbidx];\n");
+    fprintf(f, "      %s_bitset(&cbmask, cbstack[cbidx]);\n", parsername);
     fprints(f, "    }\n");
   }
-  fprintf(f, "    if (cbmask)\n");
+  fprintf(f, "    if (%s_bitnz(&cbmask))\n", parsername);
   fprintf(f, "    {\n");
-  fprintf(f, "      cbr = %s_call_cbs1(pctx, cbmask, buf, sz, cbtbl);\n", parsername);
+  fprintf(f, "      cbr = %s_call_cbs1(pctx, &cbmask, buf, sz, cbtbl);\n", parsername);
   fprintf(f, "      if (cbr != -EAGAIN)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        return cbr;\n");
   fprintf(f, "      }\n");
   fprintf(f, "    }\n");
-  fprints(f, "    endmask = ctx->confirm_status & ~cbmask;\n");
-  fprintf(f, "    if (endmask)\n");
+  fprintf(f, "    %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
+  fprintf(f, "    %s_bitandnot(&endmask, &cbmask);\n", parsername);
+  fprintf(f, "    if (%s_bitnz(&endmask))\n", parsername);
   fprintf(f, "    {\n");
-  fprintf(f, "      cbr = %s_call_cbsflg(pctx, endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
+  fprintf(f, "      cbr = %s_call_cbsflg(pctx, &endmask, buf, 0, YALE_FLAG_END, cbtbl);\n", parsername);
   fprintf(f, "      if (cbr != -EAGAIN)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        return cbr;\n");
   fprintf(f, "      }\n");
   fprintf(f, "    }\n");
-  fprints(f, "    mismask = ctx->start_status & ~cbmask & ~ctx->lastack_status;\n");
-  fprintf(f, "    if (mismask)\n");
+  fprintf(f, "    %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
+  fprintf(f, "    %s_bitandnot(&mismask, &cbmask);\n", parsername);
+  fprintf(f, "    %s_bitandnot(&mismask, &ctx->lastack_status);\n", parsername);
+  fprintf(f, "    if (%s_bitnz(&mismask))\n", parsername);
   fprintf(f, "    {\n");
-  fprintf(f, "      cbr = %s_call_cbsflg(pctx, mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
+  fprintf(f, "      cbr = %s_call_cbsflg(pctx, &mismask, buf, 0, YALE_FLAG_MAJOR_MISTAKE, cbtbl);\n", parsername);
   fprintf(f, "      if (cbr != -EAGAIN)\n");
   fprintf(f, "      {\n");
   fprintf(f, "        return cbr;\n");
   fprintf(f, "      }\n");
   fprintf(f, "    }\n");
-  fprints(f, "    ctx->start_status |= cbmask;\n");
-  fprints(f, "    negendmis = ~(endmask | mismask);");
-  fprints(f, "    ctx->start_status &= negendmis;\n");
-  fprints(f, "    ctx->confirm_status &= negendmis;\n");
-  fprints(f, "    ctx->lastack_status &= negendmis;\n");
+  fprintf(f, "    %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
+  fprintf(f, "    %s_bitcopy(&negendmis, &endmask);\n", parsername);
+  fprintf(f, "    %s_bitor(&negendmis, &mismask);\n", parsername);
+  fprintf(f, "    %s_bitnot(&negendmis);\n", parsername);
+  fprintf(f, "    %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
+  fprintf(f, "    %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
+  fprintf(f, "    %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
   //fprints(f, "    ctx->lastack_status &= ~endmask;\n");
   //fprints(f, "    ctx->lastack_status &= ~mismask;\n"); // NOP
   fprints(f, "  }\n");

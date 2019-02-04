@@ -251,7 +251,7 @@ int main(int argc, char **argv)
     fprintf(f, "#ifndef _HTTPPARSER_H_\n");
     fprintf(f, "#define _HTTPPARSER_H_\n");
     fprintf(f, "#include \"yalecommon.h\"\n");
-    dump_headers(f, "http", maxbt, 0, "uint8_t");
+    dump_headers(f, "http", maxbt, 0, "uint8_t", 1);
     fprintf(f, "#endif\n");
     fclose(f);
     f = fopen("httpparser2.c", "w");
