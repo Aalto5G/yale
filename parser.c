@@ -1448,11 +1448,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "NULL};\n");
   fprintf(f, "struct %s_parserstatetblentry {\n", gen->parsername);
-  fprints(f, "  const uint8_t special_flags;\n");
   fprints(f, "  const struct state *re;\n");
   fprintf(f, "  //const parser_uint_t rhs[%d];\n", gen->tokencnt);
   fprintf(f, "  const struct %s_callbacks cb2[%d];\n", gen->parsername, gen->tokencnt);
   fprintf(f, "  const struct %s_callbacks bytes_cb2;\n", gen->parsername);
+  fprints(f, "  const uint8_t special_flags;\n");
   fprints(f, "};\n");
   fprintf(f, "const parser_uint_t %s_num_terminals = %d;\n", gen->parsername, gen->tokencnt);
   fprintf(f, "const parser_uint_t %s_start_state = %d;\n", gen->parsername, gen->start_state);
