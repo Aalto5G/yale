@@ -252,7 +252,7 @@ static inline void dump_python(FILE *f, struct yale *yale)
     upparsername[i] = toupper((unsigned char)upparsername[i]);
   }
   fprintf(f, "from __future__ import print_function\n");
-  fprintf(f, "import parser\n");
+  fprintf(f, "from oldpycode import parser\n");
   fprintf(f, "import sys\n\n");
   fprintf(f, "d = {}\n");
   fprintf(f, "p = parser.ParserGen(\"%s\")\n\n", yale->parsername);

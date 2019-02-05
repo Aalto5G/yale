@@ -7,7 +7,7 @@
 
 #undef DO_PRINT_STACKCONFIG
 
-void *parsergen_alloc(struct ParserGen *gen, size_t sz)
+static void *parsergen_alloc(struct ParserGen *gen, size_t sz)
 {
   void *result = gen->userareaptr;
   size_t alloc_sz = (sz+7)/8 * 8;
@@ -19,7 +19,7 @@ void *parsergen_alloc(struct ParserGen *gen, size_t sz)
   return result;
 }
 
-void *parsergen_alloc_fn(void *gen, size_t sz)
+static void *parsergen_alloc_fn(void *gen, size_t sz)
 {
   return parsergen_alloc(gen, sz);
 }
@@ -29,7 +29,7 @@ static int fprints(FILE *f, const char *s)
   return fputs(s, f);
 }
 
-uint32_t stack_cb_hash(const struct stackconfigitem *stack, yale_uint_t sz, yale_uint_t cbsz)
+static uint32_t stack_cb_hash(const struct stackconfigitem *stack, yale_uint_t sz, yale_uint_t cbsz)
 {
   struct yalemurmurctx ctx = YALEMURMURCTX_INITER(0x12345678U);
   yalemurmurctx_feed32(&ctx, cbsz);
@@ -37,13 +37,13 @@ uint32_t stack_cb_hash(const struct stackconfigitem *stack, yale_uint_t sz, yale
   return yalemurmurctx_get(&ctx);
 }
 
-uint32_t stack_cb_hash_fn(struct yale_hash_list_node *node, void *ud)
+static uint32_t stack_cb_hash_fn(struct yale_hash_list_node *node, void *ud)
 {
   struct stackconfig *cfg = YALE_CONTAINER_OF(node, struct stackconfig, node);
   return stack_cb_hash(cfg->stack, cfg->sz, cfg->cbsz);
 }
 
-uint32_t lookuptbl_hash(yale_uint_t nonterminal, yale_uint_t terminal)
+static uint32_t lookuptbl_hash(yale_uint_t nonterminal, yale_uint_t terminal)
 {
   struct yalemurmurctx ctx = YALEMURMURCTX_INITER(0x12345678U);
   yalemurmurctx_feed32(&ctx, nonterminal);
@@ -51,13 +51,13 @@ uint32_t lookuptbl_hash(yale_uint_t nonterminal, yale_uint_t terminal)
   return yalemurmurctx_get(&ctx);
 }
 
-uint32_t lookuptbl_hash_fn(struct yale_hash_list_node *node, void *ud)
+static uint32_t lookuptbl_hash_fn(struct yale_hash_list_node *node, void *ud)
 {
   struct LookupTblEntry *e = YALE_CONTAINER_OF(node, struct LookupTblEntry, node);
   return lookuptbl_hash(e->nonterminal, e->terminal);
 }
 
-void lookuptbl_put(struct ParserGen *gen,
+static void lookuptbl_put(struct ParserGen *gen,
                    yale_uint_t nonterminal, yale_uint_t terminal,
                    yale_uint_t cond,
                    yale_uint_t val,
@@ -112,7 +112,7 @@ void lookuptbl_put(struct ParserGen *gen,
   gen->nonterminal_conds[nonterminal].condcnt++;
 }
 
-uint32_t firstset2_hash(const struct ruleitem *rhs, size_t sz)
+static uint32_t firstset2_hash(const struct ruleitem *rhs, size_t sz)
 {
   struct yalemurmurctx ctx = YALEMURMURCTX_INITER(0x12345678U);
   size_t i;
@@ -125,7 +125,7 @@ uint32_t firstset2_hash(const struct ruleitem *rhs, size_t sz)
   return yalemurmurctx_get(&ctx);
 }
 
-uint32_t firstset2_hash_fn(struct yale_hash_list_node *node, void *ud)
+static uint32_t firstset2_hash_fn(struct yale_hash_list_node *node, void *ud)
 {
   struct firstset_entry2 *cfg = YALE_CONTAINER_OF(node, struct firstset_entry2, node);
   return firstset2_hash(cfg->rhs, cfg->rhssz);
@@ -207,7 +207,7 @@ void parsergen_free(struct ParserGen *gen)
   yale_hash_table_free(&gen->stackconfigs_hash);
 }
 
-int rhseq(const struct ruleitem *rhs1, const struct ruleitem *rhs2, size_t sz)
+static int rhseq(const struct ruleitem *rhs1, const struct ruleitem *rhs2, size_t sz)
 {
   size_t i;
   for (i = 0; i < sz; i++)
@@ -223,7 +223,7 @@ int rhseq(const struct ruleitem *rhs1, const struct ruleitem *rhs2, size_t sz)
   return 1;
 }
 
-struct firstset_entry2 *firstset2_lookup_hashval(
+static struct firstset_entry2 *firstset2_lookup_hashval(
     struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz, uint32_t hashval)
 {
   struct yale_hash_list_node *node;
@@ -243,12 +243,12 @@ struct firstset_entry2 *firstset2_lookup_hashval(
   return NULL;
 }
 
-struct firstset_entry2 *firstset2_lookup(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
+static struct firstset_entry2 *firstset2_lookup(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
 {
   return firstset2_lookup_hashval(gen, rhs, rhssz, firstset2_hash(rhs, rhssz));
 }
 
-void firstset2_setdefault(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
+static void firstset2_setdefault(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
 {
   uint32_t hashval = firstset2_hash(rhs, rhssz);
   if (firstset2_lookup_hashval(gen, rhs, rhssz, hashval) != NULL)
@@ -267,7 +267,7 @@ void firstset2_setdefault(struct ParserGen *gen, const struct ruleitem *rhs, siz
 
 int parsergen_is_rhs_terminal(struct ParserGen *gen, const struct ruleitem *rhs);
 
-struct firstset_value firstset_value_deep_copy(struct firstset_value orig)
+static struct firstset_value firstset_value_deep_copy(struct firstset_value orig)
 {
   struct firstset_value result = orig;
   size_t i;
@@ -279,13 +279,13 @@ struct firstset_value firstset_value_deep_copy(struct firstset_value orig)
   return result;
 }
 
-void firstset_value_deep_free(struct firstset_value *orig)
+static void firstset_value_deep_free(struct firstset_value *orig)
 {
   free(orig->cbs);
   orig->cbs = NULL;
 }
 
-struct firstset_values firstset_values_deep_copy(struct firstset_values orig)
+static struct firstset_values firstset_values_deep_copy(struct firstset_values orig)
 {
   struct firstset_values result;
   size_t i;
@@ -316,7 +316,7 @@ void firstset_entry2_deep_free(struct firstset_entry2 *e)
   e->rhs = NULL;
 }
 
-int cb_compar(const void *a, const void *b)
+static int cb_compar(const void *a, const void *b)
 {
   const int *iap = a, *ibp = b;
   yale_uint_t ia = *iap, ib = *ibp;
@@ -331,7 +331,7 @@ int cb_compar(const void *a, const void *b)
   return 0;
 }
 
-struct firstset_value firstset_value_deep_copy_cbadd(struct firstset_value orig, yale_uint_t cb)
+static struct firstset_value firstset_value_deep_copy_cbadd(struct firstset_value orig, yale_uint_t cb)
 {
   struct firstset_value result = orig;
   size_t i;
@@ -346,7 +346,7 @@ struct firstset_value firstset_value_deep_copy_cbadd(struct firstset_value orig,
   return result;
 }
 
-struct firstset_values firstset_values_deep_copy_cbadd(struct firstset_values orig, yale_uint_t cb)
+static struct firstset_values firstset_values_deep_copy_cbadd(struct firstset_values orig, yale_uint_t cb)
 {
   struct firstset_values result;
   size_t i;
@@ -358,25 +358,7 @@ struct firstset_values firstset_values_deep_copy_cbadd(struct firstset_values or
   }
   return result;
 }
-int valeq(const struct firstset_value *val1, const struct firstset_value *val2)
-{
-  size_t i;
-  if (val1->is_bytes != val2->is_bytes ||
-      val1->token != val2->token ||
-      val1->cbsz != val2->cbsz)
-  {
-    return 0;
-  }
-  for (i = 0; i < val1->cbsz; i++)
-  {
-    if (val1->cbs[i] != val2->cbs[i])
-    {
-      return 0;
-    }
-  }
-  return 1;
-}
-int valcmp(const struct firstset_value *val1, const struct firstset_value *val2)
+static int valcmp(const struct firstset_value *val1, const struct firstset_value *val2)
 {
   size_t i;
   if (val1->is_bytes > val2->is_bytes)
@@ -416,12 +398,12 @@ int valcmp(const struct firstset_value *val1, const struct firstset_value *val2)
   }
   return 0;
 }
-int valcmpvoid(const void *val1, const void *val2)
+static int valcmpvoid(const void *val1, const void *val2)
 {
   return valcmp(val1, val2);
 }
 
-void firstset2_update_one(struct firstset_values *val2, const struct firstset_values *val1, yale_uint_t one, int *changed)
+static void firstset2_update_one(struct firstset_values *val2, const struct firstset_values *val1, yale_uint_t one, int *changed)
 {
   yale_uint_t val2origsz = val2->valuessz;
   yale_uint_t i = 0, j = 0;
@@ -524,16 +506,18 @@ void firstset2_update(struct ParserGen *gen, struct firstset_values *val2, const
   }
   qsort(val2->values, val2->valuessz, sizeof(*val2->values), valcmpvoid);
 }
-void firstset2_update_epsilon(struct firstset_values *val2, const struct firstset_values *val1)
+#if 0
+static void firstset2_update_epsilon(struct firstset_values *val2, const struct firstset_values *val1)
 {
   return firstset2_update(NULL, val2, val1, 0, NULL);
 }
-void firstset2_update_noepsilon(struct ParserGen *gen, struct firstset_values *val2, const struct firstset_values *val1)
+#endif
+static void firstset2_update_noepsilon(struct ParserGen *gen, struct firstset_values *val2, const struct firstset_values *val1)
 {
   return firstset2_update(gen, val2, val1, 1, NULL);
 }
 
-struct firstset_values firstset_func2(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
+static struct firstset_values firstset_func2(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
 {
   struct firstset_entry2 *e2;
   struct ruleitem rhs0;
@@ -609,7 +593,7 @@ struct firstset_values firstset_func2(struct ParserGen *gen, const struct ruleit
   }
 }
 
-void stackconfig_print(struct ParserGen *gen, yale_uint_t scidx)
+static void stackconfig_print(struct ParserGen *gen, yale_uint_t scidx)
 {
 #ifdef DO_PRINT_STACKCONFIG
   yale_uint_t sz = gen->stackconfigs[scidx]->sz;
@@ -635,7 +619,7 @@ void stackconfig_print(struct ParserGen *gen, yale_uint_t scidx)
 #endif
 }
 
-void stacktransitionlast_print(struct ParserGen *gen, yale_uint_t scidx)
+static void stacktransitionlast_print(struct ParserGen *gen, yale_uint_t scidx)
 {
 #ifdef DO_PRINT_STACKCONFIG
   yale_uint_t sz = gen->stackconfigs[scidx]->sz;
@@ -656,7 +640,7 @@ void stacktransitionlast_print(struct ParserGen *gen, yale_uint_t scidx)
 #endif
 }
 
-void stacktransitionarbitrary_print(struct ParserGen *gen, yale_uint_t scidx1,
+static void stacktransitionarbitrary_print(struct ParserGen *gen, yale_uint_t scidx1,
                                     yale_uint_t scidx2, yale_uint_t tkn)
 {
 #ifdef DO_PRINT_STACKCONFIG
@@ -680,7 +664,7 @@ void stacktransitionarbitrary_print(struct ParserGen *gen, yale_uint_t scidx1,
 }
 
 
-size_t stackconfig_append(struct ParserGen *gen, const struct stackconfigitem *stack, yale_uint_t sz,
+static size_t stackconfig_append(struct ParserGen *gen, const struct stackconfigitem *stack, yale_uint_t sz,
                           yale_uint_t cbsz)
 {
   size_t i = gen->stackconfigcnt;
@@ -917,7 +901,7 @@ ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
   return maxsz;
 }
 
-int has_firstset(struct firstset_values *vals, yale_uint_t terminal)
+static int has_firstset(struct firstset_values *vals, yale_uint_t terminal)
 {
   size_t i;
   for (i = 0; i < vals->valuessz; i++)

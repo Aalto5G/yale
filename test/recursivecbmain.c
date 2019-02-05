@@ -18,7 +18,7 @@ static inline void myPutchar(char ch)
 }
 #endif
 
-ssize_t print(const char *buf, size_t siz, int start, struct recursivecb_parserctx *btn)
+static ssize_t print(const char *buf, size_t siz, int start, struct recursivecb_parserctx *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;

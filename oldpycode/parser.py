@@ -1,6 +1,6 @@
 from __future__ import division
 from __future__ import print_function
-import regex
+import oldpycode.regex as regex
 
 def firstset_update(a,b):
   for k,v in b.items():

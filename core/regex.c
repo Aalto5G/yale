@@ -967,14 +967,14 @@ struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainders
   }
   else if (re[0] == '(')
   {
-    size_t resz = 0;
-    result = parse_re(casei, re+1, resz-1, &resz);
-    if (re[1+resz] != ')')
+    size_t resz2 = 0;
+    result = parse_re(casei, re+1, resz2-1, &resz2);
+    if (re[1+resz2] != ')')
     {
       printf("error: unterminated parenthesis in regexp\n");
       exit(1);
     }
-    *remainderstart = 2+resz;
+    *remainderstart = 2+resz2;
     return result;
   }
   else
@@ -1211,7 +1211,7 @@ void gennfa_alternmulti(struct re *regexp,
   }
 }
 
-uint32_t transition_hash(const yale_uint_t *transitions)
+static uint32_t transition_hash(const yale_uint_t *transitions)
 {
   return yalemurmur_buf(0x12345678U, transitions, 256*sizeof(*transitions));
 }
@@ -2652,12 +2652,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   free(parserupper);
 }
 
-uint32_t numbers_hash(const struct bitset *numbers)
+static uint32_t numbers_hash(const struct bitset *numbers)
 {
   return yalemurmur_buf(0x12345678U, numbers, sizeof(*numbers));
 }
 
-uint32_t numbers_hash_fn(struct yale_hash_list_node *node, void *ud)
+static uint32_t numbers_hash_fn(struct yale_hash_list_node *node, void *ud)
 {
   struct numbers_set *ids = YALE_CONTAINER_OF(node, struct numbers_set, node);
   return numbers_hash(&ids->numbers);

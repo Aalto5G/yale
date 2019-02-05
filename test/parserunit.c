@@ -5,7 +5,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-size_t freadall(void **pbuf, size_t *pcap, FILE *stream)
+static size_t freadall(void **pbuf, size_t *pcap, FILE *stream)
 {
   char *buf = *pbuf;
   size_t cap = *pcap;
@@ -43,7 +43,7 @@ size_t freadall(void **pbuf, size_t *pcap, FILE *stream)
   }
 }
 
-void testmain(char *cmd, char *exp)
+static void testmain(char *cmd, char *exp)
 {
   FILE *p;
   size_t sz;
@@ -77,7 +77,7 @@ void testmain(char *cmd, char *exp)
   }
 }
 
-void backtracktestcbmain(void)
+static void backtracktestcbmain(void)
 {
   char *expected =
     "1: <a>\n"
@@ -104,10 +104,10 @@ void backtracktestcbmain(void)
     "Succeed i = 7\n"
     "1: [e]\n"
     "Succeed i = 8\n";
-  testmain("./backtracktestcbmain", expected);
+  testmain("test/backtracktestcbmain", expected);
 }
 
-void backtracktestmain(void)
+static void backtracktestmain(void)
 {
   char *expected =
     "Succeed i = 0\n"
@@ -158,10 +158,10 @@ void backtracktestmain(void)
     "Succeed i = 14\n"
     "Succeed i = 15\n"
     "Succeed i = 16\n";
-  testmain("./backtracktestmain", expected);
+  testmain("test/backtracktestmain", expected);
 }
 
-void httpcmainprint(void)
+static void httpcmainprint(void)
 {
   char *expected =
     "<www.google.fi>\n"
@@ -170,10 +170,10 @@ void httpcmainprint(void)
     "<www.google2.fi>\n"
     "<>-\n"
     "Consumed: 665\n";
-  testmain("./httpcmainprint", expected);
+  testmain("test/httpcmainprint", expected);
 }
 
-void sslcmainprint(void)
+static void sslcmainprint(void)
 {
   char *expected =
     "sz: 136\n"
@@ -188,10 +188,10 @@ void sslcmainprint(void)
     "[o]\n"
     "[s]\n"
     "[t]\n";
-  testmain("./sslcmainprint", expected);
+  testmain("test/sslcmainprint", expected);
 }
 
-void lenprefixcmain(void)
+static void lenprefixcmain(void)
 {
   char *expected =
     "<\\x00\\x00>A\n"
@@ -425,10 +425,10 @@ void lenprefixcmain(void)
     "[k]A\n"
     "[k]\n"
     "[k]C\n";
-  testmain("./lenprefixcmain", expected);
+  testmain("test/lenprefixcmain", expected);
 }
 
-void recursivecbmain(void)
+static void recursivecbmain(void)
 {
   char *expected =
     "2: <d>\n"
@@ -440,10 +440,10 @@ void recursivecbmain(void)
     "1: <>\n"
     "2: <>\n"
     "3: <>\n";
-  testmain("./recursivecbmain", expected);
+  testmain("test/recursivecbmain", expected);
 }
 
-void reprefixcmain(void)
+static void reprefixcmain(void)
 {
   char *expected =
     "<\\x00\\x01>A\n"
@@ -462,22 +462,22 @@ void reprefixcmain(void)
     "[H]A\n"
     "[H]C\n"
     "[H]\n";
-  testmain("./reprefixcmain", expected);
+  testmain("test/reprefixcmain", expected);
 }
 
-void tokentheft1main(void)
+static void tokentheft1main(void)
 {
   char *expected = "CCLL(1)";
-  testmain("./tokentheft1main", expected);
+  testmain("test/tokentheft1main", expected);
 }
 
-void tokentheft1smain(void)
+static void tokentheft1smain(void)
 {
   char *expected = "SCCLL(1)";
-  testmain("./tokentheft1smain", expected);
+  testmain("test/tokentheft1smain", expected);
 }
 
-void httpcpytest(void)
+static void httpcpytest(void)
 {
   char *expected =
     "-22\n"
@@ -709,7 +709,7 @@ void httpcpytest(void)
     "localhost\r\n"
     "\n"
     "END ok 1\n";
-  testmain("./httpcpytest", expected);
+  testmain("test/httpcpytest", expected);
 }
 
 int main(int argc, char **argv)

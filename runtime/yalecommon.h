@@ -34,7 +34,7 @@ typedef uint8_t parser_uint_t;
 #define likely(x)       __builtin_expect((x),1)
 #define unlikely(x)     __builtin_expect((x),0)
 
-#undef SMALL_CODE
+#define SMALL_CODE
 
 struct state {
   uint8_t accepting;

@@ -20,7 +20,7 @@ static inline void myPutchar(char ch)
 
 int abort_on_mistake = 0;
 
-ssize_t print(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
+static ssize_t print(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;

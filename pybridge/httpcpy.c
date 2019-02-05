@@ -105,6 +105,8 @@ static PyModuleDef httpparsermodule = {
   .m_size = -1,
 };
 
+PyObject *PyInit_httpparser(void);
+
 PyMODINIT_FUNC
 PyInit_httpparser(void)
 {

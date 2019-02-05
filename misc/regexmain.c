@@ -12,7 +12,7 @@ struct nfa_node ns[YALE_UINT_MAX_LEGAL];
 struct dfa_node ds[YALE_UINT_MAX_LEGAL];
 struct transitionbufs bufs;
 
-void *malloc_fn(void *ud, size_t sz)
+static void *malloc_fn(void *ud, size_t sz)
 {
   return malloc(sz);
 }

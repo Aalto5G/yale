@@ -2,6 +2,7 @@
 #include "yale.h"
 #include "yyutils.h"
 #include <stdio.h>
+#include <libgen.h>
 #include "parser.h"
 
 struct ParserGen gen;
@@ -13,12 +14,14 @@ int main(int argc, char **argv)
   size_t i, iter;
   char cnamebuf[1024] = {0};
   char hnamebuf[1024] = {0};
+  char hincbuf[1024] = {0};
   char hdefbuf[1024] = {0};
   size_t len;
   int c = 0;
   int h = 0;
   size_t iters = 1;
   int test = 0;
+  char *dir;
 
   if (argc != 3)
   {
@@ -72,8 +75,11 @@ int main(int argc, char **argv)
   }
 #endif
 
-  snprintf(cnamebuf, sizeof(cnamebuf), "%s%s", yale.parsername, "cparser.c");
-  snprintf(hnamebuf, sizeof(hnamebuf), "%s%s", yale.parsername, "cparser.h");
+  dir = dirname(strdup(argv[1]));
+
+  snprintf(cnamebuf, sizeof(cnamebuf), "%s/%s%s", dir, yale.parsername, "cparser.c");
+  snprintf(hnamebuf, sizeof(hnamebuf), "%s/%s%s", dir, yale.parsername, "cparser.h");
+  snprintf(hincbuf, sizeof(hincbuf), "%s%s", yale.parsername, "cparser.h");
   if (iters > 1 || test)
   {
     snprintf(cnamebuf, sizeof(cnamebuf), "/dev/null");
@@ -165,7 +171,7 @@ int main(int argc, char **argv)
       {
         fprintf(f, "%s", yale.cs.data);
       }
-      fprintf(f, "#include \"%s\"\n", hnamebuf);
+      fprintf(f, "#include \"%s\"\n", hincbuf);
       parsergen_dump_parser(&gen, f);
       fclose(f);
     }
