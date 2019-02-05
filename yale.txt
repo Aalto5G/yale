@@ -1,3 +1,3 @@
 yale = yacc + lex
 yale = yet another lexer eliminator
-yale = yale ain't lexer engine
+yale = yale ain't lexing engine
