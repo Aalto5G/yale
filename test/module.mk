@@ -57,53 +57,56 @@ $(DIRYALE_TEST)/libtest.a: $(YALE_TEST_OBJ_LIB) $(YALE_TEST_OBJGEN_LIB) $(MAKEFI
 
 # Main programs
 
-$(DIRYALE_TEST)/parserunit: $(DIRYALE_TEST)/parserunit.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+YALE_TEST_DEPS_COMMON:=$(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
+YALE_TEST_CCLDCMD=$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
 
-$(DIRYALE_TEST)/condtest: $(DIRYALE_TEST)/condtest.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/parserunit: $(DIRYALE_TEST)/parserunit.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/httpcmain: $(DIRYALE_TEST)/httpcmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/condtest: $(DIRYALE_TEST)/condtest.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/httpcmainprint: $(DIRYALE_TEST)/httpcmainprint.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/httpcmain: $(DIRYALE_TEST)/httpcmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/httpcpytest: $(DIRYALE_TEST)/httpcpytest.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/httpcmainprint: $(DIRYALE_TEST)/httpcmainprint.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/httppyperf: $(DIRYALE_TEST)/httppyperf.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/httpcpytest: $(DIRYALE_TEST)/httpcpytest.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/lenprefixcmain: $(DIRYALE_TEST)/lenprefixcmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/httppyperf: $(DIRYALE_TEST)/httppyperf.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/reprefixcmain: $(DIRYALE_TEST)/reprefixcmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/lenprefixcmain: $(DIRYALE_TEST)/lenprefixcmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/httprespcmain: $(DIRYALE_TEST)/httprespcmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/reprefixcmain: $(DIRYALE_TEST)/reprefixcmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/recursivecbmain: $(DIRYALE_TEST)/recursivecbmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/httprespcmain: $(DIRYALE_TEST)/httprespcmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/backtracktestmain: $(DIRYALE_TEST)/backtracktestmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/recursivecbmain: $(DIRYALE_TEST)/recursivecbmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/backtracktestcbmain: $(DIRYALE_TEST)/backtracktestcbmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/backtracktestmain: $(DIRYALE_TEST)/backtracktestmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/tokentheft1main: $(DIRYALE_TEST)/tokentheft1main.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/backtracktestcbmain: $(DIRYALE_TEST)/backtracktestcbmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/tokentheft1smain: $(DIRYALE_TEST)/tokentheft1smain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/tokentheft1main: $(DIRYALE_TEST)/tokentheft1main.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/sslcmain: $(DIRYALE_TEST)/sslcmain.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/tokentheft1smain: $(DIRYALE_TEST)/tokentheft1smain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
-$(DIRYALE_TEST)/sslcmainprint: $(DIRYALE_TEST)/sslcmainprint.o $(DIRYALE_TEST)/libtest.a $(LIBS_YALE_TEST) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
-	$(CC) $(CFLAGS) -o $@ $(filter %.o,$^) $(filter %.a,$^) $(CFLAGS_YALE_TEST)
+$(DIRYALE_TEST)/sslcmain: $(DIRYALE_TEST)/sslcmain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
+
+$(DIRYALE_TEST)/sslcmainprint: $(DIRYALE_TEST)/sslcmainprint.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
 
 # Dependencies
 
@@ -176,72 +179,74 @@ $(DIRYALE_TEST)/condparsercparser.o: $(DIRYALE_TEST)/condparsercparser.h
 # Generated parsers
 
 YALE_TEST_PARSER_DEPS := $(DIRYALE_MAIN)/yaleparser $(MAKEFILES_COMMON) $(MAKEFILES_YALE_TEST)
+YALE_TEST_YALEHCMD=$(DIRYALE_MAIN)/yaleparser $< h
+YALE_TEST_YALECCMD=$(DIRYALE_MAIN)/yaleparser $< c
 
 $(DIRYALE_TEST)/lenprefixcparser.h: $(DIRYALE_TEST)/lenprefix.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/lenprefixcparser.c: $(DIRYALE_TEST)/lenprefix.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/reprefixcparser.h: $(DIRYALE_TEST)/reprefix.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/reprefixcparser.c: $(DIRYALE_TEST)/reprefix.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/httpcparser.h: $(DIRYALE_TEST)/httppaper.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/httpcparser.c: $(DIRYALE_TEST)/httppaper.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/httppycparser.h: $(DIRYALE_TEST)/httppy.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/httppycparser.c: $(DIRYALE_TEST)/httppy.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/httprespcparser.h: $(DIRYALE_TEST)/httpresp.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/httprespcparser.c: $(DIRYALE_TEST)/httpresp.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/condparsercparser.h: $(DIRYALE_TEST)/condparser.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/condparsercparser.c: $(DIRYALE_TEST)/condparser.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/recursivecbcparser.h: $(DIRYALE_TEST)/recursivecb.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/recursivecbcparser.c: $(DIRYALE_TEST)/recursivecb.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/backtracktestcparser.h: $(DIRYALE_TEST)/backtracktest.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/backtracktestcparser.c: $(DIRYALE_TEST)/backtracktest.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/backtracktestcbcparser.h: $(DIRYALE_TEST)/backtracktestcb.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/backtracktestcbcparser.c: $(DIRYALE_TEST)/backtracktestcb.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/tokentheft1cparser.h: $(DIRYALE_TEST)/tokentheft1.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/tokentheft1cparser.c: $(DIRYALE_TEST)/tokentheft1.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/tokentheft1scparser.h: $(DIRYALE_TEST)/tokentheft1s.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/tokentheft1scparser.c: $(DIRYALE_TEST)/tokentheft1s.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 # ------ Begin SSL dependencies --------
 
@@ -265,40 +270,40 @@ $(DIRYALE_TEST)/ssl6cparser.o: $(DIRYALE_TEST)/ssl6cparser.h
 # ------ Begin SSL generated parsers --------
 
 $(DIRYALE_TEST)/ssl1cparser.h: $(DIRYALE_TEST)/ssl1.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/ssl1cparser.c: $(DIRYALE_TEST)/ssl1.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/ssl2cparser.h: $(DIRYALE_TEST)/ssl2.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/ssl2cparser.c: $(DIRYALE_TEST)/ssl2.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/ssl3cparser.h: $(DIRYALE_TEST)/ssl3.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/ssl3cparser.c: $(DIRYALE_TEST)/ssl3.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/ssl4cparser.h: $(DIRYALE_TEST)/ssl4.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/ssl4cparser.c: $(DIRYALE_TEST)/ssl4.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/ssl5cparser.h: $(DIRYALE_TEST)/ssl5.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/ssl5cparser.c: $(DIRYALE_TEST)/ssl5.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/ssl6cparser.h: $(DIRYALE_TEST)/ssl6.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< h
+	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/ssl6cparser.c: $(DIRYALE_TEST)/ssl6.txt $(YALE_TEST_PARSER_DEPS)
-	./$(DIRYALE_MAIN)/yaleparser $< c
+	$(YALE_TEST_YALECCMD)
 
 # Automatic rules
 
