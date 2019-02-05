@@ -4,7 +4,7 @@ YALE_TEST_SRC := $(YALE_TEST_SRC_LIB) parserunit.c condtest.c httpcmain.c httpcm
 YALE_TEST_SRCGEN_LIB := lenprefixcparser.c reprefixcparser.c httpcparser.c httppycparser.c httprespcparser.c condparsercparser.c recursivecbcparser.c backtracktestcparser.c backtracktestcbcparser.c tokentheft1cparser.c tokentheft1scparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c
 YALE_TEST_SRCGEN := $(YALE_TEST_SRCGEN_LIB)
 
-YALE_TEST_HDRGEN := lenprefixcparser.h reprefixcparser.h httpcparser.h httppycparser.h httprespcparser.h condparsercparser.h recursivecbcparser.h backtracktestcparser.h backtracktestcbcparser.h tokentheft1cparser.h tokentheft1scparser.h ssl1cparser.h ssl2cparser.h ssl3cparser.h ssl4cparser.h ssl5cparser.h ssl6cparser.h
+YALE_TEST_HDRGEN := $(patsubst %.c,%.h,$(YALE_TEST_SRCGEN))
 
 YALE_TEST_HDRGEN := $(patsubst %,$(DIRYALE_TEST)/%,$(YALE_TEST_HDRGEN))
 
