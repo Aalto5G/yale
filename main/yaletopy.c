@@ -7,6 +7,10 @@ int main(int argc, char **argv)
   FILE *f, *fout;
   struct yale yale = {};
 
+  fprintf(stderr, "Warning: this is an old implementation of YaLe.\n");
+  fprintf(stderr, "The old implementation is known to have backtrack bugs.\n");
+  fprintf(stderr, "Please use yaleparser instead of yaletopy!\n");
+
   if (argc != 3)
   {
     fprintf(stderr, "Usage: %s file.txt file.py\n", argv[0]);
