@@ -1811,7 +1811,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                {\n");
   fprints(f, "                  return cbr;\n");
   fprints(f, "                }\n");
-  fprints(f, "                cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprintf(f, "                if (should_return(cbr, ctx->backtrackmid))\n"); // FIXME or backtrackend?
   fprints(f, "                {\n");
   fprints(f, "                  return cbr;\n");
@@ -1900,7 +1900,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "                  {\n");
   fprints(f, "                    return cbr;\n");
   fprints(f, "                  }\n");
-  fprints(f, "                  cbr = cbtbl[bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprints(f, "                  cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack, ctx->backtrackmid, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
   fprintf(f, "                  if (should_return(cbr, ctx->backtrackmid))\n"); // FIXME or backtrackend?
   fprints(f, "                  {\n");
   fprints(f, "                    return cbr;\n");
