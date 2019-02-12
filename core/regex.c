@@ -10,6 +10,12 @@
 #include "yalemurmur.h"
 #include "yalecontainerof.h"
 
+/*
+ * Some environments are tremendously helped if you have only one callback,
+ * and this is set to one. You may experiment with larger values for more
+ * benefit if you have let's say 2 callbacks, but the benefits won't be as
+ * great.
+ */
 #define FFSLL_AVOID_THRESHOLD 1
 
 static inline struct re *alloc_re(void)
