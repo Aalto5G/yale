@@ -1841,7 +1841,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   add_cb_stack(f, "          ", parsername, cbssz);
   fprints(f, "          cbmask_orig = cbmask;\n");
   fprintf(f, "          %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
-  if_bitnz_call_cbs1_btbuf(f, "          ", parsername, "cbmask", "mid"); // FIXME or "end"?
+  if_bitnz_call_cbs1_btbuf(f, "          ", parsername, "cbmask", "mid");
   fprintf(f, "          %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "          %s_bitandnot(&endmask, &cbmask);\n", parsername);
   fprintf(f, "          %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
@@ -1892,7 +1892,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   add_cb_stack(f, "            ", parsername, cbssz);
   fprints(f, "            cbmask_orig = cbmask;\n");
   fprintf(f, "            %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
-  if_bitnz_call_cbs1_btbuf(f, "            ", parsername, "cbmask", "mid"); // FIXME or "end"?
+  if_bitnz_call_cbs1_btbuf(f, "            ", parsername, "cbmask", "mid");
   fprintf(f, "            %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "            %s_bitandnot(&endmask, &cbmask);\n", parsername);
   fprintf(f, "            %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
@@ -1942,7 +1942,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   add_cb_stack(f, "      ", parsername, cbssz);
   fprints(f, "      cbmask_orig = cbmask;\n");
   fprintf(f, "      %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
-  if_bitnz_call_cbs1_btbuf(f, "      ", parsername, "cbmask", "end"); // FIXME or "mid"?
+  if_bitnz_call_cbs1_btbuf(f, "      ", parsername, "cbmask", "end");
   fprintf(f, "      %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "      %s_bitandnot(&endmask, &cbmask);\n", parsername);
   fprintf(f, "      %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
