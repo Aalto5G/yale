@@ -2191,7 +2191,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        struct %s_cbset cbmask = {};\n", parsername);
   fprintf(f, "        struct %s_cbset endmask = {};\n", parsername);
   fprintf(f, "        struct %s_cbset mismask = {};\n", parsername);
+#if 0 // Not needed due to this being the last block
   fprintf(f, "        struct %s_cbset negendmis;\n", parsername);
+#endif
   fprints(f, "        ssize_t cbr;\n");
   fprintf(f, "        %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprints(f, "        if (start)\n");
@@ -2218,6 +2220,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          %s_bitandnot(&mismask, &cbmask);\n", parsername);
   fprintf(f, "          %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
   if_bitnz_call_cbsflg(f, "          ", parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+#if 0 // Not needed due to this being the last block
   fprintf(f, "          %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
   fprintf(f, "          %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprintf(f, "          %s_bitcopy(&negendmis, &endmask);\n", parsername);
@@ -2226,7 +2229,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
   fprintf(f, "          %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
   fprintf(f, "          %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
+#endif
   fprints(f, "        }\n");
+#if 0 // Not needed due to this being the last block
   fprints(f, "        else\n");
   fprints(f, "        {\n");
   fprintf(f, "          %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
@@ -2238,6 +2243,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
   fprintf(f, "          %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprints(f, "        }\n");
+#endif
   fprints(f, "      }\n");
   fprints(f, "      return i;\n"); // FIXME what to return?
   fprints(f, "    }\n");
@@ -2263,7 +2269,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "      struct %s_cbset cbmask = {};\n", parsername);
   fprintf(f, "      struct %s_cbset endmask = {};\n", parsername);
   fprintf(f, "      struct %s_cbset mismask = {};\n", parsername);
+#if 0 // Not needed due to this being the last block
   fprintf(f, "      struct %s_cbset negendmis;\n", parsername);
+#endif
   fprintf(f, "      ssize_t cbr;\n");
   fprintf(f, "      %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "      if (start)\n");
@@ -2290,6 +2298,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        %s_bitandnot(&mismask, &cbmask);\n", parsername);
   fprintf(f, "        %s_bitandnot(&mismask, &ctx->confirm_status);\n", parsername);
   if_bitnz_call_cbsflg(f, "        ", parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+#if 0 // Not needed due to this being the last block
   fprintf(f, "        %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
   fprintf(f, "        %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprintf(f, "        %s_bitcopy(&negendmis, &endmask);\n", parsername);
@@ -2298,7 +2307,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        %s_bitand(&ctx->start_status, &negendmis);\n", parsername);
   fprintf(f, "        %s_bitand(&ctx->confirm_status, &negendmis);\n", parsername);
   fprintf(f, "        %s_bitand(&ctx->lastack_status, &negendmis);\n", parsername);
+#endif
   fprints(f, "      }\n");
+#if 0 // Not needed due to this being the last block
   fprints(f, "      else\n");
   fprints(f, "      {\n");
   fprintf(f, "        %s_bitcopy(&mismask, &ctx->start_status);\n", parsername);
@@ -2310,6 +2321,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        %s_bitor(&ctx->start_status, &cbmask);\n", parsername);
   fprintf(f, "        %s_bitor(&ctx->confirm_status, &cbmask);\n", parsername);
   fprints(f, "      }\n");
+#endif
   fprints(f, "    }\n");
   fprints(f, "    return -EAGAIN;\n");
   fprints(f, "  }\n");
