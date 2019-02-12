@@ -1927,16 +1927,15 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprints(f, "    {\n");
   fprintf(f, "      struct %s_cbset cbmask = {}, endmask = {}, mismask = {}, cbmask_orig, negendmis;\n", parsername);
   fprints(f, "      ssize_t cbr;\n");
-  //fprints(f, "      size_t taintidx;\n");
+  fprints(f, "      size_t taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
   fprints(f, "      size_t elemidx;\n");
   fprintf(f, "      %s_bitmaybeset(&cbmask, cb1);\n", parsername);
-  //fprints(f, "      for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n"); // FIXME ??????
-  fprints(f, "      {\n");
-  //fprints(f, "        const struct callbacks *mycb = &cb2[st->taintids[taintidx]];\n");
-  fprintf(f, "        if (cb2)\n");
-  fprintf(f, "        {\n");
-  fprintf(f, "          %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername); // FIXME or cb2[st->taintidx[taintidx]]; ???????
+  fprintf(f, "      if (cb2)\n");
+  fprintf(f, "      {\n");
+  fprints(f, "        for (taintidx = 0; taintidx < st->taintidsz; taintidx++)\n");
+  fprints(f, "        {\n");
+  fprintf(f, "          %s_bitor(&cbmask, &cb2[st->taintids[taintidx]].cbsmask);\n", parsername);
   fprintf(f, "        }\n");
   fprints(f, "      }\n");
   add_cb_stack(f, "      ", parsername, cbssz);
