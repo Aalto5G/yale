@@ -1335,9 +1335,9 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprintf(f, "  struct %s_cbset btbuf_status;\n", parsername);
   fprintf(f, "  struct %s_cbset lastack_status;\n", parsername);
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "  uint8_t backtrackstart;\n"); // FIXME uint8_t
-  fprints(f, "  uint8_t backtrackmid;\n"); // FIXME uint8_t
-  fprints(f, "  uint8_t backtrackend;\n"); // FIXME uint8_t
+  fprints(f, "  uint8_t backtrackstart;\n");
+  fprints(f, "  uint8_t backtrackmid;\n");
+  fprints(f, "  uint8_t backtrackend;\n");
   fprintf(f, "  unsigned char backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper);
   fprints(f, "#endif\n");
   fprints(f, "};\n");
