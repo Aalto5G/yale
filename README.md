@@ -72,7 +72,7 @@ system.
 
 # Performance
 
-YaLe parses HTTP headers at a rate of 3.3 gigabits per seconds on a modern
+YaLe parses HTTP headers at a rate of 3.1 gigabits per seconds on a modern
 computer, using a single thread. Different threads can parse concurrently
 different connections, so it won't take many connections to reach line rate.
 Note also that HTTP body does not require as much parsing as HTTP headers, if
