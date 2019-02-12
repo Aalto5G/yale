@@ -1862,7 +1862,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          %s_bitclear(&ctx->btbuf_status);\n", parsername);
   fprints(f, "        }\n");
   fprints(f, "        ctx->backtrackstart = new_backtrackstart;\n"); // FIXME correct?
-  fprints(f, "        return 0;\n"); // FIXME callbacks!!!
+  fprints(f, "        return 0;\n");
   fprints(f, "      }\n");
   fprints(f, "      ctx->backtrackmid++;\n");
   fprintf(f, "      if (ctx->backtrackmid >= %s_BACKTRACKLEN_PLUS_1)\n", parserupper);
@@ -1913,7 +1913,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "            %s_bitclear(&ctx->btbuf_status);\n", parsername);
   fprints(f, "          }\n");
   fprints(f, "          ctx->backtrackstart = ctx->backtrackmid;\n");
-  fprints(f, "          return 0;\n"); // FIXME callbacks
+  fprints(f, "          return 0;\n");
   fprints(f, "        }\n");
   fprints(f, "        else\n");
   fprints(f, "        {\n");
