@@ -2207,11 +2207,15 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
   fprintf(f, "        }\n");
   if_bitnz_call_cbs1(f, "        ", "buf", "i", parsername, "cbmask");
+#if 0 // We want to end all callbacks now
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "        if (ctx->backtrackend == ctx->backtrackstart)\n");
   fprintf(f, "#else\n");
+#endif
   fprints(f, "        if (1)\n");
+#if 0 // We want to end all callbacks now
   fprintf(f, "#endif\n");
+#endif
   fprints(f, "        {\n");
   fprintf(f, "          %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "          %s_bitandnot(&endmask, &cbmask);\n", parsername);
@@ -2285,11 +2289,15 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "        %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
   fprintf(f, "      }\n");
   if_bitnz_call_cbs1(f, "      ", "buf", "i", parsername, "cbmask");
+#if 0 // We want to end all callbacks now
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "      if (ctx->backtrackend == ctx->backtrackstart)\n");
   fprintf(f, "#else\n");
+#endif
   fprints(f, "      if (1)\n");
+#if 0
   fprintf(f, "#endif\n");
+#endif
   fprints(f, "      {\n");
   fprintf(f, "        %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "        %s_bitandnot(&mismask, &cbmask);\n", parsername);
