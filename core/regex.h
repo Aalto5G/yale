@@ -256,6 +256,6 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
          void *(*alloc)(void*,size_t), void *allocud);
 
 void
-dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz);
+dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t cbcnt);
 
 #endif

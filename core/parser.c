@@ -1418,7 +1418,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   size_t curidx = 0;
   int special_needed;
   yale_uint_t c;
-  dump_chead(f, gen->parsername, gen->nofastpath, gen->max_cb_stack_size);
+  dump_chead(f, gen->parsername, gen->nofastpath, gen->max_cb_stack_size, gen->cbcnt);
   dump_collected(f, gen->parsername, &gen->bufs);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {

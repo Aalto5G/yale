@@ -10,6 +10,8 @@
 #include "yalemurmur.h"
 #include "yalecontainerof.h"
 
+#define FFSLL_AVOID_THRESHOLD 1
+
 static inline struct re *alloc_re(void)
 {
   struct re *result = malloc(sizeof(*result));
@@ -1514,7 +1516,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
 }
 
 static void
-if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, const char *varname, const char *endpos)
+if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, const char *varname, const char *endpos, size_t cbcnt)
 {
   if (strcmp(endpos, "mid") != 0 && strcmp(endpos, "end") != 0)
   {
@@ -1526,7 +1528,10 @@ if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, co
   fprintf(f, "%s  {\n", indent);
   fprintf(f, "%s    for (bitoff = 0; bitoff < 64; )\n", indent);
   fprintf(f, "%s    {\n", indent);
-  fprintf(f, "%s      int ffsres;\n", indent);
+  if (cbcnt > FFSLL_AVOID_THRESHOLD)
+  {
+    fprintf(f, "%s      int ffsres;\n", indent);
+  }
   fprintf(f, "%s      if (%s.elems[elemidx] & (1ULL<<bitoff))\n", indent, varname);
   fprintf(f, "%s      {\n", indent);
   fprintf(f, "%s        if (ctx->backtrack%s > ctx->backtrackstart)\n", indent, endpos);
@@ -1551,15 +1556,30 @@ if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, co
   fprintf(f, "%s          }\n", indent);
   fprintf(f, "%s        }\n", indent);
   fprintf(f, "%s      }\n", indent);
-  fprintf(f, "%s      ffsres = ffsll(%s.elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n", indent, varname);
-  fprintf(f, "%s      if (ffsres == 0)\n", indent);
-  fprintf(f, "%s      {\n", indent);
-  fprintf(f, "%s        bitoff = 64;\n", indent);
-  fprintf(f, "%s      }\n", indent);
-  fprintf(f, "%s      else\n", indent);
-  fprintf(f, "%s      {\n", indent);
-  fprintf(f, "%s        bitoff = ffsres - 1;\n", indent);
-  fprintf(f, "%s      }\n", indent);
+  if (cbcnt <= FFSLL_AVOID_THRESHOLD && FFSLL_AVOID_THRESHOLD <= 1)
+  {
+    fprintf(f, "      break;\n");
+  }
+  else if (cbcnt <= FFSLL_AVOID_THRESHOLD)
+  {
+    fprintf(f, "%s      bitoff++;\n", indent);
+    fprintf(f, "%s      if (bitoff >= %zu)\n", indent, cbcnt);
+    fprintf(f, "%s      {\n", indent);
+    fprintf(f, "%s        break;\n", indent);
+    fprintf(f, "%s      }\n", indent);
+  }
+  else
+  {
+    fprintf(f, "%s      ffsres = ffsll(%s.elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n", indent, varname);
+    fprintf(f, "%s      if (ffsres == 0)\n", indent);
+    fprintf(f, "%s      {\n", indent);
+    fprintf(f, "%s        bitoff = 64;\n", indent); // FIXME break?
+    fprintf(f, "%s      }\n", indent);
+    fprintf(f, "%s      else\n", indent);
+    fprintf(f, "%s      {\n", indent);
+    fprintf(f, "%s        bitoff = ffsres - 1;\n", indent);
+    fprintf(f, "%s      }\n", indent);
+  }
   fprintf(f, "%s    }\n", indent);
   fprintf(f, "%s  }\n", indent);
   fprintf(f, "%s}\n", indent);
@@ -1607,7 +1627,7 @@ add_cb_stack(FILE *f, const char *indent, const char *parsername, size_t cbssz)
 }
 
 void
-dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
+dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t cbcnt)
 {
   char *parserupper = strdup(parsername);
   size_t len = strlen(parsername);
@@ -1720,7 +1740,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "  {\n");
   fprintf(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprintf(f, "    {\n");
-  fprintf(f, "      int ffsres;\n");
+  if (cbcnt > FFSLL_AVOID_THRESHOLD)
+  {
+    fprintf(f, "      int ffsres;\n");
+  }
   fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
   fprintf(f, "        cbr = cbtbl[64*elemidx + bitoff](buf, sz, (pctx->rctx.start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
@@ -1729,15 +1752,30 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
   fprintf(f, "      }\n");
-  fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
-  fprintf(f, "      if (ffsres == 0)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        bitoff = 64;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        bitoff = ffsres - 1;\n");
-  fprintf(f, "      }\n");
+  if (cbcnt <= FFSLL_AVOID_THRESHOLD && FFSLL_AVOID_THRESHOLD <= 1)
+  {
+    fprintf(f, "      break;\n");
+  }
+  else if (cbcnt <= FFSLL_AVOID_THRESHOLD)
+  {
+    fprintf(f, "      bitoff++;\n");
+    fprintf(f, "      if (bitoff >= %zu)\n", cbcnt);
+    fprintf(f, "      {\n");
+    fprintf(f, "        break;\n");
+    fprintf(f, "      }\n");
+  }
+  else
+  {
+    fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
+    fprintf(f, "      if (ffsres == 0)\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        bitoff = 64;\n"); // FIXME break?
+    fprintf(f, "      }\n");
+    fprintf(f, "      else\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        bitoff = ffsres - 1;\n");
+    fprintf(f, "      }\n");
+  }
   fprintf(f, "    }\n");
   fprintf(f, "  }\n");
   fprintf(f, "  return -EAGAIN;\n");
@@ -1754,7 +1792,10 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "  {\n");
   fprintf(f, "    for (bitoff = 0; bitoff < 64; )\n");
   fprintf(f, "    {\n");
-  fprintf(f, "      int ffsres;\n");
+  if (cbcnt > FFSLL_AVOID_THRESHOLD)
+  {
+    fprintf(f, "      int ffsres;\n");
+  }
   fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
   fprintf(f, "        cbr = cbtbl[64*elemidx + bitoff](buf, sz, flag, pctx);\n");
@@ -1763,15 +1804,30 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
   fprintf(f, "      }\n");
-  fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
-  fprintf(f, "      if (ffsres == 0)\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        bitoff = 64;\n");
-  fprintf(f, "      }\n");
-  fprintf(f, "      else\n");
-  fprintf(f, "      {\n");
-  fprintf(f, "        bitoff = ffsres - 1;\n");
-  fprintf(f, "      }\n");
+  if (cbcnt <= FFSLL_AVOID_THRESHOLD && FFSLL_AVOID_THRESHOLD <= 1)
+  {
+    fprintf(f, "      break;\n");
+  }
+  else if (cbcnt <= FFSLL_AVOID_THRESHOLD)
+  {
+    fprintf(f, "      bitoff++;\n");
+    fprintf(f, "      if (bitoff >= %zu)\n", cbcnt);
+    fprintf(f, "      {\n");
+    fprintf(f, "        break;\n");
+    fprintf(f, "      }\n");
+  }
+  else
+  {
+    fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
+    fprintf(f, "      if (ffsres == 0)\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        bitoff = 64;\n"); // FIXME break?
+    fprintf(f, "      }\n");
+    fprintf(f, "      else\n");
+    fprintf(f, "      {\n");
+    fprintf(f, "        bitoff = ffsres - 1;\n");
+    fprintf(f, "      }\n");
+  }
   fprintf(f, "    }\n");
   fprintf(f, "  }\n");
   fprintf(f, "  return -EAGAIN;\n");
@@ -1841,7 +1897,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   add_cb_stack(f, "          ", parsername, cbssz);
   fprints(f, "          cbmask_orig = cbmask;\n");
   fprintf(f, "          %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
-  if_bitnz_call_cbs1_btbuf(f, "          ", parsername, "cbmask", "mid");
+  if_bitnz_call_cbs1_btbuf(f, "          ", parsername, "cbmask", "mid", cbcnt);
   fprintf(f, "          %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "          %s_bitandnot(&endmask, &cbmask);\n", parsername);
   fprintf(f, "          %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
@@ -1892,7 +1948,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   add_cb_stack(f, "            ", parsername, cbssz);
   fprints(f, "            cbmask_orig = cbmask;\n");
   fprintf(f, "            %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
-  if_bitnz_call_cbs1_btbuf(f, "            ", parsername, "cbmask", "mid");
+  if_bitnz_call_cbs1_btbuf(f, "            ", parsername, "cbmask", "mid", cbcnt);
   fprintf(f, "            %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "            %s_bitandnot(&endmask, &cbmask);\n", parsername);
   fprintf(f, "            %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
@@ -1941,7 +1997,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz)
   add_cb_stack(f, "      ", parsername, cbssz);
   fprints(f, "      cbmask_orig = cbmask;\n");
   fprintf(f, "      %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
-  if_bitnz_call_cbs1_btbuf(f, "      ", parsername, "cbmask", "end");
+  if_bitnz_call_cbs1_btbuf(f, "      ", parsername, "cbmask", "end", cbcnt);
   fprintf(f, "      %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
   fprintf(f, "      %s_bitandnot(&endmask, &cbmask);\n", parsername);
   fprintf(f, "      %s_bitandnot(&endmask, &ctx->btbuf_status);\n", parsername);
