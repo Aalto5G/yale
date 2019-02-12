@@ -40,8 +40,7 @@ that YaLe successfully implements.
 
 A number of object types is limited to at most close to 256 items of the given
 type (few last numbers may be reseved for special purposes). The reason is that
-many integers are limited to 8 bits for space reasons. There may be at most 64
-callbacks, because the maximum supported integer type is 64 bits.
+many integers are limited to 8 bits for space reasons.
 
 Callbacks and actions are supported. Actions are executed when the parser
 reaches a given state. Callbacks are executed when lexing. The callback system
