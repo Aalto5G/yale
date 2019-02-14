@@ -1,5 +1,7 @@
 # YaLe
 
+![YaLe](yalelogo.png)
+
 YaLe is Yet another Lexer eliminator, or Yacc and Lex combined. It may also
 mean YaLe ain't Lexing engine. It is intended for event-driven incremental
 non-blocking network protocol parsing in a state machine architecture.
