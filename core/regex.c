@@ -2317,7 +2317,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    {\n");
   fprints(f, "      *state = PARSER_UINT_MAX;\n");
   fprints(f, "      //printf(\"Error\\n\");\n");
-  fprints(f, "      return -EINVAL;\n");
+  fprints(f, "      return 0;\n");
   fprints(f, "    }\n");
   fprints(f, "    ctx->state = ctx->last_accept;\n");
   fprintf(f, "    %s_bitor(&ctx->confirm_status, &ctx->lastack_status);\n", parsername); // FIXME???

@@ -1417,10 +1417,10 @@ if_bitnz_call_cbsflg(FILE *f, const char *indent, const char *parsername, const 
 {
   fprintf(f, "%sif (%s_bitnz(&%s) && 1)\n", indent, parsername, varname);
   fprintf(f, "%s{\n", indent);
-  fprintf(f, "%s  ssize_t cbr = %s_call_cbsflg(pctx, &%s, blk, 0, %s, %s_callbacks);\n", indent, parsername, varname, flagname, parsername);
-  fprintf(f, "%s  if (cbr != -EAGAIN)\n", indent);
+  fprintf(f, "%s  ssize_t cbr2 = %s_call_cbsflg(pctx, &%s, blk, 0, %s, %s_callbacks);\n", indent, parsername, varname, flagname, parsername);
+  fprintf(f, "%s  if (cbr2 != -EAGAIN)\n", indent);
   fprintf(f, "%s  {\n", indent);
-  fprintf(f, "%s    return cbr;\n", indent);
+  fprintf(f, "%s    return cbr2;\n", indent);
   fprintf(f, "%s  }\n", indent);
   fprintf(f, "%s}\n", indent);
 }
@@ -1739,6 +1739,15 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "          abort();\n"
              "        }\n"
              "#endif\n"
+             "        if (unlikely(eofindicator))\n"
+             "        {\n");
+  fprintf(f, "          struct %s_cbset endmask = {}, mismask = {};\n", gen->parsername);
+  fprintf(f, "          %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
+  fprintf(f, "          %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+  fprints(f, "        }\n"
              "        return sz; // EOF\n"
              "      }\n"
              "      else\n"
@@ -1822,6 +1831,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "      if (pctx->bytes_sz)\n");
     fprintf(f, "      {\n");
     fprintf(f, "        //off = sz;\n");
+    fprints(f, "        if (unlikely(eofindicator))\n"
+               "        {\n");
+    fprintf(f, "          %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
+    if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
+    fprintf(f, "          %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
+    fprintf(f, "          %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
+    if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+    fprints(f, "        }\n");
     fprintf(f, "        return -EAGAIN;\n");
     fprintf(f, "      }\n");
     fprints(f, "      pctx->stacksz--;\n");
@@ -1839,6 +1856,15 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "      if (ret == -EAGAIN)\n"
              "      {\n"
              "        //off = sz;\n"
+             "        if (unlikely(eofindicator))\n"
+             "        {\n");
+  fprintf(f, "          struct %s_cbset endmask = {}, mismask = {};\n", gen->parsername);
+  fprintf(f, "          %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
+  fprintf(f, "          %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
+  fprintf(f, "          %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+  fprints(f, "        }\n"
              "        return -EAGAIN;\n"
              "      }\n"
              "      else if (ret < 0)\n"
@@ -2001,6 +2027,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "        if (pctx->bytes_sz)\n");
       fprintf(f, "        {\n");
       fprintf(f, "          //off = sz;\n");
+      fprints(f, "          if (unlikely(eofindicator))\n"
+                 "          {\n");
+      fprintf(f, "            %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
+      if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
+      fprintf(f, "            %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
+      fprintf(f, "            %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
+      if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+      fprints(f, "          }\n");
       fprintf(f, "          return -EAGAIN;\n");
       fprintf(f, "        }\n");
       fprintf(f, "        state = PARSER_UINT_MAX-1;\n");
@@ -2029,12 +2063,34 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "        if (ret == -EAGAIN)\n"
              "        {\n"
              "          //off = sz;\n"
+             "          if (unlikely(eofindicator))\n"
+             "          {\n");
+  fprintf(f, "            struct %s_cbset endmask = {}, mismask = {};\n", gen->parsername);
+  fprintf(f, "            %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
+  fprintf(f, "            %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
+  fprintf(f, "            %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+  fprints(f, "          }\n"
              "          return -EAGAIN;\n"
              "        }\n"
              "        else if (ret < 0 || state == PARSER_UINT_MAX)\n"
              "        {\n"
              "          //fprintf(stderr, \"Parser error: tokenizer error, curstate=%%d, token=%%d\\n\", (int)curstate, (int)state);\n");
   fprints(f, "          //exit(1);\n"
+             "          if (ret == 0)\n"
+             "          {\n"
+             "            if (unlikely(eofindicator))\n"
+             "            {\n");
+  fprintf(f, "              struct %s_cbset endmask = {}, mismask = {};\n", gen->parsername);
+  fprintf(f, "              %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
+  fprintf(f, "              %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
+  fprintf(f, "              %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+  fprints(f, "            }\n"
+             "            return 0;\n"
+             "          }\n"
              "          return -EINVAL;\n"
              "        }\n"
              "        else\n"
@@ -2258,6 +2314,15 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "      break;\n"
              "    }\n"
              "  }\n"
+             "  if (unlikely(eofindicator))\n"
+             "  {\n");
+  fprintf(f, "    struct %s_cbset endmask = {}, mismask = {};\n", gen->parsername);
+  fprintf(f, "    %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
+  fprintf(f, "    %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
+  fprintf(f, "    %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
+  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
+  fprints(f, "  }\n"
              "  if (pctx->stacksz == 0)\n"
              "  {\n"
              "    if (off >= sz && pctx->saved_token == PARSER_UINT_MAX)\n"
@@ -2277,15 +2342,6 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    abort();\n"
              "  }\n"
              "#endif\n"
-             "  if (unlikely(eofindicator))\n"
-             "  {\n");
-  fprintf(f, "    struct %s_cbset endmask = {}, mismask = {};\n", gen->parsername);
-  fprintf(f, "    %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
-  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "endmask", "YALE_FLAG_END");
-  fprintf(f, "    %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
-  fprintf(f, "    %s_bitandnot(&mismask, &pctx->rctx.confirm_status);\n", gen->parsername);
-  if_bitnz_call_cbsflg(f, "          ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
-  fprints(f, "  }\n"
              "  return -EAGAIN;\n"
              "}\n");
 }
