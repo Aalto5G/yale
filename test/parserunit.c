@@ -103,6 +103,7 @@ static void backtracktestcbmain(void)
     "1: [d]\n"
     "Succeed i = 7\n"
     "1: [e]\n"
+    "1: []-\n"
     "Succeed i = 8\n";
   testmain("test/backtracktestcbmain", expected);
 }
@@ -264,6 +265,9 @@ static void lenprefixcmain(void)
     "[ghijk]A\n"
     "<ghijk>\n"
     "<ghijk>C\n"
+    "<>A\n"
+    "<>\n"
+    "<>C\n"
     "----------------\n"
     "<\\x00>A\n"
     "[\\x00]A\n"
@@ -424,7 +428,10 @@ static void lenprefixcmain(void)
     "[j]C\n"
     "[k]A\n"
     "[k]\n"
-    "[k]C\n";
+    "[k]C\n"
+    "<>A\n"
+    "<>\n"
+    "<>C\n";
   testmain("test/lenprefixcmain", expected);
 }
 
@@ -451,6 +458,9 @@ static void reprefixcmain(void)
     "[GH]A\n"
     "<GH>C\n"
     "<GH>\n"
+    "<>A\n"
+    "<>C\n"
+    "<>\n"
     "----------------\n"
     "<\\x00>A\n"
     "[\\x01]A\n"
@@ -461,7 +471,10 @@ static void reprefixcmain(void)
     "<G>\n"
     "[H]A\n"
     "[H]C\n"
-    "[H]\n";
+    "[H]\n"
+    "<>A\n"
+    "<>C\n"
+    "<>\n";
   testmain("test/reprefixcmain", expected);
 }
 
