@@ -1,5 +1,5 @@
 YALE_PYBRIDGE_SRC_LIB :=
-YALE_PYBRIDGE_SRC := $(YALE_PYBRIDGE_SRC_LIB) httpcpy.c
+YALE_PYBRIDGE_SRC := $(YALE_PYBRIDGE_SRC_LIB) httpcpy.c sslcpy.c
 
 YALE_PYBRIDGE_SRC_LIB := $(patsubst %,$(DIRYALE_PYBRIDGE)/%,$(YALE_PYBRIDGE_SRC_LIB))
 YALE_PYBRIDGE_SRC := $(patsubst %,$(DIRYALE_PYBRIDGE)/%,$(YALE_PYBRIDGE_SRC))
@@ -29,6 +29,7 @@ YALE_PYBRIDGE: $(DIRYALE_PYBRIDGE)/libpybridge.a
 
 ifeq ($(WITH_PYTHON),yes)
 YALE_PYBRIDGE: $(DIRYALE_PYBRIDGE)/httpparser.so
+YALE_PYBRIDGE: $(DIRYALE_PYBRIDGE)/sslparser.so
 endif
 
 unit_YALE_PYBRIDGE: $(MAKEFILES_COMMON) $(MAKEFILES_YALE_PYBRIDGE)
@@ -37,12 +38,18 @@ unit_YALE_PYBRIDGE: $(MAKEFILES_COMMON) $(MAKEFILES_YALE_PYBRIDGE)
 $(DIRYALE_PYBRIDGE)/httpparser.so: $(DIRYALE_PYBRIDGE)/httpcpy.o $(YALE_PYBRIDGE_OBJ_LIB) $(LIBS_YALE_PYBRIDGE) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_PYBRIDGE)
 	$(CC) $(CFLAGS) -shared -o $@ $(filter %.o,$^) $(filter %.a,$^)
 
+$(DIRYALE_PYBRIDGE)/sslparser.so: $(DIRYALE_PYBRIDGE)/sslcpy.o $(YALE_PYBRIDGE_OBJ_LIB) $(LIBS_YALE_PYBRIDGE) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_PYBRIDGE)
+	$(CC) $(CFLAGS) -shared -o $@ $(filter %.o,$^) $(filter %.a,$^)
+
 $(DIRYALE_PYBRIDGE)/libpybridge.a: $(YALE_PYBRIDGE_OBJ_LIB) $(MAKEFILES_COMMON) $(MAKEFILES_YALE_PYBRIDGE)
 	rm -f $@
 	ar rvs $@ $(filter %.o,$^)
 
 $(DIRYALE_PYBRIDGE)/httpcpy.d: $(DIRYALE_TEST)/httppycparser.h
 $(DIRYALE_PYBRIDGE)/httpcpy.o: $(DIRYALE_TEST)/httppycparser.h
+
+$(DIRYALE_PYBRIDGE)/sslcpy.d: $(DIRYALE_TEST)/ssl1cparser.h $(DIRYALE_TEST)/ssl2cparser.h $(DIRYALE_TEST)/ssl3cparser.h $(DIRYALE_TEST)/ssl4cparser.h $(DIRYALE_TEST)/ssl5cparser.h $(DIRYALE_TEST)/ssl6cparser.h
+$(DIRYALE_PYBRIDGE)/sslcpy.o: $(DIRYALE_TEST)/ssl1cparser.h $(DIRYALE_TEST)/ssl2cparser.h $(DIRYALE_TEST)/ssl3cparser.h $(DIRYALE_TEST)/ssl4cparser.h $(DIRYALE_TEST)/ssl5cparser.h $(DIRYALE_TEST)/ssl6cparser.h
 
 $(YALE_PYBRIDGE_OBJ): %.o: %.c %.d $(MAKEFILES_COMMON) $(MAKEFILES_YALE_PYBRIDGE)
 	$(CC) $(CFLAGS) -c -o $*.o $*.c $(CFLAGS_YALE_PYBRIDGE)
