@@ -26,4 +26,7 @@ s=sslparser.Ssl()
 for datum in data:
   datum = bytes(chr(datum), encoding='latin1')
   print(s.feed(datum, 0))
-  print(s.host())
+  host = s.host()
+  if host:
+    print(host)
+    break

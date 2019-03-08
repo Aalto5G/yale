@@ -70,7 +70,6 @@ Ssl_feed(SslObject *self, PyObject *args)
   {
     return NULL;
   }
-  printf("sz: %d\n", size);
   consumed = ssl1_parse_block(&self->pyctx.pctx, dat, size, !!p);
   return PyLong_FromLong(consumed);
 }
@@ -161,12 +160,10 @@ ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pct
 ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
 {
   ssize_t result;
-  printf("feed2 called\n");
   if (flags & YALE_FLAG_START)
   {
     ssl3_parserctx_init(&pctx->ssl3);
   }
-  printf("feed2 eof? %d\n", !!(flags & YALE_FLAG_END));
   result = ssl3_parse_block(&pctx->ssl3, buf, siz, !!(flags & YALE_FLAG_END)); // FIXME eofindicator
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
@@ -184,7 +181,6 @@ ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pct
 
 ssize_t szset32_3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
-  printf("szset32_3 called\n");
   pctx->bytes_sz = 32;
   return -EAGAIN;
 }
@@ -206,12 +202,10 @@ ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pct
 ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
   ssize_t result;
-  printf("feed3 called siz=%zu\n", siz);
   if (flags & YALE_FLAG_START)
   {
     ssl4_parserctx_init(&pctx->ssl4);
   }
-  printf("feed3 eof? %d\n", !!(flags & YALE_FLAG_END));
   result = ssl4_parse_block(&pctx->ssl4, buf, siz, !!(flags & YALE_FLAG_END));
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
@@ -244,12 +238,10 @@ ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pct
 ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
 {
   ssize_t result;
-  printf("feed4 called siz=%zu\n", siz);
   if (flags & YALE_FLAG_START)
   {
     ssl5_parserctx_init(&pctx->ssl5);
   }
-  printf("feed4 eof? %d\n", !!(flags & YALE_FLAG_END));
   result = ssl5_parse_block(&pctx->ssl5, buf, siz, !!(flags & YALE_FLAG_END));
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
@@ -282,13 +274,10 @@ ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pct
 ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
 {
   ssize_t result;
-  printf("feed5 called siz=%zu\n", siz);
-  printf("feed5 called\n");
   if (flags & YALE_FLAG_START)
   {
     ssl6_parserctx_init(&pctx->ssl6);
   }
-  printf("feed5 eof? %d\n", !!(flags & YALE_FLAG_END));
   result = ssl6_parse_block(&pctx->ssl6, buf, siz, !!(flags & YALE_FLAG_END));
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
@@ -329,7 +318,6 @@ ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *bt
   struct ssl2_parserctx *ctx2 = CONTAINER_OF(ctx3, struct ssl2_parserctx, ssl3);
   struct ssl1_parserctx *ctx1 = CONTAINER_OF(ctx2, struct ssl1_parserctx, ssl2);
   struct ssl_pyctx *pyctx = CONTAINER_OF(ctx1, struct ssl_pyctx, pctx);
-  printf("print6 called\n");
   if (pyctx->sz + siz > sizeof(pyctx->buf) - 1)
   {
     siz = sizeof(pyctx->buf) - pyctx->sz - 1;
