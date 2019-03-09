@@ -1848,7 +1848,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        //off = sz;\n");
     fprints(f, "        if (unlikely(eofindicator))\n"
                "        {\n");
-    end_cbs(f, "          ");
+    //end_cbs(f, "          "); // FIXME ???
     fprints(f, "        }\n");
     fprintf(f, "        return -EAGAIN;\n");
     fprintf(f, "      }\n");
@@ -2035,7 +2035,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "          //off = sz;\n");
       fprints(f, "          if (unlikely(eofindicator))\n"
                  "          {\n");
-      end_cbs(f, "            ");
+      //end_cbs(f, "            "); // FIXME ????
       fprints(f, "          }\n");
       fprintf(f, "          return -EAGAIN;\n");
       fprintf(f, "        }\n");
