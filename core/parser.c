@@ -1718,7 +1718,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, eofindicator, state, %s_callbacks, cb2, cb1);//, baton);\n", gen->parsername, gen->parsername);
   }
   fprints(f, "}\n");
-  fprintf(f, "static ssize_t end_cbs(struct %s_parserctx *pctx, const void *blk)\n", gen->parsername);
+  fprintf(f, "static ssize_t __attribute__((noinline)) end_cbs(struct %s_parserctx *pctx, const void *blk)\n", gen->parsername);
   fprints(f, "{\n");
   fprintf(f, "  struct %s_cbset endmask = {}, mismask = {};\n", gen->parsername);
   fprintf(f, "  %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
