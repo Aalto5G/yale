@@ -727,6 +727,17 @@ static void httpcpytest(void)
   testmain("test/httpcpytest", expected);
 }
 
+static void fooparsertest()
+{
+  char *expected =
+    "<bar>\n"
+    "<>-\n"
+    "<bar>\n"
+    "<>-\n"
+    "Consumed: -11\n";
+  testmain("test/footest", expected);
+}
+
 int main(int argc, char **argv)
 {
   backtracktestcbmain();
@@ -739,5 +750,6 @@ int main(int argc, char **argv)
   tokentheft1main();
   tokentheft1smain();
   httpcpytest();
+  fooparsertest();
   return 0;
 }

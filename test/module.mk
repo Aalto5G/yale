@@ -1,7 +1,7 @@
 YALE_TEST_SRC_LIB :=
-YALE_TEST_SRC := $(YALE_TEST_SRC_LIB) parserunit.c condtest.c httpcmain.c httpcmainprint.c httpcpytest.c httppyperf.c lenperfixcmain.c reprefixcmain.c httptrespcmain.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c tokentheft1main.c tokentheft1smain.c lenprefixcmain.c httprespcmain.c sslcmain.c sslcmainprint.c
+YALE_TEST_SRC := $(YALE_TEST_SRC_LIB) parserunit.c condtest.c httpcmain.c httpcmainprint.c httpcpytest.c httppyperf.c lenperfixcmain.c reprefixcmain.c httptrespcmain.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c tokentheft1main.c tokentheft1smain.c lenprefixcmain.c httprespcmain.c sslcmain.c sslcmainprint.c footest.c
 
-YALE_TEST_SRCGEN_LIB := lenprefixcparser.c reprefixcparser.c httpcparser.c httppycparser.c httprespcparser.c condparsercparser.c recursivecbcparser.c backtracktestcparser.c backtracktestcbcparser.c tokentheft1cparser.c tokentheft1scparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c
+YALE_TEST_SRCGEN_LIB := lenprefixcparser.c reprefixcparser.c httpcparser.c httppycparser.c httprespcparser.c condparsercparser.c recursivecbcparser.c backtracktestcparser.c backtracktestcbcparser.c tokentheft1cparser.c tokentheft1scparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c fooparsercparser.c
 YALE_TEST_SRCGEN := $(YALE_TEST_SRCGEN_LIB)
 
 YALE_TEST_HDRGEN := $(patsubst %.c,%.h,$(YALE_TEST_SRCGEN))
@@ -44,7 +44,7 @@ clean_$(LCYALE_TEST): clean_YALE_TEST
 distclean_$(LCYALE_TEST): distclean_YALE_TEST
 unit_$(LCYALE_TEST): unit_YALE_TEST
 
-YALE_TEST_PROGS:=$(DIRYALE_TEST)/parserunit $(DIRYALE_TEST)/condtest $(DIRYALE_TEST)/httpcmain $(DIRYALE_TEST)/httpcmainprint $(DIRYALE_TEST)/httpcpytest $(DIRYALE_TEST)/httppyperf $(DIRYALE_TEST)/lenprefixcmain $(DIRYALE_TEST)/reprefixcmain $(DIRYALE_TEST)/httprespcmain $(DIRYALE_TEST)/recursivecbmain $(DIRYALE_TEST)/backtracktestmain $(DIRYALE_TEST)/backtracktestcbmain $(DIRYALE_TEST)/tokentheft1main $(DIRYALE_TEST)/tokentheft1smain $(DIRYALE_TEST)/sslcmain $(DIRYALE_TEST)/sslcmainprint
+YALE_TEST_PROGS:=$(DIRYALE_TEST)/parserunit $(DIRYALE_TEST)/condtest $(DIRYALE_TEST)/httpcmain $(DIRYALE_TEST)/httpcmainprint $(DIRYALE_TEST)/httpcpytest $(DIRYALE_TEST)/httppyperf $(DIRYALE_TEST)/lenprefixcmain $(DIRYALE_TEST)/reprefixcmain $(DIRYALE_TEST)/httprespcmain $(DIRYALE_TEST)/recursivecbmain $(DIRYALE_TEST)/backtracktestmain $(DIRYALE_TEST)/backtracktestcbmain $(DIRYALE_TEST)/tokentheft1main $(DIRYALE_TEST)/tokentheft1smain $(DIRYALE_TEST)/sslcmain $(DIRYALE_TEST)/sslcmainprint $(DIRYALE_TEST)/footest
 
 YALE_TEST: $(DIRYALE_TEST)/libtest.a $(YALE_TEST_PROGS)
 
@@ -70,6 +70,9 @@ $(DIRYALE_TEST)/httpcmain: $(DIRYALE_TEST)/httpcmain.o $(YALE_TEST_DEPS_COMMON)
 	$(YALE_TEST_CCLDCMD)
 
 $(DIRYALE_TEST)/httpcmainprint: $(DIRYALE_TEST)/httpcmainprint.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
+
+$(DIRYALE_TEST)/footest: $(DIRYALE_TEST)/footest.o $(YALE_TEST_DEPS_COMMON)
 	$(YALE_TEST_CCLDCMD)
 
 $(DIRYALE_TEST)/httpcpytest: $(DIRYALE_TEST)/httpcpytest.o $(YALE_TEST_DEPS_COMMON)
@@ -123,6 +126,11 @@ $(DIRYALE_TEST)/httpcmainprint.d: $(DIRYALE_TEST)/httpcparser.h
 $(DIRYALE_TEST)/httpcmainprint.o: $(DIRYALE_TEST)/httpcparser.h
 $(DIRYALE_TEST)/httpcparser.d: $(DIRYALE_TEST)/httpcparser.h
 $(DIRYALE_TEST)/httpcparser.o: $(DIRYALE_TEST)/httpcparser.h
+
+$(DIRYALE_TEST)/footest.d: $(DIRYALE_TEST)/fooparsercparser.h
+$(DIRYALE_TEST)/footest.o: $(DIRYALE_TEST)/fooparsercparser.h
+$(DIRYALE_TEST)/fooparsercparser.d: $(DIRYALE_TEST)/fooparsercparser.h
+$(DIRYALE_TEST)/fooparsercparser.o: $(DIRYALE_TEST)/fooparsercparser.h
 
 $(DIRYALE_TEST)/httpcpytest.d: $(DIRYALE_TEST)/httppycparser.h
 $(DIRYALE_TEST)/httpcpytest.o: $(DIRYALE_TEST)/httppycparser.h
@@ -192,6 +200,12 @@ $(DIRYALE_TEST)/reprefixcparser.h: $(DIRYALE_TEST)/reprefix.txt $(YALE_TEST_PARS
 	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/reprefixcparser.c: $(DIRYALE_TEST)/reprefix.txt $(YALE_TEST_PARSER_DEPS)
+	$(YALE_TEST_YALECCMD)
+
+$(DIRYALE_TEST)/fooparsercparser.h: $(DIRYALE_TEST)/fooparser.txt $(YALE_TEST_PARSER_DEPS)
+	$(YALE_TEST_YALEHCMD)
+
+$(DIRYALE_TEST)/fooparsercparser.c: $(DIRYALE_TEST)/fooparser.txt $(YALE_TEST_PARSER_DEPS)
 	$(YALE_TEST_YALECCMD)
 
 $(DIRYALE_TEST)/httpcparser.h: $(DIRYALE_TEST)/httppaper.txt $(YALE_TEST_PARSER_DEPS)

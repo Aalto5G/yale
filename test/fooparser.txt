@@ -1,0 +1,11 @@
+%{
+#include "foocommon.h"
+%}
+
+token foo = "foo" ;
+token bar = "bar" ;
+
+A = | foo bar<cb=barcb> A ;
+
+directive main = A;
+directive parsername = fooparser;

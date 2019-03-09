@@ -53,3 +53,6 @@
 /httppycparser.h
 /httpcpytest
 /httppyperf
+/fooparsercparser.c
+/fooparsercparser.h
+/footest
