@@ -2329,7 +2329,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    abort();\n"
              "  }\n"
              "#endif\n"
-             "  return -EAGAIN;\n"
+             "  return eofindicator ? off : (-EAGAIN);\n"
              "}\n");
 }
 

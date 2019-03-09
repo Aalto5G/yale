@@ -734,7 +734,7 @@ static void fooparsertest()
     "[]-\n"
     "<bar>\n"
     "[]-\n"
-    "Consumed: -11\n";
+    "Consumed: 12\n";
   testmain("test/footest", expected);
 }
 
