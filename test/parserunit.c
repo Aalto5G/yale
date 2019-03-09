@@ -731,9 +731,9 @@ static void fooparsertest()
 {
   char *expected =
     "<bar>\n"
-    "<>-\n"
+    "[]-\n"
     "<bar>\n"
-    "<>-\n"
+    "[]-\n"
     "Consumed: -11\n";
   testmain("test/footest", expected);
 }

@@ -5,12 +5,18 @@ ssize_t barcb(const char *buf, size_t siz, int start, struct fooparser_parserctx
 {
   const char *ubuf = buf;
   size_t i;
-  putchar('<');
+  if (start & YALE_FLAG_START)
+    putchar('<');
+  else
+    putchar('[');
   for (i = 0; i < siz; i++)
   {
     putchar(ubuf[i]);
   }
-  putchar('>');
+  if (start & YALE_FLAG_START)
+    putchar('>');
+  else
+    putchar(']');
   if (start & YALE_FLAG_END)
   {
     putchar('-');
