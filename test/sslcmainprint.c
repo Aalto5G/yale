@@ -19,7 +19,7 @@ ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pct
 }
 ssize_t feed1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {
-  return ssl2_parse_block(&pctx->ssl2, buf, siz, 0); // FIXME eofindicator
+  return ssl2_parse_block(&pctx->ssl2, buf, siz, 0);
 }
 
 ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
@@ -43,7 +43,7 @@ ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pct
   {
     ssl3_parserctx_init(&pctx->ssl3);
   }
-  result = ssl3_parse_block(&pctx->ssl3, buf, siz, 0); // FIXME eofindicator
+  result = ssl3_parse_block(&pctx->ssl3, buf, siz, !!(flags & YALE_FLAG_END));
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
     return result;
@@ -79,7 +79,7 @@ ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pct
   {
     ssl4_parserctx_init(&pctx->ssl4);
   }
-  result = ssl4_parse_block(&pctx->ssl4, buf, siz, 0); // FIXME eofindicator
+  result = ssl4_parse_block(&pctx->ssl4, buf, siz, !!(flags & YALE_FLAG_END));
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
     return result;
@@ -115,7 +115,7 @@ ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pct
   {
     ssl5_parserctx_init(&pctx->ssl5);
   }
-  result = ssl5_parse_block(&pctx->ssl5, buf, siz, 0); // FIXME eofindicator
+  result = ssl5_parse_block(&pctx->ssl5, buf, siz, !!(flags & YALE_FLAG_END));
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
     return result;
@@ -151,7 +151,7 @@ ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pct
   {
     ssl6_parserctx_init(&pctx->ssl6);
   }
-  result = ssl6_parse_block(&pctx->ssl6, buf, siz, 0); // FIXME eofindicator
+  result = ssl6_parse_block(&pctx->ssl6, buf, siz, !!(flags & YALE_FLAG_END));
   if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
   {
     return result;

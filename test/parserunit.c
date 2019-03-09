@@ -179,6 +179,7 @@ static void sslcmainprint(void)
   char *expected =
     "sz: 136\n"
     "<localhost>\n"
+    "[]-\n"
     "----------------\n"
     "<l>\n"
     "[o]\n"
@@ -188,7 +189,8 @@ static void sslcmainprint(void)
     "[h]\n"
     "[o]\n"
     "[s]\n"
-    "[t]\n";
+    "[t]\n"
+    "[]-\n";
   testmain("test/sslcmainprint", expected);
 }
 
