@@ -1879,7 +1879,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        //fprintf(stderr, \"blk[off] = '%%c'\\n\", blk[off]);\n");
   fprints(f, "        //abort();\n"
              "        //exit(1);\n"
-             "        return -EINVAL;\n"
+             "        return ret;\n"
              "      }\n"
              "      else\n"
              "      {\n"
@@ -2083,7 +2083,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "            }\n"
              "            return 0;\n"
              "          }\n"
-             "          return -EINVAL;\n"
+             "          return (ret < 0) ? ret : (-EINVAL);\n"
              "        }\n"
              "        else\n"
              "        {\n"
