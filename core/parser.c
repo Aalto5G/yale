@@ -7,6 +7,8 @@
 
 #undef DO_PRINT_STACKCONFIG
 
+#define STACKSZ_ERR 255
+
 static void *parsergen_alloc(struct ParserGen *gen, size_t sz)
 {
   void *result = gen->userareaptr;
@@ -1295,6 +1297,11 @@ void gen_parser(struct ParserGen *gen)
   }
   gen->max_stack_size = tmpssz;
   gen->max_cb_stack_size = tmpsz;
+  if (gen->max_stack_size != tmpssz || gen->max_cb_stack_size != tmpsz)
+  {
+    printf("Error: PDA stack overflow\n");
+    exit(1);
+  }
   for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
   {
     int ok = 1;
@@ -1431,6 +1438,7 @@ end_cbs(FILE *f, const char *indent)
   fprintf(f, "%sssize_t end_cbs_ret = end_cbs(pctx, blk);\n", indent);
   fprintf(f, "%sif (end_cbs_ret != -EAGAIN)\n", indent);
   fprintf(f, "%s{\n", indent);
+  fprintf(f, "%s  pctx->stacksz = STACKSZ_ERR;\n", indent);
   fprintf(f, "%s  return end_cbs_ret;\n", indent);
   fprintf(f, "%s}\n", indent);
 }
@@ -1728,9 +1736,11 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   if_bitnz_call_cbsflg(f, "  ", gen->parsername, "mismask", "YALE_FLAG_MAJOR_MISTAKE");
   fprintf(f, "  return -EAGAIN;\n");
   fprints(f, "}\n");
-  fprints(f, "\n"
+  fprintf(f, "\n"
              "#define EXTRA_SANITY\n"
-             "\n");
+             "\n"
+             "#define STACKSZ_ERR %d\n"
+             "\n", STACKSZ_ERR);
   fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator)//, void *baton)\n", gen->parsername, gen->parsername);
   fprintf(f, "{\n"
              "  size_t off = 0;\n"
@@ -1749,9 +1759,9 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "\n"
              "  for (;;)\n"
              "  {\n"
-             "    if (unlikely(pctx->stacksz == 0))\n"
+             "    if (unlikely(pctx->stacksz == 0 || pctx->stacksz == STACKSZ_ERR))\n"
              "    {\n"
-             "      if (off >= sz && pctx->saved_token == PARSER_UINT_MAX)\n"
+             "      if (off >= sz && pctx->saved_token == PARSER_UINT_MAX && pctx->stacksz != STACKSZ_ERR)\n"
              "      {\n"
              "#ifdef EXTRA_SANITY\n");
   fprints(f, "        if (off > sz)\n"
@@ -1810,6 +1820,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        cbr = %s_call_cbs1(pctx, &cbmask, blk+off, ret, %s_callbacks);\n", gen->parsername, gen->parsername);
     fprintf(f, "        if (cbr != -EAGAIN)\n");
     fprintf(f, "        {\n");
+    fprintf(f, "          pctx->stacksz = STACKSZ_ERR;\n");
     fprintf(f, "          return cbr;\n");
     fprintf(f, "        }\n");
     fprintf(f, "      }\n");
@@ -1820,6 +1831,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        cbr = %s_call_cbsflg(pctx, &endmask, blk+off, 0, YALE_FLAG_END, %s_callbacks);\n", gen->parsername, gen->parsername);
     fprintf(f, "        if (cbr != -EAGAIN)\n");
     fprintf(f, "        {\n");
+    fprintf(f, "          pctx->stacksz = STACKSZ_ERR;\n");
     fprintf(f, "          return cbr;\n");
     fprintf(f, "        }\n");
     fprintf(f, "      }\n");
@@ -1831,6 +1843,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     fprintf(f, "        cbr = %s_call_cbsflg(pctx, &mismask, blk+off, 0, YALE_FLAG_MAJOR_MISTAKE, %s_callbacks);\n", gen->parsername, gen->parsername);
     fprintf(f, "        if (cbr != -EAGAIN)\n");
     fprintf(f, "        {\n");
+    fprintf(f, "          pctx->stacksz = STACKSZ_ERR;\n");
     fprintf(f, "          return cbr;\n");
     fprintf(f, "        }\n");
     fprintf(f, "      }\n");
@@ -1879,6 +1892,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "        //fprintf(stderr, \"blk[off] = '%%c'\\n\", blk[off]);\n");
   fprints(f, "        //abort();\n"
              "        //exit(1);\n"
+             "        pctx->stacksz = STACKSZ_ERR;\n"
              "        return ret;\n"
              "      }\n"
              "      else\n"
@@ -1953,6 +1967,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   //fprintf(f, "      curstateoff = curstate - %s_num_terminals;\n", gen->parsername);
   fprintf(f, "      if (curstateoff == PARSER_UINT_MAX)\n");
   fprintf(f, "      {\n");
+  fprintf(f, "        pctx->stacksz = STACKSZ_ERR;\n");
   fprintf(f, "        return -EINVAL;\n");
   fprintf(f, "      }\n");
   fprintf(f, "      restates = %s_parserstatetblentries[curstateoff].re;\n", gen->parsername);
@@ -1997,6 +2012,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "          cbr = %s_call_cbs1(pctx, &cbmask, blk+off, ret, %s_callbacks);\n", gen->parsername, gen->parsername);
       fprintf(f, "          if (cbr != -EAGAIN)\n");
       fprintf(f, "          {\n");
+      fprintf(f, "            pctx->stacksz = STACKSZ_ERR;\n");
       fprintf(f, "            return cbr;\n");
       fprintf(f, "          }\n");
       fprintf(f, "        }\n");
@@ -2007,6 +2023,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "          cbr = %s_call_cbsflg(pctx, &endmask, blk+off, 0, YALE_FLAG_END, %s_callbacks);\n", gen->parsername, gen->parsername);
       fprintf(f, "          if (cbr != -EAGAIN)\n");
       fprintf(f, "          {\n");
+      fprintf(f, "            pctx->stacksz = STACKSZ_ERR;\n");
       fprintf(f, "            return cbr;\n");
       fprintf(f, "          }\n");
       fprintf(f, "        }\n");
@@ -2018,6 +2035,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       fprintf(f, "          cbr = %s_call_cbsflg(pctx, &mismask, blk+off, 0, YALE_FLAG_MAJOR_MISTAKE, %s_callbacks);\n", gen->parsername, gen->parsername);
       fprintf(f, "          if (cbr != -EAGAIN)\n");
       fprintf(f, "          {\n");
+      fprintf(f, "            pctx->stacksz = STACKSZ_ERR;\n");
       fprintf(f, "            return cbr;\n");
       fprintf(f, "          }\n");
       fprintf(f, "        }\n");
@@ -2077,12 +2095,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "          //exit(1);\n"
              "          if (ret == 0)\n"
              "          {\n"
+             "            if (sz > 0) pctx->stacksz = STACKSZ_ERR;\n"
              "            if (unlikely(eofindicator))\n"
              "            {\n");
   end_cbs(f, "              ");
   fprints(f, "            }\n"
              "            return 0;\n"
              "          }\n"
+             "          pctx->stacksz = STACKSZ_ERR;\n"
              "          return (ret < 0) ? ret : (-EINVAL);\n"
              "        }\n"
              "        else\n"
@@ -2214,6 +2234,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "      //ruleid = %s_parserstatetblentries[curstateoff].rhs[state];\n", gen->parsername);
   fprintf(f, "      if (ruleid == PARSER_UINT_MAX)\n");
   fprintf(f, "      {\n");
+  fprintf(f, "        pctx->stacksz = STACKSZ_ERR;\n");
   fprintf(f, "        return -EINVAL;\n");
   fprintf(f, "      }\n");
   fprintf(f, "      rule = &%s_rules[ruleid];\n", gen->parsername);
@@ -2296,6 +2317,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "        cbr = cb1f(NULL, 0, YALE_FLAG_ACTION, pctx);//, baton);\n"
              "        if (cbr != 0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n"
              "        {\n"
+             "          pctx->stacksz = STACKSZ_ERR;\n"
              "          return cbr;\n"
              "        }\n"
              "        pctx->stacksz--;\n"
@@ -2329,6 +2351,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "    abort();\n"
              "  }\n"
              "#endif\n"
+             "  if (unlikely(eofindicator))\n"
+             "  {\n"
+             "    pctx->stacksz = STACKSZ_ERR;\n"
+             "  }\n"
              "  return eofindicator ? off : (-EAGAIN);\n"
              "}\n");
 }
@@ -2376,6 +2402,11 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "  parser_uint_t saved_token;\n");
   fprints(f, "  parser_uint_t curstateoff;\n");
+  if (gen->max_stack_size >= STACKSZ_ERR)
+  {
+    printf("Too big maximum stack size, maximum is %d\n", STACKSZ_ERR-1);
+    exit(1);
+  }
   fprintf(f, "  struct ruleentry stack[%d];\n", gen->max_stack_size);
   if (gen->max_cb_stack_size)
   {
