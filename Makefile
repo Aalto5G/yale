@@ -28,10 +28,6 @@ MODULES += YALE_PYBRIDGE
 
 CFLAGS := -Ofast -g -Wall -Wextra -Werror -Wno-missing-field-initializers -Wno-unused-parameter -Wno-tautological-compare -Wshadow -Wstrict-prototypes -Wmissing-prototypes -Wpointer-arith -msse -msse2 -msse3 -mssse3 -msse4.1 -msse4.2 -msse4 -mavx -mavx2 -msse4a -mbmi -mbmi2 -march=skylake -fomit-frame-pointer -std=gnu11
 
-ifeq ($(WITH_PYTHON),yes)
-  CFLAGS += -I/usr/include/python3.6 -fPIC
-endif
-
 .PHONY: all clean distclean unit
 
 all: $(MODULES)
@@ -42,6 +38,13 @@ unit: $(patsubst %,unit_%,$(MODULES))
 MAKEFILES_COMMON := Makefile opts.mk
 
 include opts.mk
+
+WITH_PYTHON ?= no
+PYTHON_DIR ?= /usr/include/python3.6
+
+ifeq ($(WITH_PYTHON),yes)
+  CFLAGS += -I$(PYTHON_DIR) -fPIC
+endif
 
 $(foreach module,$(MODULES),$(eval \
     include $(DIR$(module))/module.mk))
