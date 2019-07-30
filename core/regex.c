@@ -765,7 +765,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
     start = re;
     term = memchr(re+1, ']', resz-1);
   }
-  len = term - start; // FIXME is return value correct for inverse?
+  len = term - start + inverse;
   i = 0;
   while (i < len)
   {

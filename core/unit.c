@@ -1,7 +1,8 @@
 #define _GNU_SOURCE
 #include "parser.h"
+#include "regex.h"
 
-struct firstset_values singleton(yale_uint_t tkn)
+static struct firstset_values singleton(yale_uint_t tkn)
 {
   struct firstset_values values;
   struct firstset_value *value = malloc(1*sizeof(*value));
@@ -14,10 +15,26 @@ struct firstset_values singleton(yale_uint_t tkn)
   return values;
 }
 
+static void bracketexpr_unit(void)
+{
+  struct re *re;
+  size_t remst;
+  const char bracketexpr1[] = "[\\r\\n]*";
+  const char bracketexpr2[] = "[^\\r\\n]*";
+
+  re = parse_bracketexpr(0, bracketexpr1+1, strlen(bracketexpr1)-1, &remst);
+  printf("%c\n", bracketexpr1[1+remst]);
+
+  re = parse_bracketexpr(0, bracketexpr2+1, strlen(bracketexpr2)-1, &remst);
+  printf("%c\n", bracketexpr2[1+remst]);
+}
+
 int main(int argc, char **argv)
 {
   struct firstset_values vals1, vals2, vals3, vals4, vals5, vals6;
   size_t i;
+
+  bracketexpr_unit();
 
   vals1 = singleton(1);
   vals2 = singleton(2);
