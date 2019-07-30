@@ -56,3 +56,6 @@
 /fooparsercparser.c
 /fooparsercparser.h
 /footest
+/smtpclientmain
+/smtpclientcparser.c
+/smtpclientcparser.h

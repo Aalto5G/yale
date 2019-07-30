@@ -1,7 +1,7 @@
 YALE_TEST_SRC_LIB :=
-YALE_TEST_SRC := $(YALE_TEST_SRC_LIB) parserunit.c condtest.c httpcmain.c httpcmainprint.c httpcpytest.c httppyperf.c lenperfixcmain.c reprefixcmain.c httptrespcmain.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c tokentheft1main.c tokentheft1smain.c lenprefixcmain.c httprespcmain.c sslcmain.c sslcmainprint.c footest.c
+YALE_TEST_SRC := $(YALE_TEST_SRC_LIB) parserunit.c condtest.c httpcmain.c httpcmainprint.c httpcpytest.c httppyperf.c lenperfixcmain.c reprefixcmain.c httptrespcmain.c recursivecbmain.c backtracktestmain.c backtracktestcbmain.c tokentheft1main.c tokentheft1smain.c smtpclientmain.c lenprefixcmain.c httprespcmain.c sslcmain.c sslcmainprint.c footest.c
 
-YALE_TEST_SRCGEN_LIB := lenprefixcparser.c reprefixcparser.c httpcparser.c httppycparser.c httprespcparser.c condparsercparser.c recursivecbcparser.c backtracktestcparser.c backtracktestcbcparser.c tokentheft1cparser.c tokentheft1scparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c fooparsercparser.c
+YALE_TEST_SRCGEN_LIB := lenprefixcparser.c reprefixcparser.c httpcparser.c httppycparser.c httprespcparser.c condparsercparser.c recursivecbcparser.c backtracktestcparser.c backtracktestcbcparser.c tokentheft1cparser.c smtpclientcparser.c tokentheft1scparser.c ssl1cparser.c ssl2cparser.c ssl3cparser.c ssl4cparser.c ssl5cparser.c ssl6cparser.c fooparsercparser.c
 YALE_TEST_SRCGEN := $(YALE_TEST_SRCGEN_LIB)
 
 YALE_TEST_HDRGEN := $(patsubst %.c,%.h,$(YALE_TEST_SRCGEN))
@@ -44,7 +44,7 @@ clean_$(LCYALE_TEST): clean_YALE_TEST
 distclean_$(LCYALE_TEST): distclean_YALE_TEST
 unit_$(LCYALE_TEST): unit_YALE_TEST
 
-YALE_TEST_PROGS:=$(DIRYALE_TEST)/parserunit $(DIRYALE_TEST)/condtest $(DIRYALE_TEST)/httpcmain $(DIRYALE_TEST)/httpcmainprint $(DIRYALE_TEST)/httpcpytest $(DIRYALE_TEST)/httppyperf $(DIRYALE_TEST)/lenprefixcmain $(DIRYALE_TEST)/reprefixcmain $(DIRYALE_TEST)/httprespcmain $(DIRYALE_TEST)/recursivecbmain $(DIRYALE_TEST)/backtracktestmain $(DIRYALE_TEST)/backtracktestcbmain $(DIRYALE_TEST)/tokentheft1main $(DIRYALE_TEST)/tokentheft1smain $(DIRYALE_TEST)/sslcmain $(DIRYALE_TEST)/sslcmainprint $(DIRYALE_TEST)/footest
+YALE_TEST_PROGS:=$(DIRYALE_TEST)/parserunit $(DIRYALE_TEST)/condtest $(DIRYALE_TEST)/httpcmain $(DIRYALE_TEST)/httpcmainprint $(DIRYALE_TEST)/httpcpytest $(DIRYALE_TEST)/httppyperf $(DIRYALE_TEST)/lenprefixcmain $(DIRYALE_TEST)/reprefixcmain $(DIRYALE_TEST)/httprespcmain $(DIRYALE_TEST)/recursivecbmain $(DIRYALE_TEST)/backtracktestmain $(DIRYALE_TEST)/backtracktestcbmain $(DIRYALE_TEST)/tokentheft1main $(DIRYALE_TEST)/tokentheft1smain $(DIRYALE_TEST)/smtpclientmain $(DIRYALE_TEST)/sslcmain $(DIRYALE_TEST)/sslcmainprint $(DIRYALE_TEST)/footest
 
 YALE_TEST: $(DIRYALE_TEST)/libtest.a $(YALE_TEST_PROGS)
 
@@ -103,6 +103,9 @@ $(DIRYALE_TEST)/tokentheft1main: $(DIRYALE_TEST)/tokentheft1main.o $(YALE_TEST_D
 	$(YALE_TEST_CCLDCMD)
 
 $(DIRYALE_TEST)/tokentheft1smain: $(DIRYALE_TEST)/tokentheft1smain.o $(YALE_TEST_DEPS_COMMON)
+	$(YALE_TEST_CCLDCMD)
+
+$(DIRYALE_TEST)/smtpclientmain: $(DIRYALE_TEST)/smtpclientmain.o $(YALE_TEST_DEPS_COMMON)
 	$(YALE_TEST_CCLDCMD)
 
 $(DIRYALE_TEST)/sslcmain: $(DIRYALE_TEST)/sslcmain.o $(YALE_TEST_DEPS_COMMON)
@@ -178,6 +181,11 @@ $(DIRYALE_TEST)/tokentheft1smain.d: $(DIRYALE_TEST)/tokentheft1scparser.h
 $(DIRYALE_TEST)/tokentheft1smain.o: $(DIRYALE_TEST)/tokentheft1scparser.h
 $(DIRYALE_TEST)/tokentheft1scparser.d: $(DIRYALE_TEST)/tokentheft1scparser.h
 $(DIRYALE_TEST)/tokentheft1scparser.o: $(DIRYALE_TEST)/tokentheft1scparser.h
+
+$(DIRYALE_TEST)/smtpclientmain.d: $(DIRYALE_TEST)/smtpclientcparser.h
+$(DIRYALE_TEST)/smtpclientmain.o: $(DIRYALE_TEST)/smtpclientcparser.h
+$(DIRYALE_TEST)/smtpclientcparser.d: $(DIRYALE_TEST)/smtpclientcparser.h
+$(DIRYALE_TEST)/smtpclientcparser.o: $(DIRYALE_TEST)/smtpclientcparser.h
 
 $(DIRYALE_TEST)/condtest.d: $(DIRYALE_TEST)/condparsercparser.h
 $(DIRYALE_TEST)/condtest.o: $(DIRYALE_TEST)/condparsercparser.h
@@ -260,6 +268,12 @@ $(DIRYALE_TEST)/tokentheft1scparser.h: $(DIRYALE_TEST)/tokentheft1s.txt $(YALE_T
 	$(YALE_TEST_YALEHCMD)
 
 $(DIRYALE_TEST)/tokentheft1scparser.c: $(DIRYALE_TEST)/tokentheft1s.txt $(YALE_TEST_PARSER_DEPS)
+	$(YALE_TEST_YALECCMD)
+
+$(DIRYALE_TEST)/smtpclientcparser.h: $(DIRYALE_TEST)/smtpclient.txt $(YALE_TEST_PARSER_DEPS)
+	$(YALE_TEST_YALEHCMD)
+
+$(DIRYALE_TEST)/smtpclientcparser.c: $(DIRYALE_TEST)/smtpclient.txt $(YALE_TEST_PARSER_DEPS)
 	$(YALE_TEST_YALECCMD)
 
 # ------ Begin SSL dependencies --------

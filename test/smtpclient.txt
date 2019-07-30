@@ -1,0 +1,48 @@
+%{
+#include "smtpclientcommon.h"
+%}
+
+token sp = " " ;
+token args = "[^\r\n]*" ;
+token HELO = "HELO" ;
+token EHLO = "EHLO" ;
+token MAIL = "MAIL" ;
+token RCPT = "RCPT" ;
+token DATA = "DATA" ;
+token QUIT = "QUIT" ;
+token dataNoCrLf = "[^\r\n]*" ;
+token maybe_cr = "\r?" ;
+token crCont = "\r[^\r\n]*" ;
+token lfCont = "\n[^\r\n]*" ;
+token cr = "\r" ;
+token lf = "\n" ;
+token dataTerminator = "\r\n[.]\r\n" ;
+
+heloLine = HELO sp args maybe_cr lf | EHLO sp args maybe_cr lf ;
+
+maybeCont2 =
+ | lfCont maybeCont2
+ | crCont maybeCont2
+;
+
+dataCont2 = dataNoCrLf maybeCont2 ;
+
+dataCont = 
+  dataTerminator
+| maybe_cr lf dataCont2 dataTerminator
+;
+
+bodyLine =
+  MAIL sp args maybe_cr lf 
+| RCPT sp args maybe_cr lf
+| DATA dataCont
+;
+
+bodyLines =
+| bodyLine bodyLines ;
+
+smtpExchange = heloLine bodyLines QUIT maybe_cr lf ;
+
+directive bytessizetype = void ;
+directive main = smtpExchange;
+directive parsername = smtpclient;
