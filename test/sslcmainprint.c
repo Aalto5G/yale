@@ -252,6 +252,38 @@ int main(int argc, char **argv)
 ,0x02,0x03
   };
 
+  if (argc != 1 && argc != 2)
+  {
+    printf("Usage: %s [file.dat]\n", argv[0]);
+    exit(1);
+  }
+  if (argc == 2)
+  {
+    FILE *f = fopen(argv[1], "rb");
+    char buf[65536];
+    size_t bytes_read;
+    if (f == NULL)
+    {
+      printf("Can't open %s\n", argv[1]);
+      exit(1);
+    }
+    bytes_read = fread(buf, 1, sizeof(buf), f);
+    if (bytes_read == sizeof(buf))
+    {
+      printf("Too large file: %s\n", argv[1]);
+      exit(1);
+    }
+    buf[bytes_read] = '\0';
+    fclose(f);
+    ssl1_parserctx_init(&pctx);
+    consumed = ssl1_parse_block(&pctx, buf, bytes_read, 1);
+    if (consumed < 0 || (size_t)consumed != bytes_read)
+    {
+      abort();
+    }
+    return 0;
+  }
+
   printf("sz: %zu\n", sizeof(pctx));
 
 
