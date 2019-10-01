@@ -71,6 +71,44 @@ int main(int argc, char **argv)
     "Cookie: PHPSESSID=298zf09hf012fh2; csrftoken=u32t4o3tb3gg43; _gat=1;\r\n"
     "\r\n";
 
+  if (argc != 1 && argc != 2)
+  {
+    printf("Usage: %s [file.dat]\n", argv[0]);
+    exit(1);
+  }
+  if (argc == 2)
+  {
+    FILE *f = fopen(argv[1], "rb");
+    char buf[65536];
+    size_t bytes_read;
+    char *term;
+    if (f == NULL)
+    {
+      printf("Can't open %s\n", argv[1]);
+      exit(1);
+    }
+    bytes_read = fread(buf, 1, sizeof(buf), f);
+    if (bytes_read == sizeof(buf))
+    {
+      printf("Too large file: %s\n", argv[1]);
+      exit(1);
+    }
+    buf[bytes_read] = '\0';
+    fclose(f);
+    term = strstr(buf, "\r\n\r\n");
+    if (term != NULL)
+    {
+      bytes_read = term - buf + 4;
+    }
+    http_parserctx_init(&pctx);
+    consumed = http_parse_block(&pctx, buf, bytes_read, 1);
+    if (consumed < 0 || (size_t)consumed != bytes_read)
+    {
+      abort();
+    }
+    return 0;
+  }
+
   for (i = 0; i < /* 1000 * 1000 */ 1 ; i++)
   {
     http_parserctx_init(&pctx);
