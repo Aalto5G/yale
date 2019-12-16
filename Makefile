@@ -26,6 +26,10 @@ DIRYALE_PYBRIDGE := pybridge
 LCYALE_PYBRIDGE := yale_pybridge
 MODULES += YALE_PYBRIDGE
 
+DIRYALE_CBRIDGE := cbridge
+LCYALE_CBRIDGE := yale_cbridge
+MODULES += YALE_CBRIDGE
+
 .PHONY: all clean distclean unit
 
 all: $(MODULES)
