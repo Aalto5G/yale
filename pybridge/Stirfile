@@ -1,0 +1,48 @@
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = []
+$SRC_PROG = []
+$LIB = "libpybridge.a"
+# FIXME fix += operator
+$EXTRACFLAGS = ["-I../test", "-I../runtime"]
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = ["../test/libtest.a"]
+$UNITDEPS = []
+$UNITCMDS = []
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@if($WITH_PYTHON)
+@deponly: 'all': 'httpparser.so' 'sslparser.so'
+@endif
+
+@deponly: 'httpcpy.d' 'httpcpy.o': '../test/httppycparser.h'
+
+@deponly: 'sslcpy.d' 'sslcpy.o': \
+          '../test/ssl1cparser.h' '../test/ssl2cparser.h' \
+          '../test/ssl3cparser.h' '../test/ssl4cparser.h' \
+          '../test/ssl5cparser.h' '../test/ssl6cparser.h'
+
+'httpcpy.o': 'httpcpy.c' 'httpcpy.d'
+@	[$(CC), @$(CFLAGS), "-c", "-o", @D$@, @D$<]
+
+'sslcpy.o': 'sslcpy.c' 'sslcpy.d'
+@	[$(CC), @$(CFLAGS), "-c", "-o", @D$@, @D$<]
+
+'httpcpy.d': 'httpcpy.c'
+@	[$(CC), @$(CFLAGS), "-M", "-o", @D$@, @D$<]
+
+'sslcpy.d': 'sslcpy.c'
+@	[$(CC), @$(CFLAGS), "-M", "-o", @D$@, @D$<]
+
+'httpparser.so': 'httpcpy.o' $LIBS
+@	[$(CC), @$(CFLAGS), "-shared", "-o", @D$@, @@D$^]
+
+'sslparser.so': 'sslcpy.o' $LIBS
+@	[$(CC), @$(CFLAGS), "-shared", "-o", @D$@, @@D$^]
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB, "httpcpy.c", "sslcpy.c"], ".c", ".d")

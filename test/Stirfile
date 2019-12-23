@@ -1,0 +1,188 @@
+@subfile
+@strict
+
+# You can modify these
+
+$SRC_LIB = ["lenprefixcparser.c", "reprefixcparser.c", "httpcparser.c", "httppycparser.c", "httprespcparser.c", "condparsercparser.c", "recursivecbcparser.c", "backtracktestcparser.c", "backtracktestcbcparser.c", "tokentheft1cparser.c", "smtpclientcparser.c", "tokentheft1scparser.c", "ssl1cparser.c", "ssl2cparser.c", "ssl3cparser.c", "ssl4cparser.c", "ssl5cparser.c", "ssl6cparser.c", "fooparsercparser.c"]
+$SRC_PROG = ["parserunit.c", "condtest.c", "httpcmain.c", "httpcmainprint.c", "httpcpytest.c", "httppyperf.c", "lenprefixcmain.c", "reprefixcmain.c", "httprespcmain.c", "recursivecbmain.c", "backtracktestmain.c", "backtracktestcbmain.c", "tokentheft1main.c", "tokentheft1smain.c", "smtpclientmain.c", "sslcmain.c", "sslcmainprint.c", "footest.c"]
+$LIB = "libtest.a"
+# FIXME fix += operator
+$EXTRACFLAGS = ["-I../runtime", "-I../core"]
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = ["../core/libcore.a"]
+$UNITDEPS = ["parserunit"]
+$UNITCMDS = [["./parserunit"]]
+
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+# Dependencies
+
+@deponly: 'httpcmain.d' 'httpcmain.o' 'httpcmainprint.d' 'httpcmainprint.o' \
+          'httpcparser.d' 'httpcparser.o': 'httpcparser.h'
+
+@deponly: 'footest.d' 'footest.o' 'fooparsercparser.d' 'fooparsercparser.o': \
+          'fooparsercparser.h'
+
+@deponly: 'httpcpytest.d' 'httpcpytest.o' 'httppyperf.d' 'httppyperf.o' \
+          'httppycparser.d' 'httppycparser.o': 'httppycparser.h'
+
+@deponly: 'recursivecbmain.d' 'recursivecbmain.o' \
+          'recursivecbcparser.d' 'recursivecbcparser.o': 'recursivecbcparser.h'
+
+@deponly: 'httprespcmain.d' 'httprespcmain.o' \
+          'httprespcparser.d' 'httprespcparser.o': 'httprespcparser.h'
+
+@deponly: 'backtracktestmain.d' 'backtracktestmain.o' \
+          'backtracktestcparser.d' 'backtracktestcparser.o': \
+          'backtracktestcparser.h'
+
+@deponly: 'backtracktestcbmain.d' 'backtracktestcbmain.o' \
+          'backtracktestcbcparser.d' 'backtracktestcbcparser.o': \
+          'backtracktestcbcparser.h'
+
+@deponly: 'lenprefixcmain.d' 'lenprefixcmain.o' \
+          'lenprefixcparser.d' 'lenprefixcparser.o': 'lenprefixcparser.h'
+
+@deponly: 'reprefixcmain.d' 'reprefixcmain.o' \
+          'reprefixcparser.d' 'reprefixcparser.o': 'reprefixcparser.h'
+
+@deponly: 'tokentheft1main.d' 'tokentheft1main.o' \
+          'tokentheft1cparser.d' 'tokentheft1cparser.o': 'tokentheft1cparser.h'
+
+@deponly: 'tokentheft1smain.d' 'tokentheft1smain.o' \
+          'tokentheft1scparser.d' 'tokentheft1scparser.o': \
+          'tokentheft1scparser.h'
+
+@deponly: 'smtpclientmain.d' 'smtpclientmain.o' \
+          'smtpclientcparser.d' 'smtpclientcparser.o': 'smtpclientcparser.h'
+
+@deponly: 'condtest.d' 'condtest.o' \
+          'condparsercparser.d' 'condparsercparser.o': 'condparsercparser.h'
+
+# Generated parsers
+
+'lenprefixcparser.h': 'lenprefix.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'lenprefixcparser.c': 'lenprefix.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'reprefixcparser.h': 'reprefix.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'reprefixcparser.c': 'reprefix.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'fooparsercparser.h': 'fooparser.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'fooparsercparser.c': 'fooparser.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'httpcparser.h': 'httppaper.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'httpcparser.c': 'httppaper.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'httppycparser.h': 'httppy.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'httppycparser.c': 'httppy.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'httprespcparser.h': 'httpresp.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'httprespcparser.c': 'httpresp.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'condparsercparser.h': 'condparser.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'condparsercparser.c': 'condparser.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'recursivecbcparser.h': 'recursivecb.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'recursivecbcparser.c': 'recursivecb.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'backtracktestcparser.h': 'backtracktest.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'backtracktestcparser.c': 'backtracktest.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'backtracktestcbcparser.h': 'backtracktestcb.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'backtracktestcbcparser.c': 'backtracktestcb.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'tokentheft1cparser.h': 'tokentheft1.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'tokentheft1cparser.c': 'tokentheft1.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'tokentheft1scparser.h': 'tokentheft1s.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'tokentheft1scparser.c': 'tokentheft1s.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'smtpclientcparser.h': 'smtpclient.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'smtpclientcparser.c': 'smtpclient.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+# ------ Begin SSL dependencies --------
+
+@deponly: 'sslcmain.d' 'sslcmain.o' 'sslcmainprint.d' 'sslcmainprint.o': \
+          'ssl1cparser.h' 'ssl2cparser.h' 'ssl3cparser.h' \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl1cparser.d' 'ssl1cparser.o': \
+          'ssl1cparser.h' 'ssl2cparser.h' 'ssl3cparser.h' \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl2cparser.d' 'ssl2cparser.o': \
+          'ssl2cparser.h' 'ssl3cparser.h' \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl3cparser.d' 'ssl3cparser.o': \
+          'ssl3cparser.h' 'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl4cparser.d' 'ssl4cparser.o': \
+          'ssl4cparser.h' 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl5cparser.d' 'ssl5cparser.o': 'ssl5cparser.h' 'ssl6cparser.h'
+
+@deponly: 'ssl6cparser.d' 'ssl6cparser.o': 'ssl6cparser.h'
+
+# ------ Begin SSL generated parsers --------
+
+'ssl1cparser.h': 'ssl1.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'ssl1cparser.c': 'ssl1.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'ssl2cparser.h': 'ssl2.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'ssl2cparser.c': 'ssl2.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'ssl3cparser.h': 'ssl3.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'ssl3cparser.c': 'ssl3.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'ssl4cparser.h': 'ssl4.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'ssl4cparser.c': 'ssl4.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'ssl5cparser.h': 'ssl5.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'ssl5cparser.c': 'ssl5.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+'ssl6cparser.h': 'ssl6.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "h"]
+'ssl6cparser.c': 'ssl6.txt' '../main/yaleparser'
+@	["../main/yaleparser", @D$<, "c"]
+
+# cdepincludes
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
