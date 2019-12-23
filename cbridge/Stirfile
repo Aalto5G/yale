@@ -1,0 +1,26 @@
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = ["sslc.c", "httpc.c"]
+$SRC_PROG = ["test.c"]
+$LIB = "libcbridge.a"
+# FIXME fix += operator
+$EXTRACFLAGS = ["-I../test", "-I../runtime"]
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = ["../test/libtest.a"]
+$UNITDEPS = []
+$UNITCMDS = []
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@deponly: 'httpc.d' 'httpc.o': '../test/httppycparser.h'
+
+@deponly: 'sslc.d' 'sslc.o': \
+          '../test/ssl1cparser.h' '../test/ssl2cparser.h' \
+          '../test/ssl3cparser.h' '../test/ssl4cparser.h' \
+          '../test/ssl5cparser.h' '../test/ssl6cparser.h'
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")

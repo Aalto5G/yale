@@ -1,0 +1,19 @@
+@subfile
+@strict
+
+# You can modify these
+$SRC_LIB = []
+$SRC_PROG = ["yaleparser.c", "yaletopy.c"]
+$LIB = "libmain.a"
+# FIXME fix += operator
+$EXTRACFLAGS = ["-I../core", "-I../yy"]
+$CFLAGS = [@$CFLAGS, @$EXTRACFLAGS]
+$LIBS = ["../yy/libyy.a", "../core/libcore.a"]
+$UNITDEPS = []
+$UNITCMDS = []
+
+# You won't want to modify anything below this line
+@call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
+
+@cdepincludes @autophony @autotarget @ignore \
+  @sufsuball([@$SRC_PROG, @$SRC_LIB], ".c", ".d")
