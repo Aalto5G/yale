@@ -61,70 +61,46 @@ $UNITCMDS = [["./parserunit"]]
 
 # Generated parsers
 
-'lenprefixcparser.h': 'lenprefix.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'lenprefixcparser.c': 'lenprefix.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+$Y = "../main/yaleparser"
 
-'reprefixcparser.h': 'reprefix.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'reprefixcparser.c': 'reprefix.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'lenprefixcparser.h' 'lenprefixcparser.c': 'lenprefix.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'fooparsercparser.h': 'fooparser.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'fooparsercparser.c': 'fooparser.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'reprefixcparser.h' 'reprefixcparser.c': 'reprefix.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'httpcparser.h': 'httppaper.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'httpcparser.c': 'httppaper.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'fooparsercparser.h' 'fooparsercparser.c': 'fooparser.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'httppycparser.h': 'httppy.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'httppycparser.c': 'httppy.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'httpcparser.h' 'httpcparser.c': 'httppaper.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'httprespcparser.h': 'httpresp.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'httprespcparser.c': 'httpresp.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'httppycparser.h' 'httppycparser.c': 'httppy.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'condparsercparser.h': 'condparser.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'condparsercparser.c': 'condparser.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'httprespcparser.h' 'httprespcparser.c': 'httpresp.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'recursivecbcparser.h': 'recursivecb.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'recursivecbcparser.c': 'recursivecb.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'condparsercparser.h' 'condparsercparser.c': 'condparser.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'backtracktestcparser.h': 'backtracktest.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'backtracktestcparser.c': 'backtracktest.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'recursivecbcparser.h' 'recursivecbcparser.c': 'recursivecb.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'backtracktestcbcparser.h': 'backtracktestcb.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'backtracktestcbcparser.c': 'backtracktestcb.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'backtracktestcparser.h' 'backtracktestcparser.c': 'backtracktest.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'tokentheft1cparser.h': 'tokentheft1.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'tokentheft1cparser.c': 'tokentheft1.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'backtracktestcbcparser.h' 'backtracktestcbcparser.c': 'backtracktestcb.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'tokentheft1scparser.h': 'tokentheft1s.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'tokentheft1scparser.c': 'tokentheft1s.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'tokentheft1cparser.h' 'tokentheft1cparser.c': 'tokentheft1.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'smtpclientcparser.h': 'smtpclient.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'smtpclientcparser.c': 'smtpclient.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'tokentheft1scparser.h' 'tokentheft1scparser.c': 'tokentheft1s.txt' $Y
+@	[$Y, @D$<, "b"]
+
+'smtpclientcparser.h' 'smtpclientcparser.c': 'smtpclient.txt' $Y
+@	[$Y, @D$<, "b"]
 
 # ------ Begin SSL dependencies --------
 
@@ -152,35 +128,23 @@ $UNITCMDS = [["./parserunit"]]
 
 # ------ Begin SSL generated parsers --------
 
-'ssl1cparser.h': 'ssl1.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'ssl1cparser.c': 'ssl1.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'ssl1cparser.h' 'ssl1cparser.c': 'ssl1.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'ssl2cparser.h': 'ssl2.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'ssl2cparser.c': 'ssl2.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'ssl2cparser.h' 'ssl2cparser.c': 'ssl2.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'ssl3cparser.h': 'ssl3.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'ssl3cparser.c': 'ssl3.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'ssl3cparser.h' 'ssl3cparser.c': 'ssl3.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'ssl4cparser.h': 'ssl4.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'ssl4cparser.c': 'ssl4.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'ssl4cparser.h' 'ssl4cparser.c': 'ssl4.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'ssl5cparser.h': 'ssl5.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'ssl5cparser.c': 'ssl5.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'ssl5cparser.h' 'ssl5cparser.c': 'ssl5.txt' $Y
+@	[$Y, @D$<, "b"]
 
-'ssl6cparser.h': 'ssl6.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "h"]
-'ssl6cparser.c': 'ssl6.txt' '../main/yaleparser'
-@	["../main/yaleparser", @D$<, "c"]
+'ssl6cparser.h' 'ssl6cparser.c': 'ssl6.txt' $Y
+@	[$Y, @D$<, "b"]
 
 # cdepincludes
 
