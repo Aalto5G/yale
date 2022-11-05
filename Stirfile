@@ -4,11 +4,16 @@
 @fileinclude @ignore "opts.smk"
 
 # You can modify these for compilation
+$WITH_WERROR ?= @false
 $CC ?= "clang"
-$CFLAGS ?= ["-Ofast", "-g", "-Wall", "-Wextra", "-Werror", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wno-tautological-compare", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-fomit-frame-pointer", "-std=gnu11", "-fPIC"]
+$CFLAGS ?= ["-Ofast", "-g", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wno-tautological-compare", "-Wshadow", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-fomit-frame-pointer", "-std=gnu11", "-fPIC"]
 $LDFLAGS ?= []
 $WITH_PYTHON ?= @false
 $WITH_NEW_CPU ?= @false
+
+@if($WITH_WERROR)
+  $CFLAGS = [@$CFLAGS, "-Werror"]
+@endif
 
 @if($WITH_PYTHON)
   $PYTHON_CFLAGS_SET ?= @false
