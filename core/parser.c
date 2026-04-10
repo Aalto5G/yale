@@ -511,12 +511,12 @@ void firstset2_update(struct ParserGen *gen, struct firstset_values *val2, const
 #if 0
 static void firstset2_update_epsilon(struct firstset_values *val2, const struct firstset_values *val1)
 {
-  return firstset2_update(NULL, val2, val1, 0, NULL);
+  firstset2_update(NULL, val2, val1, 0, NULL);
 }
 #endif
 static void firstset2_update_noepsilon(struct ParserGen *gen, struct firstset_values *val2, const struct firstset_values *val1)
 {
-  return firstset2_update(gen, val2, val1, 1, NULL);
+  firstset2_update(gen, val2, val1, 1, NULL);
 }
 
 static struct firstset_values firstset_func2(struct ParserGen *gen, const struct ruleitem *rhs, size_t rhssz)
