@@ -679,7 +679,8 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         }
         if (curdfanode >= YALE_UINT_MAX_LEGAL)
         {
-          abort();
+          fprintf(stderr, "too big regexp, too many states\n");
+          exit(1);
         }
         d.tbl[d.tblsz].dfanodeid = curdfanode;
         memcpy(&d.tbl[d.tblsz++].key, &ec, sizeof(ec));
@@ -687,7 +688,8 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         dfanodeid = curdfanode++;
         if (queuesz >= sizeof(queue)/sizeof(*queue))
         {
-          abort();
+          fprintf(stderr, "too big regexp, too many states in queue\n");
+          exit(1);
         }
         queue[queuesz++] = ec;
       }
