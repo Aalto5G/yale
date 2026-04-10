@@ -82,7 +82,7 @@ struct dfa_node {
   yale_uint_t acceptid;
   uint8_t tainted:1;
   uint8_t accepting:1;
-  uint8_t final:1;
+  uint8_t finalflag:1;
   struct bitset acceptidset;
   struct bitset taintidset;
   uint64_t algo_tmp;

@@ -38,7 +38,7 @@ typedef uint8_t parser_uint_t;
 
 struct state {
   uint8_t accepting;
-  uint8_t final;
+  uint8_t finalflag;
   parser_uint_t acceptid;
   const parser_uint_t *taintids;
   parser_uint_t taintidsz;

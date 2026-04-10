@@ -512,7 +512,7 @@ void dfaviz(struct dfa_node *ds, yale_uint_t cnt)
            (int)i, (int)i,
            ds[i].accepting ? "+" : "",
            ds[i].tainted ? "*" : "",
-           ds[i].final ? "F" : "");
+           ds[i].finalflag ? "F" : "");
   }
   for (i = 0; i < cnt; i++)
   {
@@ -719,7 +719,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
     }
     if (j == 256 && ds[i].default_tr == YALE_UINT_MAX_LEGAL)
     {
-      ds[i].final = 1;
+      ds[i].finalflag = 1;
     }
   }
   return curdfanode;
@@ -1458,13 +1458,13 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     struct dfa_node *ds = &pick_those->ds[i];
     if (ds->acceptid == YALE_UINT_MAX_LEGAL)
     {
-      fprintf(f, "{ .accepting = %d, .acceptid = PARSER_UINT_MAX, .final = %d,\n",
-                 (int)ds->accepting, (int)ds->final);
+      fprintf(f, "{ .accepting = %d, .acceptid = PARSER_UINT_MAX, .finalflag = %d,\n",
+                 (int)ds->accepting, (int)ds->finalflag);
     }
     else
     {
-      fprintf(f, "{ .accepting = %d, .acceptid = %d, .final = %d,\n",
-                 (int)ds->accepting, (int)ds->acceptid, (int)ds->final);
+      fprintf(f, "{ .accepting = %d, .acceptid = %d, .finalflag = %d,\n",
+                 (int)ds->accepting, (int)ds->acceptid, (int)ds->finalflag);
     }
     fprints(f, ".taintids = taintidsetarray");
     for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
@@ -1504,7 +1504,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     }
     fprints(f, ")/sizeof(parser_uint_t),\n");
     fprints(f, ".fastpathbitmask = {");
-    if (ds->accepting && !ds->final)
+    if (ds->accepting && !ds->finalflag)
     {
       size_t iid, jid;
       uint64_t curval;
@@ -1962,7 +1962,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      if (st->accepting)\n");
   fprints(f, "      {\n");
-  fprints(f, "        if (st->final)\n");
+  fprints(f, "        if (st->finalflag)\n");
   fprints(f, "        {\n");
   fprints(f, "          *state = st->acceptid;\n");
   fprints(f, "          ctx->state = 0;\n");
@@ -2187,7 +2187,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here\n");
   fprints(f, "    if (st->accepting)\n");
   fprints(f, "    {\n");
-  fprints(f, "      if (st->final)\n");
+  fprints(f, "      if (st->finalflag)\n");
   fprints(f, "      {\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
