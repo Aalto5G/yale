@@ -10,7 +10,7 @@ struct ParserGen gen;
 int main(int argc, char **argv)
 {
   FILE *f;
-  struct yale yale = {};
+  struct yale yale = YALE_EMPTY;
   size_t i, iter;
   char cnamebuf[1024] = {0};
   char hnamebuf[1024] = {0};

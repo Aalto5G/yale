@@ -5,7 +5,7 @@
 int main(int argc, char **argv)
 {
   FILE *f, *fout;
-  struct yale yale = {};
+  struct yale yale = YALE_EMPTY;
 
   fprintf(stderr, "Warning: this is an old implementation of YaLe.\n");
   fprintf(stderr, "The old implementation is known to have backtrack bugs.\n");

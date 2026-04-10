@@ -10,6 +10,8 @@ struct bitset {
   uint64_t bitset[(YALE_UINT_MAX_LEGAL+1+63)/64];
 };
 
+#define BITSET_EMPTY {.bitset = {0}}
+
 struct charbitset {
   uint64_t bitset[4];
 };

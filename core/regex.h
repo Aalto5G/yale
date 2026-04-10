@@ -141,6 +141,7 @@ struct bitset_hash {
   struct bitset_hash_item tbl[YALE_UINT_MAX_LEGAL];
   yale_uint_t tblsz;
 };
+#define BITSET_HASH_EMPTY {.tblsz = 0}
 
 // FIXME this algorithm requires thorough review
 ssize_t state_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound);

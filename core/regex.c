@@ -139,8 +139,8 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
                     struct bitset *taintidsetp)
 {
   struct bitset closure = nodes;
-  struct bitset taintidset = {};
-  struct bitset acceptidset = {};
+  struct bitset taintidset = BITSET_EMPTY;
+  struct bitset acceptidset = BITSET_EMPTY;
   yale_uint_t stack[YALE_UINT_MAX_LEGAL + 1];
   yale_uint_t nidx;
   size_t stacksz = 0;
@@ -275,8 +275,8 @@ void dfa_init(struct dfa_node *n, int accepting, int tainted, struct bitset *acc
 
 void dfa_init_empty(struct dfa_node *n)
 {
-  struct bitset acceptidset = {};
-  struct bitset taintidset = {};
+  struct bitset acceptidset = BITSET_EMPTY;
+  struct bitset taintidset = BITSET_EMPTY;
   dfa_init(n, 0, 0, &acceptidset, &taintidset);
 }
 
@@ -307,8 +307,8 @@ void dfa_connect_default(struct dfa_node *n, yale_uint_t node2)
 // FIXME this algorithm requires thorough review
 ssize_t state_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound)
 {
-  struct bitset tovisit = {};
-  struct bitset visited = {};
+  struct bitset tovisit = BITSET_EMPTY;
+  struct bitset visited = BITSET_EMPTY;
   size_t max_backtrack = 0;
   size_t i;
   ds[state].algo_tmp = 0;
@@ -358,8 +358,8 @@ ssize_t state_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound)
 
 void __attribute__((noinline)) set_accepting(struct dfa_node *ds, yale_uint_t state, int *priorities)
 {
-  struct bitset tovisit = {};
-  struct bitset visited = {};
+  struct bitset tovisit = BITSET_EMPTY;
+  struct bitset visited = BITSET_EMPTY;
   size_t i;
   int seen = 0;
   int priority;
@@ -452,8 +452,8 @@ void __attribute__((noinline)) set_accepting(struct dfa_node *ds, yale_uint_t st
 
 ssize_t maximal_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound)
 {
-  struct bitset tovisit = {};
-  struct bitset visited = {};
+  struct bitset tovisit = BITSET_EMPTY;
+  struct bitset visited = BITSET_EMPTY;
   ssize_t state_bt;
   ssize_t max_backtrack = 0;
   size_t i;
@@ -560,11 +560,11 @@ void nfaviz(struct nfa_node *ns, yale_uint_t cnt)
 
 yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
 {
-  struct bitset initial = {};
-  struct bitset dfabegin = {};
+  struct bitset initial = BITSET_EMPTY;
+  struct bitset dfabegin = BITSET_EMPTY;
   int tainted;
-  struct bitset acceptidset = {};
-  struct bitset taintidset = {};
+  struct bitset acceptidset = BITSET_EMPTY;
+  struct bitset taintidset = BITSET_EMPTY;
   yale_uint_t wordoff = begin/64;
   yale_uint_t bitoff = begin%64;
   yale_uint_t curdfanode = 0;
@@ -572,7 +572,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
   int accepting = 0;
   struct bitset queue[YALE_UINT_MAX_LEGAL + 1];
   size_t queuesz;
-  struct bitset_hash d = {};
+  struct bitset_hash d = BITSET_HASH_EMPTY;
   size_t i, j;
 
   initial.bitset[wordoff] |= (1ULL<<bitoff);
@@ -611,8 +611,8 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
   while (queuesz)
   {
     struct bitset nns = queue[--queuesz];
-    struct bitset d2[256] = {};
-    struct bitset d2epsilon = {};
+    struct bitset d2[256] = {BITSET_EMPTY};
+    struct bitset d2epsilon = BITSET_EMPTY;
     //printf("Iter\n");
     for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/) // for nn in nns
     {
@@ -739,7 +739,7 @@ static inline void set_char(uint64_t bitmask[4], unsigned char ch)
 struct re *
 parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart)
 {
-  uint64_t bitmask[4] = {};
+  uint64_t bitmask[4] = {0};
   const char *start;
   const char *term;
   size_t i, len;
@@ -1356,8 +1356,9 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprints(f, "\n");
   fprintf(f, "struct %s_parserctx;", parsername);
   fprintf(f, "struct %s_cbset {\n", parsername);
-  fprintf(f, "  %s elems[%d];\n", cbbitmasktype, cbbitmaskcnt);
+  fprintf(f, "  %s elems[%d];\n", cbbitmasktype, cbbitmaskcnt ? cbbitmaskcnt : 1); // Standard C does not allow zero-length arrays
   fprintf(f, "};\n");
+  fprintf(f, "#define %s_CBSET_EMPTY {.elems = {0}}\n", parsername);
   fprintf(f, "struct %s_callbacks {\n", parsername);
   fprintf(f, "  struct %s_cbset cbsmask;\n", parsername);
   fprintf(f, "};\n");
@@ -1380,7 +1381,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);
   fprints(f, "{\n");
-  fprintf(f, "  const struct %s_cbset empty = {};\n", parsername);
+  fprintf(f, "  const struct %s_cbset empty = %s_CBSET_EMPTY;\n", parsername, parsername);
   fprints(f, "  ctx->state = 0;\n");
   fprints(f, "  ctx->last_accept = LEXER_UINT_MAX;\n");
   fprints(f, "  ctx->start_status = empty;\n");
@@ -1921,7 +1922,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        ctx->backtrackmid = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "        if (st)\n");
   fprints(f, "        {\n");
-  fprintf(f, "          struct %s_cbset cbmask = {}, endmask = {}, mismask = {}, cbmask_orig, negendmis;\n", parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parsername, parsername, parsername);
   fprints(f, "          ssize_t cbr;\n");
   fprints(f, "          uint16_t bitoff;\n");
   fprints(f, "          size_t elemidx;\n");
@@ -1972,7 +1973,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "          %s_bitclear(&ctx->lastack_status);\n", parsername);
   fprints(f, "          if (st)\n");
   fprints(f, "          {\n");
-  fprintf(f, "            struct %s_cbset cbmask = {}, endmask = {}, mismask = {}, cbmask_orig, negendmis;\n", parsername);
+  fprintf(f, "            struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parsername, parsername, parsername);
   fprints(f, "            ssize_t cbr;\n");
   fprints(f, "            uint16_t bitoff;\n");
   fprints(f, "            size_t elemidx;\n");
@@ -2017,7 +2018,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    }\n");
   fprints(f, "    if (st)\n");
   fprints(f, "    {\n");
-  fprintf(f, "      struct %s_cbset cbmask = {}, endmask = {}, mismask = {}, cbmask_orig, negendmis;\n", parsername);
+  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parsername, parsername, parsername);
   fprints(f, "      ssize_t cbr;\n");
   fprints(f, "      size_t taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
@@ -2114,7 +2115,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      {\n");
   fprints(f, "        if (j == 0)\n");
   fprints(f, "        {\n");
-  fprintf(f, "          struct %s_cbset cbmask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   add_cb_stack(f, "          ", parsername, cbssz);
   fprintf(f, "          if (cb2)\n");
@@ -2128,9 +2129,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        else\n");
   fprints(f, "        {\n");
   fprintf(f, "          enum yale_flags flags = 0;\n");
-  fprintf(f, "          struct %s_cbset cbmask = {};\n", parsername);
-  fprintf(f, "          struct %s_cbset endmask = {};\n", parsername);
-  fprintf(f, "          struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
   fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "          ssize_t cbr;\n");
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
@@ -2198,9 +2199,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        if (st->accepting)\n");
   fprints(f, "        {\n");
   fprintf(f, "          enum yale_flags flags = 0;\n");
-  fprintf(f, "          struct %s_cbset cbmask = {};\n", parsername);
-  fprintf(f, "          struct %s_cbset endmask = {};\n", parsername);
-  fprintf(f, "          struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
   fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "          ssize_t cbr;\n");
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
@@ -2280,9 +2281,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      if (st->accepting && i > 0)\n");
   fprints(f, "      {\n");
   fprints(f, "        enum yale_flags flags = 0;\n");
-  fprintf(f, "        struct %s_cbset cbmask = {};\n", parsername);
-  fprintf(f, "        struct %s_cbset endmask = {};\n", parsername);
-  fprintf(f, "        struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "        struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "        struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "        struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
 #if 0 // Not needed due to this being the last block
   fprintf(f, "        struct %s_cbset negendmis;\n", parsername);
 #endif
@@ -2362,9 +2363,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    if (st->accepting && i > 0)\n");
   fprints(f, "    {\n");
   fprintf(f, "      enum yale_flags flags = 0;\n");
-  fprintf(f, "      struct %s_cbset cbmask = {};\n", parsername);
-  fprintf(f, "      struct %s_cbset endmask = {};\n", parsername);
-  fprintf(f, "      struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "      struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "      struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
 #if 0 // Not needed due to this being the last block
   fprintf(f, "      struct %s_cbset negendmis;\n", parsername);
 #endif
@@ -2428,9 +2429,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   // FIXME use taintid set:
   fprints(f, "  if (st)\n");
   fprints(f, "  {\n");
-  fprintf(f, "    struct %s_cbset cbmask = {};\n", parsername);
-  fprintf(f, "    struct %s_cbset endmask = {};\n", parsername);
-  fprintf(f, "    struct %s_cbset mismask = {};\n", parsername);
+  fprintf(f, "    struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "    struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "    struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
   fprintf(f, "    struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "    enum yale_flags flags = 0;\n");
   fprints(f, "    size_t taintidx;\n");

@@ -112,7 +112,7 @@ int main(int argc, char **argv)
   ssize_t maxbt = 0;
   FILE *f;
 
-  //yale_uint_t transitions[256] = {};
+  //yale_uint_t transitions[256] = {0};
   //perf_trans(transitions, &bufs);
 
 #if 0

@@ -108,6 +108,7 @@ struct yale {
   uint8_t nofastpath;
   uint8_t shortcutting;
 };
+#define YALE_EMPTY {.tokencnt = 0}
 
 static inline void yale_free(struct yale *yale)
 {
