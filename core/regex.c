@@ -1141,6 +1141,11 @@ void gennfa(struct re *regexp,
     {
       yale_uint_t begin1 = (*ncnt)++;
       yale_uint_t end1 = (*ncnt)++;
+      if (begin1 >= YALE_UINT_MAX_LEGAL || end1 >= YALE_UINT_MAX_LEGAL)
+      {
+        fprintf(stderr, "too big regexp, too many states\n");
+        exit(1);
+      }
       nfa_init(&ns[begin1], 0, taintid);
       nfa_init(&ns[end1], 0, taintid);
       gennfa(regexp->u.star.re, ns, ncnt, begin1, end1, taintid);
@@ -1186,6 +1191,11 @@ void gennfa(struct re *regexp,
     case CONCAT:
     {
       yale_uint_t middle = (*ncnt)++;
+      if (middle >= YALE_UINT_MAX_LEGAL)
+      {
+        fprintf(stderr, "too big regexp, too many states\n");
+        exit(1);
+      }
       nfa_init(&ns[middle], 0, taintid);
       gennfa(regexp->u.cat.re1, ns, ncnt, begin, middle, taintid);
       gennfa(regexp->u.cat.re2, ns, ncnt, middle, end, taintid);
@@ -1200,6 +1210,11 @@ void gennfa_main(struct re *regexp,
 {
   yale_uint_t begin = (*ncnt)++;
   yale_uint_t end = (*ncnt)++;
+  if (begin >= YALE_UINT_MAX_LEGAL || end >= YALE_UINT_MAX_LEGAL)
+  {
+    fprintf(stderr, "too big regexp, too many states\n");
+    exit(1);
+  }
   nfa_init(&ns[begin], 0, YALE_UINT_MAX_LEGAL);
   nfa_init(&ns[end], 1, YALE_UINT_MAX_LEGAL);
   gennfa(regexp, ns, ncnt, begin, end, taintid);
@@ -1210,10 +1225,20 @@ void gennfa_alternmulti(struct re *regexp,
 {
   yale_uint_t begin = (*ncnt)++;
   size_t i;
+  if (begin >= YALE_UINT_MAX_LEGAL)
+  {
+    fprintf(stderr, "too big regexp, too many states\n");
+    exit(1);
+  }
   nfa_init(&ns[begin], 0, YALE_UINT_MAX_LEGAL);
   for (i = 0; i < regexp->u.altmulti.resz; i++)
   {
     yale_uint_t end = (*ncnt)++;
+    if (end >= YALE_UINT_MAX_LEGAL)
+    {
+      fprintf(stderr, "too big regexp, too many states\n");
+      exit(1);
+    }
     nfa_init(&ns[end], 1, regexp->u.altmulti.pick_those[i]);
     gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, regexp->u.altmulti.pick_those[i]);
   }
@@ -1414,6 +1439,9 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
          void *(*alloc)(void*,size_t), void *allocud)
 {
   size_t i, j;
+  fprintf(f, "#if %zu > LEXER_UINT_MAX\n", (size_t)pick_those->dscnt);
+  fprintf(f, "#error \"Too big regexp DFA\"\n");
+  fprintf(f, "#endif\n");
   for (i = 0; i < pick_those->dscnt; i++)
   {
     struct dfa_node *ds = &pick_those->ds[i];
