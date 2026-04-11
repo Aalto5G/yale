@@ -1653,11 +1653,18 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     }
   }
   fprints(f, "};\n");
-  fprintf(f, "#if %zu > PARSER_UINT_MAX\n", (size_t)gen->rulecnt);
+  // PARSER_UINT_MAX is special value
+  // PARSER_UINT_MAX-1 is too special value
+  // Largest allowed is PARSER_UINT_MAX-2 so largest allowed count MAX-1
+  fprintf(f, "#if %zu >= PARSER_UINT_MAX\n", (size_t)gen->tokencnt+(size_t)gen->nonterminalcnt);
+  fprintf(f, "#error \"Too many tokens and nonterminals\"\n");
+  fprintf(f, "#endif\n");
+  fprintf(f, "#if %zu > PARSER_UINT_MAX\n", (size_t)gen->rulecnt); // RFE >= ??
   fprintf(f, "#error \"Too many rules\"\n");
   fprintf(f, "#endif\n");
   for (i = 0; i < gen->rulecnt; i++)
   {
+    // RFE >= ?? :
     fprintf(f, "#if %zu > PARSER_UINT_MAX\n", (size_t)gen->rules[i].itemcnt);
     fprintf(f, "#error \"Too long rule\"\n");
     fprintf(f, "#endif\n");
