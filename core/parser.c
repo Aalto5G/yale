@@ -1653,8 +1653,14 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     }
   }
   fprints(f, "};\n");
+  fprintf(f, "#if %zu > PARSER_UINT_MAX\n", (size_t)gen->rulecnt);
+  fprintf(f, "#error \"Too many rules\"\n");
+  fprintf(f, "#endif\n");
   for (i = 0; i < gen->rulecnt; i++)
   {
+    fprintf(f, "#if %zu > PARSER_UINT_MAX\n", (size_t)gen->rules[i].itemcnt);
+    fprintf(f, "#error \"Too long rule\"\n");
+    fprintf(f, "#endif\n");
     fprintf(f, "const struct ruleentry %s_rule_%d[] = {\n", gen->parsername, (int)i);
     for (j = 0; j < gen->rules[i].itemcnt; j++)
     {
