@@ -141,24 +141,27 @@ void nfa_connect_epsilon(struct nfa_node *n, yale_uint_t node2)
   n->epsilon.bits[n->epsilon.bits_size++] = node2;
 }
 
-void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
+void epsilonclosure(struct epsilonclosure_workarea *area,
+                    struct nfa_node *ns, const struct bitset *nodes,
                     struct bitset *closurep, int *tainted,
                     struct bitset *acceptidsetp,
                     struct bitset *taintidsetp)
 {
-  struct bitset closure = nodes;
-  struct bitset taintidset = BITSET_EMPTY;
-  struct bitset acceptidset = BITSET_EMPTY;
+  struct bitset *closure = &area->closure;
+  struct bitset *taintidset = &area->taintidset;
+  struct bitset *acceptidset = &area->acceptidset;
   yale_uint_t stack[YALE_UINT_MAX_LEGAL + 1];
   yale_uint_t nidx;
   size_t stacksz = 0;
   size_t i;
   size_t taintcnt = 0;
+  *closure = *nodes;
+  memset(area, 0, sizeof(*area));
   for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
     yale_uint_t wordoff = i/64;
     yale_uint_t bitoff = i%64;
-    if (nodes.bitset[wordoff] & (1ULL<<bitoff))
+    if (nodes->bitset[wordoff] & (1ULL<<bitoff))
     {
       if (stacksz >= sizeof(stack)/sizeof(*stack))
       {
@@ -168,7 +171,7 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + myffsll(nodes.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(nodes->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
@@ -189,9 +192,9 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
       yale_uint_t bit = n->epsilon.bits[i];
       yale_uint_t wordoff = bit/64;
       yale_uint_t bitoff = bit%64;
-      if (!(closure.bitset[wordoff] & (1ULL<<bitoff)))
+      if (!(closure->bitset[wordoff] & (1ULL<<bitoff)))
       {
-        closure.bitset[wordoff] |= (1ULL<<bitoff);
+        closure->bitset[wordoff] |= (1ULL<<bitoff);
         if (stacksz >= sizeof(stack)/sizeof(*stack))
         {
           abort();
@@ -204,36 +207,36 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
   {
     yale_uint_t wordoff = i/64;
     yale_uint_t bitoff = i%64;
-    if (closure.bitset[wordoff] & (1ULL<<bitoff))
+    if (closure->bitset[wordoff] & (1ULL<<bitoff))
     {
       struct nfa_node *n = &ns[i];
       if (n->taintid != YALE_UINT_MAX_LEGAL)
       {
         yale_uint_t wordoff2 = n->taintid/64;
         yale_uint_t bitoff2 = n->taintid%64;
-        if (!(taintidset.bitset[wordoff2] & (1ULL<<bitoff2)))
+        if (!(taintidset->bitset[wordoff2] & (1ULL<<bitoff2)))
         {
-          taintidset.bitset[wordoff2] |= (1ULL<<bitoff2);
+          taintidset->bitset[wordoff2] |= (1ULL<<bitoff2);
           taintcnt++;
         }
         if (n->accepting)
         {
-          acceptidset.bitset[wordoff2] |= (1ULL<<bitoff2);
+          acceptidset->bitset[wordoff2] |= (1ULL<<bitoff2);
         }
       }
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + myffsll(closure.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(closure->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
       i++;
     }
   }
-  *closurep = closure;
-  *acceptidsetp = acceptidset;
-  *taintidsetp = taintidset;
+  *closurep = *closure;
+  *acceptidsetp = *acceptidset;
+  *taintidsetp = *taintidset;
   *tainted = (taintcnt > 1);
 }
 
@@ -551,13 +554,13 @@ void nfaviz(struct nfa_node *ns, yale_uint_t cnt)
   printf("}\n");
 }
 
-yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
+yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
 {
-  struct bitset initial = BITSET_EMPTY;
-  struct bitset dfabegin = BITSET_EMPTY;
+  struct bitset *initial = &area->initial;
+  struct bitset *dfabegin = &area->dfabegin;
   int tainted;
-  struct bitset acceptidset = BITSET_EMPTY;
-  struct bitset taintidset = BITSET_EMPTY;
+  struct bitset *acceptidset = &area->acceptidset;
+  struct bitset *taintidset = &area->taintidset;
   yale_uint_t wordoff = begin/64;
   yale_uint_t bitoff = begin%64;
   yale_uint_t curdfanode = 0;
@@ -568,14 +571,16 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
   struct bitset_hash d = BITSET_HASH_EMPTY;
   size_t i, j;
 
-  initial.bitset[wordoff] |= (1ULL<<bitoff);
+  memset(area, 0, sizeof(*area));
 
-  epsilonclosure(ns, initial, &dfabegin, &tainted, &acceptidset, &taintidset);
+  initial->bitset[wordoff] |= (1ULL<<bitoff);
+
+  epsilonclosure(&area->ecarea, ns, initial, dfabegin, &tainted, acceptidset, taintidset);
   for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
     wordoff = i/64;
     bitoff = i%64;
-    if (dfabegin.bitset[wordoff] & (1ULL<<bitoff))
+    if (dfabegin->bitset[wordoff] & (1ULL<<bitoff))
     {
       if (ns[i].accepting)
       {
@@ -585,7 +590,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + myffsll(dfabegin.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (wordoff*64) + myffsll(dfabegin->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
     }
     else
     {
@@ -594,11 +599,11 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
   }
 
   d.tbl[d.tblsz].dfanodeid = curdfanode;
-  memcpy(&d.tbl[d.tblsz++].key, &dfabegin, sizeof(dfabegin));
-  dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset, &taintidset);
+  memcpy(&d.tbl[d.tblsz++].key, dfabegin, sizeof(*dfabegin));
+  dfa_init(&ds[curdfanode], accepting, tainted, acceptidset, taintidset);
   curdfanode++;
 
-  queue[0] = dfabegin;
+  queue[0] = *dfabegin;
   queuesz = 1;
 
   while (queuesz)
@@ -635,7 +640,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
       {
         continue;
       }
-      epsilonclosure(ns, d2[i], &ec, &tainted, &acceptidset, &taintidset);
+      epsilonclosure(&area->ecarea, ns, &d2[i], &ec, &tainted, acceptidset, taintidset);
 
       dfanodeid = YALE_UINT_MAX_LEGAL;
       for (j = 0; j < d.tblsz; j++)
@@ -677,7 +682,7 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
         }
         d.tbl[d.tblsz].dfanodeid = curdfanode;
         memcpy(&d.tbl[d.tblsz++].key, &ec, sizeof(ec));
-        dfa_init(&ds[curdfanode], accepting, tainted, &acceptidset, &taintidset);
+        dfa_init(&ds[curdfanode], accepting, tainted, acceptidset, taintidset);
         dfanodeid = curdfanode++;
         if (queuesz >= sizeof(queue)/sizeof(*queue))
         {
@@ -1293,7 +1298,8 @@ perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
 }
 
 void
-pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
+pick(struct nfa2dfa_workarea *area,
+     struct nfa_node *nsglobal, struct dfa_node *dsglobal,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
      int *caseis)
 {
@@ -1308,7 +1314,7 @@ pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
   re = parse_res(res, pick_those->pick_those, pick_those->len, caseis);
   gennfa_alternmulti(re, nsglobal, &ncnt);
   free_re(re);
-  pick_those->dscnt = nfa2dfa(nsglobal, dsglobal, 0);
+  pick_those->dscnt = nfa2dfa(area, nsglobal, dsglobal, 0);
   set_accepting(dsglobal, 0, priorities);
   pick_those->ds = malloc(sizeof(*pick_those->ds)*pick_those->dscnt);
   memcpy(pick_those->ds, dsglobal, sizeof(*pick_those->ds)*pick_those->dscnt);

@@ -121,7 +121,22 @@ void nfa_connect_epsilon(struct nfa_node *n, yale_uint_t node2);
 
 void nfa_connect_default(struct nfa_node *n, yale_uint_t node2);
 
-void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
+struct epsilonclosure_workarea {
+  struct bitset closure;
+  struct bitset taintidset;
+  struct bitset acceptidset;
+};
+
+struct nfa2dfa_workarea {
+  struct epsilonclosure_workarea ecarea;
+  struct bitset initial;
+  struct bitset dfabegin;
+  struct bitset acceptidset;
+  struct bitset taintidset;
+};
+
+void epsilonclosure(struct epsilonclosure_workarea *area,
+                    struct nfa_node *ns, const struct bitset *nodes,
                     struct bitset *closurep, int *tainted,
                     struct bitset *acceptidsetp,
                     struct bitset *taintidsetp);
@@ -156,7 +171,7 @@ void dfaviz(struct dfa_node *ds, yale_uint_t cnt);
 
 void nfaviz(struct nfa_node *ns, yale_uint_t cnt);
 
-yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin);
+yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin);
 
 struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart);
 
@@ -238,7 +253,7 @@ perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
            void *(*alloc)(void*, size_t), void *alloc_ud);
 
 void
-pick(struct nfa_node *nsglobal, struct dfa_node *dsglobal,
+pick(struct nfa2dfa_workarea *area, struct nfa_node *nsglobal, struct dfa_node *dsglobal,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
      int *caseis);
 
