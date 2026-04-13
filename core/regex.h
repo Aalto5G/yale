@@ -127,12 +127,24 @@ struct epsilonclosure_workarea {
   struct bitset acceptidset;
 };
 
+struct bitset_hash_item {
+  struct bitset key;
+  yale_uint_t dfanodeid;
+};
+
+struct bitset_hash {
+  struct bitset_hash_item tbl[YALE_UINT_MAX_LEGAL];
+  yale_uint_t tblsz;
+};
+
 struct nfa2dfa_workarea {
   struct epsilonclosure_workarea ecarea;
   struct bitset initial;
   struct bitset dfabegin;
   struct bitset acceptidset;
   struct bitset taintidset;
+  struct bitset queue[YALE_UINT_MAX_LEGAL + 1];
+  struct bitset_hash d;
 };
 
 void epsilonclosure(struct epsilonclosure_workarea *area,
@@ -148,16 +160,6 @@ void dfa_init_empty(struct dfa_node *n);
 void dfa_connect(struct dfa_node *n, char ch, yale_uint_t node2);
 
 void dfa_connect_default(struct dfa_node *n, yale_uint_t node2);
-
-struct bitset_hash_item {
-  struct bitset key;
-  yale_uint_t dfanodeid;
-};
-
-struct bitset_hash {
-  struct bitset_hash_item tbl[YALE_UINT_MAX_LEGAL];
-  yale_uint_t tblsz;
-};
 #define BITSET_HASH_EMPTY {.tblsz = 0}
 
 // FIXME this algorithm requires thorough review

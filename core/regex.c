@@ -155,8 +155,8 @@ void epsilonclosure(struct epsilonclosure_workarea *area,
   size_t stacksz = 0;
   size_t i;
   size_t taintcnt = 0;
-  *closure = *nodes;
   memset(area, 0, sizeof(*area));
+  *closure = *nodes;
   for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
   {
     yale_uint_t wordoff = i/64;
@@ -566,9 +566,11 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
   yale_uint_t curdfanode = 0;
   yale_uint_t dfanodeid, dfanodeid2;
   int accepting = 0;
-  struct bitset queue[YALE_UINT_MAX_LEGAL + 1];
+  struct bitset *queue = area->queue;
+  //struct bitset queue[YALE_UINT_MAX_LEGAL + 1];
   size_t queuesz;
-  struct bitset_hash d = BITSET_HASH_EMPTY;
+  struct bitset_hash *d = &area->d;
+  //struct bitset_hash d = BITSET_HASH_EMPTY;
   size_t i, j;
 
   memset(area, 0, sizeof(*area));
@@ -598,8 +600,8 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
     }
   }
 
-  d.tbl[d.tblsz].dfanodeid = curdfanode;
-  memcpy(&d.tbl[d.tblsz++].key, dfabegin, sizeof(*dfabegin));
+  d->tbl[d->tblsz].dfanodeid = curdfanode;
+  memcpy(&d->tbl[d->tblsz++].key, dfabegin, sizeof(*dfabegin));
   dfa_init(&ds[curdfanode], accepting, tainted, acceptidset, taintidset);
   curdfanode++;
 
@@ -643,11 +645,11 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
       epsilonclosure(&area->ecarea, ns, &d2[i], &ec, &tainted, acceptidset, taintidset);
 
       dfanodeid = YALE_UINT_MAX_LEGAL;
-      for (j = 0; j < d.tblsz; j++)
+      for (j = 0; j < d->tblsz; j++)
       {
-        if (bitset_equal(&d.tbl[j].key, &ec))
+        if (bitset_equal(&d->tbl[j].key, &ec))
         {
-          dfanodeid = d.tbl[j].dfanodeid;
+          dfanodeid = d->tbl[j].dfanodeid;
           break;
         }
       }
@@ -680,11 +682,11 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
           fprintf(stderr, "too big regexp, too many states\n");
           exit(1);
         }
-        d.tbl[d.tblsz].dfanodeid = curdfanode;
-        memcpy(&d.tbl[d.tblsz++].key, &ec, sizeof(ec));
+        d->tbl[d->tblsz].dfanodeid = curdfanode;
+        memcpy(&d->tbl[d->tblsz++].key, &ec, sizeof(ec));
         dfa_init(&ds[curdfanode], accepting, tainted, acceptidset, taintidset);
         dfanodeid = curdfanode++;
-        if (queuesz >= sizeof(queue)/sizeof(*queue))
+        if (queuesz >= sizeof(area->queue)/sizeof(*area->queue))
         {
           fprintf(stderr, "too big regexp, too many states in queue\n");
           exit(1);
@@ -693,11 +695,11 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
       }
 
       dfanodeid2 = YALE_UINT_MAX_LEGAL;
-      for (j = 0; j < d.tblsz; j++)
+      for (j = 0; j < d->tblsz; j++)
       {
-        if (bitset_equal(&d.tbl[j].key, &nns))
+        if (bitset_equal(&d->tbl[j].key, &nns))
         {
-          dfanodeid2 = d.tbl[j].dfanodeid;
+          dfanodeid2 = d->tbl[j].dfanodeid;
           break;
         }
       }
