@@ -90,8 +90,10 @@ struct dfa_node {
 };
 
 struct nfa_node {
-  struct bitset d[256];
-  struct bitset epsilon;
+  //struct bitset d[256];
+  //struct bitset epsilon;
+  struct sparsebitset d[256];
+  struct sparsebitset epsilon;
   uint8_t accepting:1;
   yale_uint_t taintid;
 };

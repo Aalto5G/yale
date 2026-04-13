@@ -10,6 +10,12 @@ struct bitset {
   uint64_t bitset[(YALE_UINT_MAX_LEGAL+1+63)/64];
 };
 
+struct sparsebitset {
+  yale_uint_t *bits;
+  yale_uint_t bits_capacity;
+  yale_uint_t bits_size;
+};
+
 #define BITSET_EMPTY {.bitset = {0}}
 
 struct charbitset {
@@ -58,6 +64,18 @@ static inline yale_uint_t pick_rm_first(struct bitset *bs)
     }
   }
   abort();
+}
+
+static inline void bitset_update_from_sparse(struct bitset *a, const struct sparsebitset *b)
+{
+  size_t i;
+  for (i = 0; i < b->bits_size; i++)
+  {
+    yale_uint_t bit = b->bits[i];
+    yale_uint_t wordoff = bit/64;
+    yale_uint_t bitoff = bit%64;
+    a->bitset[wordoff] |= (1ULL<<bitoff);
+  }
 }
 
 static inline void bitset_update(struct bitset *a, const struct bitset *b)

@@ -121,16 +121,24 @@ void nfa_init(struct nfa_node *n, int accepting, int taintid)
 
 void nfa_connect(struct nfa_node *n, char ch, yale_uint_t node2)
 {
-  yale_uint_t wordoff = node2/64;
-  yale_uint_t bitoff = node2%64;
-  n->d[(unsigned char)ch].bitset[wordoff] |= (1ULL<<bitoff);
+  if (n->d[(unsigned char)ch].bits_size >= n->d[(unsigned char)ch].bits_capacity)
+  {
+    size_t new_capacity = 2*n->d[(unsigned char)ch].bits_size + 16;
+    n->d[(unsigned char)ch].bits = realloc(n->d[(unsigned char)ch].bits, new_capacity*sizeof(*n->d[(unsigned char)ch].bits));
+    n->d[(unsigned char)ch].bits_capacity = new_capacity;
+  }
+  n->d[(unsigned char)ch].bits[n->d[(unsigned char)ch].bits_size++] = node2;
 }
 
 void nfa_connect_epsilon(struct nfa_node *n, yale_uint_t node2)
 {
-  yale_uint_t wordoff = node2/64;
-  yale_uint_t bitoff = node2%64;
-  n->epsilon.bitset[wordoff] |= (1ULL<<bitoff);
+  if (n->epsilon.bits_size >= n->epsilon.bits_capacity)
+  {
+    size_t new_capacity = 2*n->epsilon.bits_size + 16;
+    n->epsilon.bits = realloc(n->epsilon.bits, new_capacity*sizeof(*n->epsilon.bits));
+    n->epsilon.bits_capacity = new_capacity;
+  }
+  n->epsilon.bits[n->epsilon.bits_size++] = node2;
 }
 
 void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
@@ -176,29 +184,19 @@ void epsilonclosure(struct nfa_node *ns, struct bitset nodes,
     struct nfa_node *n;
     nidx = stack[--stacksz];
     n = &ns[nidx];
-    for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/)
+    for (i = 0; i < n->epsilon.bits_size; i++)
     {
-      yale_uint_t wordoff = i/64;
-      yale_uint_t bitoff = i%64;
-      if (n->epsilon.bitset[wordoff] & (1ULL<<bitoff))
+      yale_uint_t bit = n->epsilon.bits[i];
+      yale_uint_t wordoff = bit/64;
+      yale_uint_t bitoff = bit%64;
+      if (!(closure.bitset[wordoff] & (1ULL<<bitoff)))
       {
-        if (!(closure.bitset[wordoff] & (1ULL<<bitoff)))
+        closure.bitset[wordoff] |= (1ULL<<bitoff);
+        if (stacksz >= sizeof(stack)/sizeof(*stack))
         {
-          closure.bitset[wordoff] |= (1ULL<<bitoff);
-          if (stacksz >= sizeof(stack)/sizeof(*stack))
-          {
-            abort();
-          }
-          stack[stacksz++] = i;
+          abort();
         }
-      }
-      if (bitoff != 63)
-      {
-        i = (wordoff*64) + myffsll(n->epsilon.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
-      }
-      else
-      {
-        i++;
+        stack[stacksz++] = i;
       }
     }
   }
@@ -543,15 +541,10 @@ void nfaviz(struct nfa_node *ns, yale_uint_t cnt)
   {
     for (j = 0; j < 256; j++)
     {
-      struct bitset *bs = &ns[i].d[j];
-      for (k = 0; k < YALE_UINT_MAX_LEGAL + 1; k++)
+      struct sparsebitset *bs = &ns[i].d[j]; // TODO change
+      for (k = 0; k < bs->bits_size; k++)
       {
-        yale_uint_t wordoff = k/64;
-        yale_uint_t bitoff = k%64;
-        if (bs->bitset[wordoff] & (1ULL<<bitoff))
-        {
-          printf("n%zu -> n%zu [label=\"%c\"];\n", (size_t)i, k, (unsigned char)j);
-        }
+        printf("n%zu -> n%zu [label=\"%c\"];\n", (size_t)i, (size_t)bs->bits[k], (unsigned char)j);
       }
     }
   }
@@ -622,9 +615,9 @@ yale_uint_t nfa2dfa(struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin)
       {
         for (j = 0; j < 256; j++) // for ch,nns2 in nn.d.items()
         {
-          bitset_update(&d2[j], &ns[i].d[j]);
+          bitset_update_from_sparse(&d2[j], &ns[i].d[j]);
         }
-        bitset_update(&d2epsilon, &ns[i].epsilon);
+        bitset_update_from_sparse(&d2epsilon, &ns[i].epsilon);
       }
       if (bitoff != 63)
       {
