@@ -119,7 +119,7 @@ struct ParserGen {
   //struct LookupTblEntry T[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
     // val==YALE_UINT_MAX_LEGAL: invalid
     // cb==YALE_UINT_MAX_LEGAL: no callback
-  yale_uint_t pick_those[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL]; // 64 kB
+  //yale_uint_t pick_those[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL]; // 64 kB
   struct LookupTblEntry Tentries[32768];
   //struct firstset_entry *Fi[8192]; // 64 kB
   //struct stackconfig stackconfigs[32768]; // 1.25 MB

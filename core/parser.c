@@ -1163,9 +1163,9 @@ void gen_parser(struct ParserGen *gen)
   }
   for (i = 0; i < gen->tokencnt; i++)
   {
-    gen->pick_those[gen->pick_thoses_cnt][0] = i;
     gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
-      gen->pick_those[gen->pick_thoses_cnt];
+      parsergen_alloc(gen, 1*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
+    gen->pick_thoses[gen->pick_thoses_cnt].pick_those[0] = i;
     gen->pick_thoses[gen->pick_thoses_cnt].len = 1;
     gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
     gen->pick_thoses[gen->pick_thoses_cnt].dscnt = 0;
@@ -1235,8 +1235,9 @@ void gen_parser(struct ParserGen *gen)
       gen->nonterminal_conds[i].conds[c].pick_those = j;
       if (j == gen->pick_thoses_cnt)
       {
+        yale_uint_t pick_those[YALE_UINT_MAX_LEGAL];
         if (j >= sizeof(gen->pick_thoses)/sizeof(*gen->pick_thoses) ||
-            j >= sizeof(gen->pick_those)/sizeof(*gen->pick_those))
+            j >= sizeof(pick_those)/sizeof(*pick_those))
         {
           abort();
         }
@@ -1256,12 +1257,13 @@ void gen_parser(struct ParserGen *gen)
               {
                 abort();
               }
-              gen->pick_those[gen->pick_thoses_cnt][len++] = j;
+              pick_those[len++] = j;
             }
           }
         }
         gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
-          gen->pick_those[gen->pick_thoses_cnt];
+	  parsergen_alloc(gen, len*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
+	memcpy(gen->pick_thoses[gen->pick_thoses_cnt].pick_those, pick_those, len*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
         gen->pick_thoses[gen->pick_thoses_cnt].len = len;
         gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
         gen->pick_thoses[gen->pick_thoses_cnt].dscnt = 0;
