@@ -403,6 +403,7 @@ ACTION maybe_token_ltgt
     rule->rhs_capacity = new_capacity;
   }
   it = &rule->rhs[rule->itemcnt++];
+  memset(it, 0, sizeof(*it));
   it->is_action = 1;
   it->is_bytes = 0;
   it->value = YALE_UINT_MAX_LEGAL;
@@ -434,6 +435,7 @@ ACTION maybe_token_ltgt
     rule->rhs_capacity = new_capacity;
   }
   it = &rule->rhs[rule->itemcnt++];
+  memset(it, 0, sizeof(*it));
   if (i != yale->nscnt)
   {
     it->value = i;
@@ -465,6 +467,7 @@ ACTION maybe_token_ltgt
     rule->rhsnoact_capacity = new_capacity;
   }
   it2 = &rule->rhsnoact[rule->noactcnt++];
+  memset(it2, 0, sizeof(*it2));
   *it2 = *it;
   free($1);
 }
@@ -487,6 +490,7 @@ ACTION maybe_token_ltgt
     rule->rhs_capacity = new_capacity;
   }
   it = &rule->rhs[rule->itemcnt++];
+  memset(it, 0, sizeof(*it));
   it->is_action = 0;
   it->is_bytes = 1;
   it->value = YALE_UINT_MAX_LEGAL-1;
@@ -499,6 +503,7 @@ ACTION maybe_token_ltgt
     rule->rhsnoact_capacity = new_capacity;
   }
   it2 = &rule->rhsnoact[rule->noactcnt++];
+  memset(it2, 0, sizeof(*it2));
   *it2 = *it;
 }
 ;
