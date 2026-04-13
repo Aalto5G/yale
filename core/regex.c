@@ -566,7 +566,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
   yale_uint_t curdfanode = 0;
   yale_uint_t dfanodeid, dfanodeid2;
   int accepting = 0;
-  struct bitset *queue = area->queue;
+  //struct bitset *queue = area->queue;
   //struct bitset queue[YALE_UINT_MAX_LEGAL + 1];
   size_t queuesz;
   struct bitset_hash *d = &area->d;
@@ -600,17 +600,29 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
     }
   }
 
+  if (d->tblsz >= d->tblcapacity)
+  {
+    size_t new_capacity = 2*d->tblsz+16;
+    d->tbl = realloc(d->tbl, new_capacity*sizeof(*d->tbl));
+    d->tblcapacity = new_capacity;
+  }
+
   d->tbl[d->tblsz].dfanodeid = curdfanode;
   memcpy(&d->tbl[d->tblsz++].key, dfabegin, sizeof(*dfabegin));
   dfa_init(&ds[curdfanode], accepting, tainted, acceptidset, taintidset);
   curdfanode++;
 
-  queue[0] = *dfabegin;
+  if (area->queuecapacity == 0)
+  {
+    area->queuecapacity = 16;
+    area->queue = malloc(area->queuecapacity*sizeof(*area->queue));
+  }
+  area->queue[0] = *dfabegin;
   queuesz = 1;
 
   while (queuesz)
   {
-    struct bitset nns = queue[--queuesz];
+    struct bitset nns = area->queue[--queuesz];
     struct bitset d2[256] = {BITSET_EMPTY};
     struct bitset d2epsilon = BITSET_EMPTY;
     //printf("Iter\n");
@@ -682,16 +694,30 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct d
           fprintf(stderr, "too big regexp, too many states\n");
           exit(1);
         }
+        if (d->tblsz >= d->tblcapacity)
+        {
+          size_t new_capacity = 2*d->tblsz+16;
+          d->tbl = realloc(d->tbl, new_capacity*sizeof(*d->tbl));
+          d->tblcapacity = new_capacity;
+        }
         d->tbl[d->tblsz].dfanodeid = curdfanode;
         memcpy(&d->tbl[d->tblsz++].key, &ec, sizeof(ec));
         dfa_init(&ds[curdfanode], accepting, tainted, acceptidset, taintidset);
         dfanodeid = curdfanode++;
+#if 0
         if (queuesz >= sizeof(area->queue)/sizeof(*area->queue))
         {
           fprintf(stderr, "too big regexp, too many states in queue\n");
           exit(1);
         }
-        queue[queuesz++] = ec;
+#endif
+        if (queuesz >= area->queuecapacity)
+        {
+          size_t new_capacity = 2*queuesz+16;
+          area->queue = realloc(area->queue, new_capacity*sizeof(*area->queue));
+          area->queuecapacity = new_capacity;
+        }
+        area->queue[queuesz++] = ec;
       }
 
       dfanodeid2 = YALE_UINT_MAX_LEGAL;
