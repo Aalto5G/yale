@@ -28,7 +28,7 @@ typedef uint8_t parser_uint_t;
 
 #ifndef CONTAINER_OF
 #define CONTAINER_OF(ptr, type, member) \
-  ((type*)(((char*)ptr) - (((char*)&(((type*)0)->member)) - ((char*)0))))
+  ((type*)(((char*)ptr) - offsetof(type, member)))
 #endif
 
 #define likely(x)       __builtin_expect((x),1)
