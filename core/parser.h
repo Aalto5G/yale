@@ -70,7 +70,8 @@ struct nonterminal_cond {
 };
 
 struct nonterminal_conds {
-  struct nonterminal_cond conds[YALE_UINT_MAX_LEGAL];
+  struct nonterminal_cond *conds;
+  size_t conds_capacity;
   yale_uint_t condcnt;
   uint8_t is_shortcut:1;
   yale_uint_t shortcut_rule;

@@ -104,11 +104,21 @@ static void lookuptbl_put(struct ParserGen *gen,
       return;
     }
   }
+#if 0
   if (i >= sizeof(gen->nonterminal_conds[nonterminal].conds) /
            sizeof(*gen->nonterminal_conds[nonterminal].conds))
   {
     printf("too many conditions for nonterminal\n");
     exit(1);
+  }
+#endif
+  if (i >= gen->nonterminal_conds[nonterminal].conds_capacity)
+  {
+    size_t new_capacity = 2*i+16;
+    gen->nonterminal_conds[nonterminal].conds = realloc(
+      gen->nonterminal_conds[nonterminal].conds,
+      new_capacity*sizeof(*gen->nonterminal_conds[nonterminal].conds));
+    gen->nonterminal_conds[nonterminal].conds_capacity = new_capacity;
   }
   gen->nonterminal_conds[nonterminal].conds[i].cond = cond;
   gen->nonterminal_conds[nonterminal].condcnt++;

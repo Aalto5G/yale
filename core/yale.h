@@ -80,9 +80,13 @@ struct cb {
 struct rule {
   yale_uint_t lhs;
   yale_uint_t cond;
-  struct ruleitem rhs[YALE_UINT_MAX_LEGAL];
+  struct ruleitem *rhs;
+  size_t rhs_capacity;
+  //struct ruleitem rhs[YALE_UINT_MAX_LEGAL];
   yale_uint_t itemcnt;
-  struct ruleitem rhsnoact[YALE_UINT_MAX_LEGAL];
+  struct ruleitem *rhsnoact;
+  size_t rhsnoact_capacity;
+  //struct ruleitem rhsnoact[YALE_UINT_MAX_LEGAL];
   yale_uint_t noactcnt;
 };
 

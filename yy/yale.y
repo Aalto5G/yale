@@ -396,6 +396,12 @@ ACTION maybe_token_ltgt
     printf("7\n");
     YYABORT;
   }
+  if (rule->itemcnt >= rule->rhs_capacity)
+  {
+    size_t new_capacity = 2*rule->rhs_capacity+16;
+    rule->rhs = realloc(rule->rhs, new_capacity*sizeof(*rule->rhs));
+    rule->rhs_capacity = new_capacity;
+  }
   it = &rule->rhs[rule->itemcnt++];
   it->is_action = 1;
   it->is_bytes = 0;
@@ -420,6 +426,12 @@ ACTION maybe_token_ltgt
     {
       break;
     }
+  }
+  if (rule->itemcnt >= rule->rhs_capacity)
+  {
+    size_t new_capacity = 2*rule->rhs_capacity+16;
+    rule->rhs = realloc(rule->rhs, new_capacity*sizeof(*rule->rhs));
+    rule->rhs_capacity = new_capacity;
   }
   it = &rule->rhs[rule->itemcnt++];
   if (i != yale->nscnt)
@@ -446,6 +458,12 @@ ACTION maybe_token_ltgt
     it->cb = $2;
     yale->nscnt++;
   }
+  if (rule->noactcnt >= rule->rhsnoact_capacity)
+  {
+    size_t new_capacity = 2*rule->rhsnoact_capacity+16;
+    rule->rhsnoact = realloc(rule->rhsnoact, new_capacity*sizeof(*rule->rhsnoact));
+    rule->rhsnoact_capacity = new_capacity;
+  }
   it2 = &rule->rhsnoact[rule->noactcnt++];
   *it2 = *it;
   free($1);
@@ -462,12 +480,24 @@ ACTION maybe_token_ltgt
     printf("7\n");
     YYABORT;
   }
+  if (rule->itemcnt >= rule->rhs_capacity)
+  {
+    size_t new_capacity = 2*rule->rhs_capacity+16;
+    rule->rhs = realloc(rule->rhs, new_capacity*sizeof(*rule->rhs));
+    rule->rhs_capacity = new_capacity;
+  }
   it = &rule->rhs[rule->itemcnt++];
   it->is_action = 0;
   it->is_bytes = 1;
   it->value = YALE_UINT_MAX_LEGAL-1;
   it->cb = $2;
 
+  if (rule->noactcnt >= rule->rhsnoact_capacity)
+  {
+    size_t new_capacity = 2*rule->rhsnoact_capacity+16;
+    rule->rhsnoact = realloc(rule->rhsnoact, new_capacity*sizeof(*rule->rhsnoact));
+    rule->rhsnoact_capacity = new_capacity;
+  }
   it2 = &rule->rhsnoact[rule->noactcnt++];
   *it2 = *it;
 }
