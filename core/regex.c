@@ -624,8 +624,9 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
   while (queuesz)
   {
     struct bitset nns = area->queue[--queuesz];
-    struct bitset d2[256] = {BITSET_EMPTY};
+    //struct bitset d2[256] = {BITSET_EMPTY};
     struct bitset d2epsilon = BITSET_EMPTY;
+    memset(area->d2, 0, sizeof(area->d2));
     //printf("Iter\n");
     for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; /*i++*/) // for nn in nns
     {
@@ -635,7 +636,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
       {
         for (j = 0; j < 256; j++) // for ch,nns2 in nn.d.items()
         {
-          bitset_update_from_sparse(&d2[j], &ns[i]->d[j]);
+          bitset_update_from_sparse(&area->d2[j], &ns[i]->d[j]);
         }
         bitset_update_from_sparse(&d2epsilon, &ns[i]->epsilon);
       }
@@ -651,11 +652,11 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
     for (i = 0; i < 256; i++)
     {
       struct bitset ec;
-      if (bitset_empty(&d2[i]))
+      if (bitset_empty(&area->d2[i]))
       {
         continue;
       }
-      epsilonclosure(&area->ecarea, ns, &d2[i], &ec, &tainted, acceptidset, taintidset);
+      epsilonclosure(&area->ecarea, ns, &area->d2[i], &ec, &tainted, acceptidset, taintidset);
 
       dfanodeid = YALE_UINT_MAX_LEGAL;
       for (j = 0; j < d->tblsz; j++)

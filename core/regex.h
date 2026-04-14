@@ -146,6 +146,7 @@ struct nfa2dfa_workarea {
   struct bitset acceptidset;
   struct bitset taintidset;
   struct bitset *queue;
+  struct bitset d2[256];
   size_t queuecapacity;
   //struct bitset queue[YALE_UINT_MAX_LEGAL + 1];
   struct bitset_hash d;

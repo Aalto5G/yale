@@ -85,7 +85,9 @@ static void lookuptbl_put(struct ParserGen *gen,
     printf("lookup table size exceeded\n");
     exit(1);
   }
+  gen->Tentries[gen->Tcnt] = malloc(sizeof(*gen->Tentries[gen->Tcnt]));
   e = &gen->Tentries[gen->Tcnt++];
+  memset(e, 0, sizeof(*e));
   e->nonterminal = nonterminal;
   e->terminal = terminal;
   e->cond = cond;
@@ -162,7 +164,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->stackconfigcnt = 0;
   gen->Tcnt = 0;
   gen->condcnt = 0;
-  memset(&gen->re_gen, 0, sizeof(gen->re_gen));
+  //memset(&gen->re_gen, 0, sizeof(gen->re_gen)); // Unused
   memset(&gen->Fo2, 0, sizeof(gen->Fo2));
   for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
   {

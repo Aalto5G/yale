@@ -105,7 +105,7 @@ struct ParserGen {
   struct yale_hash_table Fi2_hash;
   struct yale_hash_table stackconfigs_hash;
   struct firstset_values Fo2[YALE_UINT_MAX_LEGAL + 1];
-  struct REGen re_gen;
+  //struct REGen re_gen; // unused and too big
   //yale_uint_t pick_thoses_id_by_nonterminal_cond[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL];
   struct pick_those_struct pick_thoses[YALE_UINT_MAX_LEGAL];
   char *conds[YALE_UINT_MAX_LEGAL];
@@ -122,7 +122,7 @@ struct ParserGen {
     // val==YALE_UINT_MAX_LEGAL: invalid
     // cb==YALE_UINT_MAX_LEGAL: no callback
   //yale_uint_t pick_those[YALE_UINT_MAX_LEGAL][YALE_UINT_MAX_LEGAL]; // 64 kB
-  struct LookupTblEntry Tentries[32768];
+  struct LookupTblEntry *Tentries[65536];
   //struct firstset_entry *Fi[8192]; // 64 kB
   //struct stackconfig stackconfigs[32768]; // 1.25 MB
   struct stackconfig *stackconfigs[32768]; // 0.25 MB
