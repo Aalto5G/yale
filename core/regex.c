@@ -1343,8 +1343,8 @@ pick(struct nfa2dfa_workarea *area,
 {
   yale_uint_t ncnt;
   struct re *re;
-  size_t i;
 #if 0
+  size_t i;
   for (i = 0; i < YALE_UINT_MAX_LEGAL; i++)
   {
     dfa_init_empty(dsglobal[i]);
