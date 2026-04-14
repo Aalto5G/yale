@@ -86,7 +86,7 @@ static void lookuptbl_put(struct ParserGen *gen,
     exit(1);
   }
   gen->Tentries[gen->Tcnt] = malloc(sizeof(*gen->Tentries[gen->Tcnt]));
-  e = &gen->Tentries[gen->Tcnt++];
+  e = gen->Tentries[gen->Tcnt++];
   memset(e, 0, sizeof(*e));
   e->nonterminal = nonterminal;
   e->terminal = terminal;
