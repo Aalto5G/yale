@@ -152,7 +152,7 @@ struct nfa2dfa_workarea {
 };
 
 void epsilonclosure(struct epsilonclosure_workarea *area,
-                    struct nfa_node *ns, const struct bitset *nodes,
+                    struct nfa_node **ns, const struct bitset *nodes,
                     struct bitset *closurep, int *tainted,
                     struct bitset *acceptidsetp,
                     struct bitset *taintidsetp);
@@ -167,17 +167,17 @@ void dfa_connect_default(struct dfa_node *n, yale_uint_t node2);
 #define BITSET_HASH_EMPTY {.tblsz = 0}
 
 // FIXME this algorithm requires thorough review
-ssize_t state_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound);
+ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
 
-void __attribute__((noinline)) set_accepting(struct dfa_node *ds, yale_uint_t state, int *priorities);
+void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities);
 
-ssize_t maximal_backtrack(struct dfa_node *ds, yale_uint_t state, size_t bound);
+ssize_t maximal_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
 
 void dfaviz(struct dfa_node *ds, yale_uint_t cnt);
 
 void nfaviz(struct nfa_node *ns, yale_uint_t cnt);
 
-yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node *ns, struct dfa_node *ds, yale_uint_t begin);
+yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct dfa_node **ds, yale_uint_t begin);
 
 struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart);
 
@@ -198,21 +198,21 @@ struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz
                      int *caseis);
 
 void gennfa(struct re *regexp,
-            struct nfa_node *ns, yale_uint_t *ncnt,
+            struct nfa_node **ns, yale_uint_t *ncnt,
             yale_uint_t begin, yale_uint_t end,
             yale_uint_t taintid);
 
 void gennfa_main(struct re *regexp,
-                 struct nfa_node *ns, yale_uint_t *ncnt,
+                 struct nfa_node **ns, yale_uint_t *ncnt,
                  yale_uint_t taintid);
 
 void gennfa_alternmulti(struct re *regexp,
-                        struct nfa_node *ns, yale_uint_t *ncnt);
+                        struct nfa_node **ns, yale_uint_t *ncnt);
 
 struct pick_those_struct {
   yale_uint_t *pick_those;
   size_t len;
-  struct dfa_node *ds;
+  struct dfa_node **ds;
   size_t dscnt;
 };
 
@@ -259,7 +259,7 @@ perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
            void *(*alloc)(void*, size_t), void *alloc_ud);
 
 void
-pick(struct nfa2dfa_workarea *area, struct nfa_node *nsglobal, struct dfa_node *dsglobal,
+pick(struct nfa2dfa_workarea *area, struct nfa_node **nsglobal, struct dfa_node **dsglobal,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
      int *caseis);
 
