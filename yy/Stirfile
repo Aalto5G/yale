@@ -25,7 +25,7 @@ $UNITCMDS = []
 @	["flex", "--outfile=yale.lex.c", '--header-file=yale.lex.h', $<]
 
 'yale.tab.c' 'yale.tab.h': 'yale.y'
-@	["bison", "--output=yale.tab.c", '--defines=yale.tab.h', $<]
+@	["byacc", "-d", "-p", "yaleyy", "-o", "yale.tab.c", $<]
 
 @deponly: 'yale.lex.d' 'yale.lex.o' 'yale.tab.d' 'yale.tab.o': \
           'yale.tab.h' 'yale.lex.h'

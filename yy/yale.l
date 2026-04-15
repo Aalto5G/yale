@@ -10,16 +10,12 @@
 #include "yyutils.h"
 #include "yale.tab.h"
 
-#define YYSTYPE YALEYYSTYPE
-#define YYLTYPE YALEYYLTYPE
-
-#define YY_USER_ACTION yylloc->first_line = yylloc->last_line = yylineno; \
-  yylloc->first_column = yycolumn; yylloc->last_column = yycolumn+yyleng-1; \
+#define YY_USER_ACTION \
   yycolumn += yyleng;
 
 %}
 
-%option reentrant bison-bridge bison-locations
+%option reentrant bison-bridge
 %x COMMENTS
 %x PERCENTCCOMMENTS
 %x PERCENTC

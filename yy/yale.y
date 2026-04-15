@@ -1,13 +1,11 @@
-%code requires {
+%{
 #ifndef YY_TYPEDEF_YY_SCANNER_T
 #define YY_TYPEDEF_YY_SCANNER_T
 typedef void *yyscan_t;
 #endif
 #include "yale.h"
 #include <sys/types.h>
-}
-
-%define api.prefix {yaleyy}
+%}
 
 %{
 
@@ -17,9 +15,9 @@ typedef void *yyscan_t;
 #include "yale.lex.h"
 #include <arpa/inet.h>
 
-void yaleyyerror(YYLTYPE *yylloc, yyscan_t scanner, struct yale *yale, const char *str)
+void yaleyyerror(yyscan_t scanner, struct yale *yale, const char *str)
 {
-        fprintf(stderr, "error: %s at line %d col %d\n",str, yylloc->first_line, yylloc->first_column);
+        fprintf(stderr, "error: %s at line %d col %d\n",str, (int)yaleyyget_lineno(scanner), (int)yaleyyget_column(scanner));
 }
 
 int yaleyywrap(yyscan_t scanner)
@@ -33,7 +31,6 @@ int yaleyywrap(yyscan_t scanner)
 %lex-param {yyscan_t scanner}
 %parse-param {yyscan_t scanner}
 %parse-param {struct yale *yale}
-%locations
 
 %union {
   int i;
@@ -53,10 +50,6 @@ int yaleyywrap(yyscan_t scanner)
     int prio;
   } tokenopts;
 }
-
-%destructor { free ($$.str); } STRING_LITERAL
-%destructor { free ($$); } FREEFORM_TOKEN
-%destructor { free ($$); } PERCENTC_LITERAL
 
 %token PERCENTC_LITERAL
 %token STATEINCLUDE

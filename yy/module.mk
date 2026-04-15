@@ -87,7 +87,7 @@ $(DIRYALE_YY)/YALE.LEX.INTERMEDIATE: $(DIRYALE_YY)/yale.l
 	touch $(DIRYALE_YY)/YALE.LEX.INTERMEDIATE
 $(DIRYALE_YY)/YALE.TAB.INTERMEDIATE: $(DIRYALE_YY)/yale.y
 	mkdir -p $(DIRYALE_YY)/intermediatestore
-	bison --defines=$(DIRYALE_YY)/intermediatestore/yale.tab.h --output=$(DIRYALE_YY)/intermediatestore/yale.tab.c $(DIRYALE_YY)/yale.y
+	byacc -d -p yaleyy -o $(DIRYALE_YY)/intermediatestore/yale.tab.c $<
 	touch $(DIRYALE_YY)/YALE.TAB.INTERMEDIATE
 $(DIRYALE_YY)/yale.lex.c: $(DIRYALE_YY)/YALE.LEX.INTERMEDIATE
 	cp $(DIRYALE_YY)/intermediatestore/yale.lex.c $(DIRYALE_YY)
