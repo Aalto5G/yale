@@ -1464,6 +1464,9 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   int special_needed;
   yale_uint_t c;
   dump_chead(f, gen->parsername, gen->nofastpath, gen->max_cb_stack_size, gen->cbcnt);
+  fprintf(f, "#if %zu > PARSER_UINT_MAX\n", (size_t)gen->cbcnt);
+  fprints(f, "#error \"Too many callbacks\"\n");
+  fprints(f, "#endif\n");
   dump_collected(f, gen->parsername, &gen->bufs);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
@@ -2407,15 +2410,18 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   {
     cbbitmasktype = "uint64_t";
   }
-  else if (gen->cbcnt <= 255)
+  //else if (gen->cbcnt <= 255)
+  else
   {
     cbbitmasktype = "uint64_t";
   }
+#if 0
   else
   {
     printf("Too many callbacks, maximum is 255\n");
     exit(1);
   }
+#endif
   dump_headers(f, gen->parsername, gen->max_bt, gen->max_cb_stack_size, cbbitmasktype, ((gen->cbcnt+63)/64));
   fprintf(f, "struct %s_parserctx {\n", gen->parsername);
   if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
@@ -2645,11 +2651,13 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
 void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t cbcnt)
 {
   yale_uint_t i;
+#if 0
   if (cbcnt > 255)
   {
     printf("Too many callbacks: current maximum is 255\n");
     exit(1);
   }
+#endif
   gen->cbcnt = cbcnt;
   for (i = 0; i < cbcnt; i++)
   {
