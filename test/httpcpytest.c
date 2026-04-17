@@ -8,6 +8,8 @@ struct http_pyctx {
   int ok;
 };
 
+#define HTTP_PYCTX_EMPTY {.ok = 0}
+
 
 ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *btn)
 {
@@ -44,7 +46,7 @@ ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *b
   return -EAGAIN;
 }
 
-const struct http_pyctx pyctx0 = {};
+const struct http_pyctx pyctx0 = HTTP_PYCTX_EMPTY;
 
 int main(int argc, char **argv)
 {

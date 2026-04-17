@@ -15,7 +15,7 @@ ssize_t setone(const char *buf, size_t siz, int start, struct condparser_parserc
 int main(int argc, char **argv)
 {
   ssize_t consumed;
-  struct condparser_parserctx pctx = {};
+  struct condparser_parserctx pctx = CONDPARSER_PARSERCTX_EMPTY;
   char msggood[] =
     "\x00\x00\x00\x00"
     "\x00\x01\x00\x01"

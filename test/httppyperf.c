@@ -33,12 +33,15 @@ ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *b
 #endif
   return -EAGAIN;
 }
+
+#define TV_EMPTY {.tv_sec = 0}
+
 int main(int argc, char **argv)
 {
   ssize_t consumed;
   size_t i;
-  struct httppy_parserctx pctx = {};
-  struct timeval tv1 = {}, tv2 = {};
+  struct httppy_parserctx pctx = HTTPPY_PARSERCTX_EMPTY;
+  struct timeval tv1 = TV_EMPTY, tv2 = TV_EMPTY;
   double us;
   char http[] =
     "GET /foo/bar/baz/barf/quux.html HTTP/1.1\r\n"

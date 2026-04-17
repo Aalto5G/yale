@@ -117,8 +117,8 @@ int main(int argc, char **argv)
 {
   ssize_t consumed;
   size_t i;
-  struct lenprefix_parserctx pctx2 = {};
-  struct lenprefix_parserctx pctx = {};
+  struct lenprefix_parserctx pctx2 = LENPREFIX_PARSERCTX_EMPTY;
+  struct lenprefix_parserctx pctx = LENPREFIX_PARSERCTX_EMPTY;
   char lenprefix[] =
     "\x00\x00\x00\x00"
     "\x00\x00\x00\x01G"

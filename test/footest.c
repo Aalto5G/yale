@@ -33,7 +33,7 @@ int main(int argc, char **argv)
 {
   ssize_t consumed;
   size_t i;
-  struct fooparser_parserctx pctx = {};
+  struct fooparser_parserctx pctx = FOOPARSER_PARSERCTX_EMPTY;
   char stream[] = "foobarfoobar";
 
   for (i = 0; i < /* 1000 * 1000 */ 1 ; i++)

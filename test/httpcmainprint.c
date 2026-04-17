@@ -55,7 +55,7 @@ int main(int argc, char **argv)
 {
   ssize_t consumed;
   size_t i;
-  struct http_parserctx pctx = {};
+  struct http_parserctx pctx = HTTP_PARSERCTX_EMPTY;
   char http[] =
     "GET /foo/bar/baz/barf/quux.html HTTP/1.1\r\n"
     "Host: www.google.fi\r\n"

@@ -83,7 +83,7 @@ ssize_t cb2(const char *buf, size_t siz, int start, struct backtracktestcb_parse
 int main(int argc, char **argv)
 {
   char input1[] = "abcdf" "abde";
-  struct backtracktestcb_parserctx pctx = {};
+  struct backtracktestcb_parserctx pctx = BACKTRACKTESTCB_PARSERCTX_EMPTY;
   ssize_t consumed;
   size_t i;
 

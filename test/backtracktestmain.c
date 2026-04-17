@@ -7,7 +7,7 @@ int main(int argc, char **argv)
   char input2[] = "abcdefbcdegi";
   char input3[] = "abcdeghcdegi";
   char input4[] = "abcdefbcdeghcdegi";
-  struct backtracktest_parserctx pctx = {};
+  struct backtracktest_parserctx pctx = BACKTRACKTEST_PARSERCTX_EMPTY;
   ssize_t consumed;
   size_t i;
 

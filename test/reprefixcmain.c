@@ -117,8 +117,8 @@ int main(int argc, char **argv)
 {
   ssize_t consumed;
   size_t i;
-  struct reprefix_parserctx pctx2 = {};
-  struct reprefix_parserctx pctx = {};
+  struct reprefix_parserctx pctx2 = REPREFIX_PARSERCTX_EMPTY;
+  struct reprefix_parserctx pctx = REPREFIX_PARSERCTX_EMPTY;
   char reprefix[] =
     "\x00\x01\x00\x02GH";
 

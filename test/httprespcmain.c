@@ -29,12 +29,13 @@ ssize_t invalidate(const char *buf, size_t siz, int flags, struct httpresp_parse
   return -EINVAL;
 }
 
+#define TV_EMPTY {.tv_sec = 0}
 int main(int argc, char **argv)
 {
   ssize_t consumed;
   size_t i;
-  struct httpresp_parserctx pctx = {};
-  struct timeval tv1 = {}, tv2 = {};
+  struct httpresp_parserctx pctx = HTTPRESP_PARSERCTX_EMPTY;
+  struct timeval tv1 = TV_EMPTY, tv2 = TV_EMPTY;
   double us;
   char peer1_2[] = { /* Packet 6 */
 0x48, 0x54, 0x54, 0x50, 0x2f, 0x31, 0x2e, 0x31, 

@@ -5,7 +5,7 @@
 int main(int argc, char **argv)
 {
   ssize_t consumed;
-  struct smtpclient_parserctx pctx = {};
+  struct smtpclient_parserctx pctx = SMTPCLIENT_PARSERCTX_EMPTY;
   char smtp[] =
     "HELO relay.example.com\r\n"
     "MAIL FROM:<bob@example.com>\r\n"
