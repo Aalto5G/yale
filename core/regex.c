@@ -1569,6 +1569,10 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
         fprintf(f, "0x%llx,", (unsigned long long)curval);
       }
     }
+    else
+    {
+      fprints(f, "0");
+    }
     fprints(f, "},\n");
     fprints(f, "#ifdef SMALL_CODE\n");
     fprintf(f, ".transitions = %s_transitiontbl[%zu],\n", parsername, ds->transitions_id);
