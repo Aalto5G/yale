@@ -111,7 +111,7 @@ void numbers_sets_init(struct numbers_sets *hash, void *(*alloc)(void*,size_t), 
 
 int numbers_sets_put(struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud);
 
-void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud);
+void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *numbers, void *(*alloc)(void*,size_t), void *allocud, uint8_t parserbits);
 
 void nfa_init(struct nfa_node *n, int accepting, int taintid);
 
@@ -270,17 +270,17 @@ collect(struct pick_those_struct *pick_thoses, size_t cnt,
         void *(*alloc)(void*, size_t), void *alloc_ud);
 
 void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz,
-                  const char *cbbitmasktype, int cbbitmaskcnt);
+                  const char *cbbitmasktype, int cbbitmaskcnt, uint8_t parserbits, uint8_t lexerbits);
 
 void
-dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs);
+dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uint8_t lexerbits);
 
 void
 dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
          struct numbers_sets *numbershash,
-         void *(*alloc)(void*,size_t), void *allocud);
+         void *(*alloc)(void*,size_t), void *allocud, uint8_t parserbits, uint8_t lexerbits);
 
 void
-dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t cbcnt);
+dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t cbcnt, uint8_t parserbits, uint8_t lexerbits);
 
 #endif
