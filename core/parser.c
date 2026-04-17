@@ -1751,15 +1751,16 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       }
       fprints(f, "},\n");
     }
+    fprints(f, "{.rhs=0,.cb=0},\n");
     fprints(f, "};\n");
-    fprintf(f, "const parser_uint%d_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry%d);\n", gen->parserbits, gen->parsername, (int)i, gen->parsername, (int)i, gen->parserbits);
+    fprintf(f, "const parser_uint%d_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct ruleentry%d) - 1;\n", gen->parserbits, gen->parsername, (int)i, gen->parsername, (int)i, gen->parserbits);
   }
   fprintf(f, "const struct rule%d %s_rules[] = {\n", gen->parserbits, gen->parsername);
   for (i = 0; i < gen->rulecnt; i++)
   {
     fprints(f, "{\n");
     fprintf(f, "  .lhs = %d,\n", gen->rules[i].lhs);
-    fprintf(f, "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry%d),\n", gen->parsername, (int)i, gen->parserbits);
+    fprintf(f, "  .rhssz = sizeof(%s_rule_%d)/sizeof(struct ruleentry%d) - 1,\n", gen->parsername, (int)i, gen->parserbits);
     fprintf(f, "  .rhs = %s_rule_%d,\n", gen->parsername, (int)i);
     fprints(f, "},\n");
   }

@@ -1545,7 +1545,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
         j++;
       }
     }
-    fprintf(f, ")/sizeof(parser_uint%d_t),\n", parserbits);
+    fprintf(f, ")/sizeof(parser_uint%d_t) - 1,\n", parserbits);
     fprints(f, ".fastpathbitmask = {");
     if (ds->accepting && !ds->finalflag)
     {
@@ -2605,6 +2605,6 @@ void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *
         j++;
       }
     }
-    fprintf(f, "};\n");
+    fprintf(f, "0};\n");
   }
 }
