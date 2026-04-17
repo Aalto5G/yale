@@ -1397,7 +1397,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprintf(f, "struct %s_cbset {\n", parsername);
   fprintf(f, "  %s elems[%d];\n", cbbitmasktype, cbbitmaskcnt ? cbbitmaskcnt : 1); // Standard C does not allow zero-length arrays
   fprintf(f, "};\n");
-  fprintf(f, "#define %s_CBSET_EMPTY {.elems = {0}}\n", parsername);
+  fprintf(f, "#define %s_CBSET_EMPTY {.elems = {0}}\n", parserupper);
   fprintf(f, "struct %s_callbacks {\n", parsername);
   fprintf(f, "  struct %s_cbset cbsmask;\n", parsername);
   fprintf(f, "};\n");
@@ -1421,7 +1421,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);
   fprints(f, "{\n");
-  fprintf(f, "  const struct %s_cbset empty = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "  const struct %s_cbset empty = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprints(f, "  ctx->state = 0;\n");
   fprintf(f, "  ctx->last_accept = LEXER_UINT%d_MAX;\n", lexerbits);
   fprints(f, "  ctx->start_status = empty;\n");
@@ -1966,7 +1966,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        ctx->backtrackmid = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "        if (st)\n");
   fprints(f, "        {\n");
-  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parsername, parsername, parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parserupper, parserupper, parserupper);
   fprints(f, "          ssize_t cbr;\n");
   fprints(f, "          uint16_t bitoff;\n");
   fprints(f, "          size_t elemidx;\n");
@@ -2017,7 +2017,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "          %s_bitclear(&ctx->lastack_status);\n", parsername);
   fprints(f, "          if (st)\n");
   fprints(f, "          {\n");
-  fprintf(f, "            struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parsername, parsername, parsername);
+  fprintf(f, "            struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parserupper, parserupper, parserupper);
   fprints(f, "            ssize_t cbr;\n");
   fprints(f, "            uint16_t bitoff;\n");
   fprints(f, "            size_t elemidx;\n");
@@ -2062,7 +2062,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    }\n");
   fprints(f, "    if (st)\n");
   fprints(f, "    {\n");
-  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parsername, parsername, parsername);
+  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parserupper, parserupper, parserupper);
   fprints(f, "      ssize_t cbr;\n");
   fprints(f, "      size_t taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
@@ -2159,7 +2159,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      {\n");
   fprints(f, "        if (j == 0)\n");
   fprints(f, "        {\n");
-  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   add_cb_stack(f, "          ", parsername, cbssz);
   fprintf(f, "          if (cb2)\n");
@@ -2173,9 +2173,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        else\n");
   fprints(f, "        {\n");
   fprintf(f, "          enum yale_flags flags = 0;\n");
-  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "          ssize_t cbr;\n");
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
@@ -2243,9 +2243,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        if (st->accepting)\n");
   fprints(f, "        {\n");
   fprintf(f, "          enum yale_flags flags = 0;\n");
-  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "          ssize_t cbr;\n");
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
@@ -2325,9 +2325,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      if (st->accepting && i > 0)\n");
   fprints(f, "      {\n");
   fprints(f, "        enum yale_flags flags = 0;\n");
-  fprintf(f, "        struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "        struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "        struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "        struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "        struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "        struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parserupper);
 #if 0 // Not needed due to this being the last block
   fprintf(f, "        struct %s_cbset negendmis;\n", parsername);
 #endif
@@ -2407,9 +2407,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    if (st->accepting && i > 0)\n");
   fprints(f, "    {\n");
   fprintf(f, "      enum yale_flags flags = 0;\n");
-  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "      struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "      struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "      struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "      struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parserupper);
 #if 0 // Not needed due to this being the last block
   fprintf(f, "      struct %s_cbset negendmis;\n", parsername);
 #endif
@@ -2473,9 +2473,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   // FIXME use taintid set:
   fprints(f, "  if (st)\n");
   fprints(f, "  {\n");
-  fprintf(f, "    struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "    struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parsername);
-  fprintf(f, "    struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parsername);
+  fprintf(f, "    struct %s_cbset cbmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "    struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
+  fprintf(f, "    struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "    struct %s_cbset negendmis;\n", parsername);
   fprintf(f, "    enum yale_flags flags = 0;\n");
   fprints(f, "    size_t taintidx;\n");

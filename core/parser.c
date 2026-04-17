@@ -1490,6 +1490,12 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   size_t i, j, X, x;
   size_t curidx = 0;
   int special_needed;
+  char *parserupper = strdup(gen->parsername);
+  size_t len = strlen(gen->parsername);
+  for (i = 0; i < len; i++)
+  {
+    parserupper[i] = toupper((unsigned char)parserupper[i]);
+  }
   yale_uint_t c;
   dump_chead(f, gen->parsername, gen->nofastpath, gen->max_cb_stack_size, gen->cbcnt, gen->parserbits, gen->lexerbits);
   fprintf(f, "#if %zu > PARSER_UINT%d_MAX\n", (size_t)gen->cbcnt, gen->parserbits);
@@ -1626,6 +1632,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         {
           fprintf(f, "0x%llx,\n", (unsigned long long)bytes_cbs.bitset[cbi]);
         }
+        if (gen->cbcnt == 0)
+        {
+          fprintf(f, "0");
+        }
         fprintf(f, "},},},\n");
       }
       else
@@ -1681,6 +1691,10 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
                 {
                   fprintf(f, "0x%llx,\n", (unsigned long long)e->cbs.bitset[cbi]);
                 }
+                if (gen->cbcnt == 0)
+                {
+                  fprintf(f, "0");
+                }
                 fprintf(f, "}, }, }, ");
                 found = 1;
                 break;
@@ -1688,7 +1702,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
             }
             if (!found)
             {
-              fprintf(f, "{.cbsmask = %s_CBSET_EMPTY}, ", gen->parsername);
+              fprintf(f, "{.cbsmask = %s_CBSET_EMPTY}, ", parserupper);
             }
           }
           fprints(f, "},\n");
@@ -1787,7 +1801,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprints(f, "}\n");
   fprintf(f, "static ssize_t __attribute__((noinline)) end_cbs(struct %s_parserctx *pctx, const void *blk)\n", gen->parsername);
   fprints(f, "{\n");
-  fprintf(f, "  struct %s_cbset endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, gen->parsername, gen->parsername);
+  fprintf(f, "  struct %s_cbset endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, parserupper, parserupper);
   fprintf(f, "  %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
   if_bitnz_call_cbsflg(f, "  ", gen->parsername, "endmask", "YALE_FLAG_END");
   fprintf(f, "  %s_bitcopy(&mismask, &pctx->rctx.start_status);\n", gen->parsername);
@@ -1851,7 +1865,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   {
     fprintf(f, "    if (curstate == PARSER_UINT%d_MAX - 1)\n", gen->parserbits);
     fprints(f, "    {\n");
-    fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, gen->parsername, gen->parsername, gen->parsername);
+    fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, parserupper, parserupper, parserupper);
     fprintf(f, "      ssize_t cbr;\n");
     if (gen->max_cb_stack_size)
     {
@@ -2041,7 +2055,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
     if (gen->bytes_size_type == NULL || strcmp(gen->bytes_size_type, "void") != 0)
     {
       //fprintf(f, "        parser_uint%d_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parserbits, gen->parsername);
-      fprintf(f, "        struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, gen->parsername, gen->parsername, gen->parsername);
+      fprintf(f, "        struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, parserupper, parserupper, parserupper);
       fprintf(f, "        ssize_t cbr;\n");
       if (gen->max_cb_stack_size)
       {
@@ -2416,6 +2430,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  }\n"
              "  return eofindicator ? off : (-EAGAIN);\n"
              "}\n");
+  free(parserupper);
 }
 
 
