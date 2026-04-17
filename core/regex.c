@@ -1416,6 +1416,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprintf(f, "  unsigned char backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper);
   fprints(f, "#endif\n");
   fprints(f, "};\n");
+  fprintf(f, "#define %s_RECTX_EMPTY {.last_accept = LEXER_UINT%d_MAX}\n", parserupper, lexerbits);
   fprints(f, "\n");
   fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);

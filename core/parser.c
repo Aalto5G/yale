@@ -2421,6 +2421,13 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {
   const char *cbbitmasktype = NULL;
+  char *parserupper = strdup(gen->parsername);
+  size_t len = strlen(gen->parsername);
+  size_t i;
+  for (i = 0; i < len; i++)
+  {
+    parserupper[i] = toupper((unsigned char)parserupper[i]);
+  }
   fprints(f, "#include \"yalecommon.h\"\n");
   if (gen->cbcnt <= 8)
   {
@@ -2480,6 +2487,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "};\n");
   fprints(f, "\n");
+  fprintf(f, "#define %s_PARSERCTX_EMPTY {.saved_token = PARSER_UINT%d_MAX, .curstateoff = PARSER_UINT%d_MAX, .stacksz = 1, .stack = {{.rhs = %d, .cb = PARSER_UINT%d_MAX}}, .rctx = %s_RECTX_EMPTY}\n", parserupper, gen->parserbits, gen->parserbits, gen->start_state, gen->parserbits, parserupper);
   fprintf(f, "static inline void %s_parserctx_init(struct %s_parserctx *pctx)\n",
           gen->parsername, gen->parsername);
   fprints(f, "{\n");
@@ -2504,6 +2512,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   fprints(f, "}\n");
   fprints(f, "\n");
   fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator);//, void *baton);\n", gen->parsername, gen->parsername);
+  free(parserupper);
 }
 
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude)
