@@ -80,6 +80,8 @@ struct nonterminal_conds {
 struct ParserGen {
   yale_uint_t tokencnt;
   yale_uint_t nonterminalcnt;
+  uint8_t parserbits;
+  uint8_t lexerbits;
   struct nfa2dfa_workarea nfa2dfa_area;
   char *parsername;
   yale_uint_t start_state;

@@ -1431,6 +1431,34 @@ void gen_parser(struct ParserGen *gen)
       }
     }
   }
+  gen->parserbits = 8;
+  if (gen->tokencnt + (size_t)gen->nonterminalcnt >= 255)
+  {
+    gen->parserbits = 16;
+  }
+  if (gen->rulecnt > 255)
+  {
+    gen->parserbits = 16;
+  }
+  if (gen->cbcnt > 255)
+  {
+    gen->parserbits = 16;
+  }
+  for (i = 0; i < gen->rulecnt; i++)
+  {
+    if (gen->rules[i].itemcnt > 255)
+    {
+      gen->parserbits = 16;
+    }
+  }
+  gen->lexerbits = 8;
+  for (i = 0; i < gen->pick_thoses_cnt; i++)
+  {
+    if (gen->pick_thoses[i].dscnt > 255)
+    {
+      gen->lexerbits = 16;
+    }
+  }
 }
 
 static void
