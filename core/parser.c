@@ -2487,7 +2487,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "};\n");
   fprints(f, "\n");
-  fprintf(f, "#define %s_PARSERCTX_EMPTY {.saved_token = PARSER_UINT%d_MAX, .curstateoff = PARSER_UINT%d_MAX, .stacksz = 1, .stack = {{.rhs = %d, .cb = PARSER_UINT%d_MAX}}, .rctx = %s_RECTX_EMPTY}\n", parserupper, gen->parserbits, gen->parserbits, gen->start_state, gen->parserbits, parserupper);
+  fprintf(f, "#define %s_PARSERCTX_EMPTY {.saved_token = PARSER_UINT%d_MAX, .curstateoff = PARSER_UINT%d_MAX, .stacksz = 1, .stack = {{.rhs = %d, .cb = PARSER_UINT%d_MAX}}, .rctx = %s_RECTX_EMPTY}\n", parserupper, gen->parserbits, gen->parserbits, gen->start_state, gen->parserbits, parserupper); // RFE omits init_include_str
   fprintf(f, "static inline void %s_parserctx_init(struct %s_parserctx *pctx)\n",
           gen->parsername, gen->parsername);
   fprints(f, "{\n");
