@@ -7,7 +7,7 @@
 *.pyc
 perf.data
 perf.data.old
-/opts.mk
+/opts.smk
 /httpparser.c
 /httpparser.h
 /httpcparser.c
