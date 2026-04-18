@@ -2153,7 +2153,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      ctx->state = 0;\n");
   fprints(f, "      j = i;\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprintf(f, "      if (j >= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1) j -= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1;\n", parserupper, parserupper, parserupper, parserupper);
+  fprintf(f, "      if (j >= (size_t)((ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1)) j -= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1;\n", parserupper, parserupper, parserupper, parserupper);
   fprintf(f, "#endif\n");
   fprints(f, "      if (st->accepting)\n");
   fprints(f, "      {\n");
