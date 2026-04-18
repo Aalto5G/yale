@@ -189,6 +189,14 @@ void parsergen_free(struct ParserGen *gen)
   size_t i;
   unsigned bucket;
   struct yale_hash_list_node *n, *x;
+  for (i = 0; i < gen->Tcnt; i++)
+  {
+    free(gen->Tentries[i]);
+  }
+  for (i = gen->tokencnt; i < gen->tokencnt + gen->nonterminalcnt; i++)
+  {
+    free(gen->nonterminal_conds[i].conds);
+  }
   for (i = 0; i < gen->tokencnt; i++)
   {
     free(gen->re_by_idx[i].iov_base);

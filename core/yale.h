@@ -117,6 +117,13 @@ struct yale {
 static inline void yale_free(struct yale *yale)
 {
   yale_uint_t i;
+  for (i = 0; i < yale->rulecnt; i++)
+  {
+    free(yale->rules[i].rhsnoact);
+    free(yale->rules[i].rhs);
+    yale->rules[i].rhsnoact = NULL;
+    yale->rules[i].rhs = NULL;
+  }
   for (i = 0; i < yale->cbcnt; i++)
   {
     free(yale->cbs[i].name);
