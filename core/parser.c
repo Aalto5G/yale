@@ -2428,7 +2428,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
              "  {\n"
              "    pctx->stacksz = STACKSZ_ERR;\n"
              "  }\n"
-             "  return eofindicator ? off : (-EAGAIN);\n"
+             "  return eofindicator ? (ssize_t)off : (-EAGAIN);\n"
              "}\n");
   free(parserupper);
 }
