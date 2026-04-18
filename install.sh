@@ -86,6 +86,7 @@ mkdir -p $P/share/examples/yaleparser/http1
 mkdir -p $P/share/examples/yaleparser/http2
 mkdir -p $P/share/examples/yaleparser/httpresp
 mkdir -p $P/share/examples/yaleparser/smtp
+mkdir -p $P/share/examples/yaleparser/cond
 
 instexample2 ssl ssl1.txt
 instexample2 ssl ssl2.txt
@@ -140,6 +141,15 @@ B="$P/share/examples/yaleparser/smtp/build.sh"
 echo "#!/bin/sh" > "$B"
 echo "yaleparser smtpclient.txt b" >> "$B"
 echo "cc -O3 -I/usr/local/include smtpclientcparser.c smtpclientmain.c" >> "$B"
+chmod a+x "$B"
+
+instexample2 cond condparser.txt
+instexample2 cond condparsercommon.h
+instexample2 cond condtest.c
+B="$P/share/examples/yaleparser/cond/build.sh"
+echo "#!/bin/sh" > "$B"
+echo "yaleparser condparser.txt b" >> "$B"
+echo "cc -O3 -I/usr/local/include condparsercparser.c condtest.c" >> "$B"
 chmod a+x "$B"
 
 echo "All done, yale has been installed to $P"
