@@ -1363,6 +1363,12 @@ pick(struct nfa2dfa_workarea *area,
   memcpy(pick_those->ds, dsglobal, sizeof(*pick_those->ds)*pick_those->dscnt);
   for (i = 0; i < ncnt; i++)
   {
+    int j;
+    for (j = 0; j < 256; j++)
+    {
+      free(nsglobal[i]->d[j].bits);
+    }
+    free(nsglobal[i]->epsilon.bits);
     free(nsglobal[i]);
   }
 }
