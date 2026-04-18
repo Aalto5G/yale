@@ -1628,7 +1628,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
         fprintf(f, ".bytes_cb2 = {\n");
         fprintf(f, ".cbsmask = {\n");
         fprintf(f, ".elems = {\n");
-        for (cbi = 0; cbi < ((gen->cbcnt+63)/64); cbi++)
+        for (cbi = 0; cbi < (size_t)((gen->cbcnt+63)/64); cbi++)
         {
           fprintf(f, "0x%llx,\n", (unsigned long long)bytes_cbs.bitset[cbi]);
         }
@@ -1687,7 +1687,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
               {
                 size_t cbi;
                 fprintf(f, "{.cbsmask = { .elems = {");
-                for (cbi = 0; cbi < ((gen->cbcnt+63)/64); cbi++)
+                for (cbi = 0; cbi < (size_t)((gen->cbcnt+63)/64); cbi++)
                 {
                   fprintf(f, "0x%llx,\n", (unsigned long long)e->cbs.bitset[cbi]);
                 }
