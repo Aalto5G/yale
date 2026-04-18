@@ -221,12 +221,12 @@ elements SEMICOLON
 {
   csaddstr(&yale->hs, $2);
   free($2);
-};
+}
 | PERCENTC_LITERAL
 {
   csaddstr(&yale->cs, $1);
   free($1);
-};
+}
 ;
 
 token_opts:
