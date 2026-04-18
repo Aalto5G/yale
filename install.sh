@@ -76,9 +76,16 @@ instexample2()
     rm "$P/share/examples/yaleparser/$1/.$2.yaleinstold.$$.$H" || exit 1
   fi
 }
+instman()
+{
+  mkdir -p "$P/man/man$2" || exit 1
+  cp "$1.$2" "$P/man/man$2/.$1.$2.yaleinstnew.$$.$H" || exit 1
+  mv "$P/man/man$2/.$1.$2.yaleinstnew.$$.$H" "$P/man/man$2/$1.$2" || exit 1
+}
 
 instbin main yaleparser
 instinc2 runtime yalecommon.h
+instman yaleparser 1
 
 mkdir -p $P/share/examples/yaleparser
 mkdir -p $P/share/examples/yaleparser/ssl

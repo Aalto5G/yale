@@ -1,0 +1,389 @@
+.\" Manpage for yaleparser.
+.\" Contact juha-matti.tilli@iki.fi to correct errors or typos.
+.Dd April 18, 2026
+.Os Linux
+.Dt YALEPARSER 1 LOCAL
+.Sh NAME
+.Nm yaleparser
+.Nd yet another lexer eliminator, or yacc/lex combined, for network protocol parsing
+.Sh SYNOPSIS
+.Nm yaleparser
+grammar.txt
+c | h | b | t | p
+.Sh DESCRIPTION
+.Nm yaleparser
+is a network protocol parser generator. It does for parsing network protocols
+in a non-blocking middlebox the same that Yacc and Lex have done for computer
+languages.
+.Sh MODES
+.Nm yaleparser
+can be invoked in five different modes. The
+.Em c
+mode only generates a C language file, whereas the
+.Em h
+mode only generates a header file. However, most users are expected to want
+both, so the
+.Em b
+mode generates both. For testing, you can test parsing of a file without
+generating anything with the
+.Em t
+mode, and the
+.Em p
+mode is for performance testing, generating the parser 1000 times.
+.Sh "PARSER FORMAT"
+Custom code can be included into the generated parser by using C language
+blocks
+.Bd -literal
+%{
+#include "customparsercommon.h"
+%}
+.Ed
+.Pp
+This is expected to be useful mainly for including header files.
+.Pp
+Tokens can be defined as follows:
+.Bd -literal
+token spvcrlf = " HTTP/[0-9]+[.][0-9]+\\r?\\n";
+.Ed
+.Pp
+where the token is specified using a regular expression. Tokens can have
+priority and they can be case insensitive by specifying
+.Em i
+.Bd -literal
+token<prio=1,i> hosttk = "Host";
+.Ed
+.Pp
+For priorities, higher priority wins. The priority can also be negative. The
+default priority is zero.
+.Pp
+Character codes can be specified in regular expressions as follows:
+.Bd -literal
+token httpfield = "[\\t\\x20-\\x7E\\x80-\\xFF]*";
+.Ed
+.Pp
+The grammar itself is specified in Backus-Naur form, with the difference that
+actions are supported with
+.Em action ,
+and terminals and nonterminals can be annotated with callbacks with
+.Em cb .
+An example of a simple grammar, HTTP request with header fields without
+folding:
+.Bd -literal
+%{
+#include "headerthatdefinesprintandstart.h"
+%}
+
+token<prio=1,i> hosttk = "Host";
+token crlf = "\\r?\\n";
+token onesp = " ";
+token spvcrlf = " HTTP/[0-9]+[.][0-9]+\\r?\\n";
+token colonsp = ":[ \\t]*";
+token httptk = "[-!#$%&'*+.^_`|~0-9A-Za-z]+";
+token httpfield = "[\\t\\x20-\\x7E\\x80-\\xFF]*";
+token uri = "[]:/?#@!$&'()*+,;=0-9A-Za-z._~%[-]+";
+
+headerField =
+  hosttk colonsp httpfield<cb=print>
+| httptk colonsp httpfield;
+reqLine = httptk onesp uri spvcrlf;
+reqHdrs = | headerField crlf reqHdrs;
+reqWithHdrs = reqLine action<cb=start> reqHdrs crlf;
+
+directive main = reqWithHdrs;
+directive parsername = httpnofold;
+.Ed
+.Pp
+It is mandatory to have both
+.Em directive main
+and
+.Em directive parsername .
+.Pp
+Here the callback
+.Em start
+is called as an action immediately after the request line, and the callback
+.Em print
+is called with data whenever the
+.Em Host
+header field (regarless of upper/lowercase characters) value is seen. This HTTP
+example contains most of the features needed for parsing text-based protocols.
+However, there's one more useful feature, conditional parsing, which can be
+demonstrated with this simple parser:
+.Pp
+.Bd -literal
+%{
+#include "headerthatdefinessetzeroandsetone.h"
+%}
+
+token uint16zero = "\\x00\\x00";
+token uint16one = "\\x00\\x01";
+
+msgser = | msg msgser;
+
+msg = uint16zero action<cb=setzero> msgcont
+| uint16one action<cb=setone> msgcont;
+
+stateinclude %{ uint8_t condval; %};
+
+msgcont<cond = %{ pctx->condval == 0 %}> = uint16zero;
+msgcont<cond = %{ pctx->condval == 1 %}> = uint16one;
+
+directive main = msgser;
+directive parsername = condparser;
+.Ed
+.Pp
+This parser uses conditional parsing. If the callback
+.Em setzero
+sets
+.Em pctx->condval
+into zero, and the callback
+.Em setone
+sets
+.Em pctx->condval
+into one, then it accepts any sequence of two repeated 16-bit big endian
+zeros or ones duplicated (occurring in identical pairs). This simple example
+could have been implemented without conditionals, but it illustrates the
+feature of conditionals that is necessary in some more complicated examples.
+.Pp
+Binary protocols can be parsed as follows:
+.Bd -literal
+token<prio=1> uint8zero = "\\x00";
+token uint8any = ".";
+token uint16any = "..";
+
+sni = uint8zero uint16any<cb=szbe> bytes<cb=print>
+| uint8any uint16any<cb=szbe> bytes;
+
+maybe_sniext2 = | sni maybe_sniext2;
+
+sniext2 = sni maybe_sniext2;
+
+directive bytessizetype = uint16_t;
+directive main = sniext2;
+directive parsername = sslsni;
+.Ed
+.Pp
+This parser accepts a 8-bit zero after which a 16-bit length prefixed
+arbitrary data field is printed, and it also accepts a 8-bit nonzero after
+which a 16-bit length prefixed arbitrary data field is discarded. These data
+fields occur at least once, but potentially multiple times. The arbitrary
+data field is parsed with
+.Em bytes
+and it requires callback that sets its length (here called
+.Em szbe ) .
+The
+.Em bytessizetype
+can be set to be the desired width integer type (here
+.Em uint16_t ) .
+.Pp
+If a parser does not use the
+.Em bytes
+arbitrary data field whose length is known in advance, then the user can set
+.Bd -literal
+directive bytessizetype = void;
+.Ed
+.Pp
+to save memory.
+.Pp
+The callback
+.Em szbe
+is presented here:
+.Bd -literal
+ssize_t szbe(const char *buf, size_t siz, int flags,
+             struct sslsni_parserctx *pctx)
+{
+  size_t i;
+  if (flags & YALE_FLAG_START)
+  {
+    pctx->bytes_sz = 0;
+  }
+  for (i = 0; i < siz; i++)
+  {
+    pctx->bytes_sz <<= 8;
+    pctx->bytes_sz |= (unsigned char)buf[i];
+  }
+  return -EAGAIN;
+}
+.Ed
+.Pp
+The callback
+.Em print
+has the same prototype, but instead of modifying
+.Em pctx->bytes_sz ,
+it prints the data it gets.
+.Pp
+Pure binary protocol parsers may benefit from having
+.Bd -literal
+directive nofastpath;
+.Ed
+.Pp
+which disables some performance features that are useful only for parsing
+text-based protocols with regular expressions.
+.Pp
+Sub-parsers can be included with
+.Em parserinclude
+that takes two options: the name of the parser implementation, and the name of
+its instance. The names may be identical, but if multiple same parser
+implementations are needed, they can be given differing instance names. An
+example:
+.Bd -literal
+parserinclude sslsni sslsniinstance;
+
+token uint16any = "..";
+
+sniext = uint16any<cb=szbe5> bytes<cb=feed5>;
+
+directive bytessizetype = uint16_t;
+directive main = sniext;
+directive parsername = ssl5;
+.Ed
+.Pp
+Here the function
+.Em szbe5
+is expected to set the length of the following
+.Em bytes
+field, and the function
+.Em feed5
+is expected to feed data into the sslsni parser as follows:
+.Bd -literal
+ssize_t feed5(const char *buf, size_t siz, int flags,
+              struct ssl5_parserctx *pctx)
+{
+  ssize_t result;
+  if (flags & YALE_FLAG_START)
+  {
+    sslsni_parserctx_init(&pctx->sslsniinstance);
+  }
+  result = sslsni_parse_block(&pctx->sslsniinstance, buf, siz,
+                              !!(flags & YALE_FLAG_END));
+  if (result != -EAGAIN && result != -EWOULDBLOCK &&
+      result != (ssize_t)siz)
+  {
+    return result;
+  }
+  if (flags & YALE_FLAG_END)
+  {
+    if (pctx->sslsniinstance.stacksz != 1)
+    {
+      return -EINVAL;
+    }
+  }
+  return result;
+}
+.Ed
+.Sh "EXIT STATUS"
+.Nm yaleparser
+exists with zero exit status for success. This means the parser was generated
+successfully. If there's an error, it reports it with a nonzero exit status.
+.Sh "FILES"
+YaLe only requires one custom header file to compile the generated parsers. No
+library is required.
+.Pp
+.Bl -column yalecommon.h -compact
+.It Pa yalecommon.h Ta The only runtime header needed to compile parsers.
+.It Pa XXXcparser.c Ta A generated parser C source file for parser name
+.Em XXX .
+.It Pa XXXcparser.h Ta A generated parser header for parser name
+.Em XXX .
+.El
+.Pp
+The directory
+.Pa /usr/local/share/examples/yaleparser
+contains several example parsers which thoroughly demonstrate the features that
+YaLe has.
+.Sh "SEE ALSO"
+.Xr binpac
+.Sh HISTORY
+The YaLe project was started in 2018, and it was working in a useful manner
+already in 2019. Several important improvements were made in 2026.
+.Sh "DISTRIBUTION"
+YaLe is available at https://github.com/Aalto5G/yale
+.Sh BUGS
+The software has several limitations an bugs:
+.Bl -bullet
+.It
+The number for object types is 16 bits long, but the largest supported value
+is 8191 because 65535 would increase the memory use of the software too much
+and slow it down too much. This drawback is caused by unoptimal data
+structures.
+.It
+By default, generating parsers requires quite a lot of memory. If this is a
+problem, a special version of YaLe can be compiled which supports integers up
+to a somewhat lower limit such as 1023. This drawback is caused by unoptimal
+data structures.
+.It
+By default, generating parsers is quite slow. However, this is not expected to
+be a major problem, since compiling the parsers with any C compiler is even
+slower. This drawback is caused by unoptimal data structures.
+.It
+There may be some memory leaks.
+.It
+Some error messages may be lacking today.
+.It
+.Em Major mistake :
+If you assign a callback to a header field name Content-Type
+(which can't do anything other than check which characters are uppercase and
+which are lowecase), and if the TCP stream consists of segments "C", "o", "n",
+"t", "e", "n", "t", "-", "L", "e", "n", "g", "t", "h" then the callback will be
+called for the first bytes until the parser decides that the callback cannot
+match anymore and calls it with the flag
+.Va YALE_FLAG_MAJOR_MISTAKE .
+.It
+.Em Backtrack bug :
+If you have a token "a(bc)?" with a callback, and the TCP stream
+consists of segments "a", "b", "d" then the correct callback was called but
+with too much data. The callback was called for data "a", "b" whereas the
+regular expression matched only for "a", and the non-matching "b" characters is
+added to the backtrack buffer, from which it can be obtained for future parsing
+needs.
+.It
+.Em Token theft :
+In the grammar
+.Bd -literal
+token<prio=1> a = "content-type";
+token<prio=1> b = "content-length";
+token c = "[-0-9a-z]+";
+A = B;
+B<cond = %{ pctx->condval == 0 %}> = a;
+B<cond = %{ pctx->condval != 0 %}> = b | c;
+directive main = A;
+.Ed
+.Pp
+if the condition value is nonzero then the parser should emit either a token
+b or c. However, if it sees "content-type", it emits token a, which causes a
+parse error at runtime. In this very example, this can be solved by having
+.Bd -literal
+directive shortcutting;
+.Ed
+.Pp
+but there are examples where shortcutting does not help.
+.It
+.Em Callback conflict :
+In the grammar
+.Bd -literal
+token c = "c";
+A = B;
+B<cond = %{ pctx->condval == 0 %}> = c<cb=f1>;
+B<cond = %{ pctx->condval != 0 %}> = c<cb=f2>;
+directive main = A;
+.Ed
+.Pp
+YaLe cannot decide which calback to call when parsing A, since the first-set
+of A contains the terminal c with two different alternative callbacks which
+depend on the condition. In this very example, this can be solved by having
+.Bd -literal
+directive shortcutting;
+.Ed
+.Pp
+but there are situations where shortcutting does not help. If
+.Em callback conflict
+occurs, it is a parser generation time error, so the user will be notified of
+the ambiguous callback.
+.El
+.Sh AUTHOR
+Juha-Matti Tilli (juha-matti.tilli@iki.fi)
+.Sh "COPYRIGHT"
+Copyright \(co 2017-9 Aalto University, 2018, 2022, 2026 Juha-Matti Tilli
+.Pp
+Licensed under the MIT license, with the exception of logo that is not
+available under this license and may only be used to represent substantially
+unmodified versions of YaLe distributed under the MIT license.
