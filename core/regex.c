@@ -753,6 +753,8 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
       ds[i]->finalflag = 1;
     }
   }
+  free(area->queue);
+  free(d->tbl);
   return curdfanode;
 }
 
