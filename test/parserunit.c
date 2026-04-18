@@ -727,7 +727,7 @@ static void httpcpytest(void)
   testmain("test/httpcpytest", expected);
 }
 
-static void fooparsertest()
+static void fooparsertest(void)
 {
   char *expected =
     "<bar>\n"
