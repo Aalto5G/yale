@@ -196,6 +196,11 @@ void parsergen_free(struct ParserGen *gen)
   }
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
+    size_t j;
+    for (j = 0; j < gen->pick_thoses[i].dscnt; j++)
+    {
+      free(gen->pick_thoses[i].ds[j]);
+    }
     free(gen->pick_thoses[i].ds);
     gen->pick_thoses[i].ds = NULL;
   }
