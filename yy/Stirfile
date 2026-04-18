@@ -21,11 +21,19 @@ $UNITCMDS = []
 # You won't want to modify anything below this line
 @call $MODULE($LIB, $SRC_LIB, $SRC_PROG, $LIBS, $UNITDEPS, $UNITCMDS)
 
+@if($FLEX_AVAILABLE)
+
 'yale.lex.c' 'yale.lex.h': 'yale.l'
-@	["flex", "--outfile=yale.lex.c", '--header-file=yale.lex.h', $<]
+@	[@$(FLEX), "--outfile=yale.lex.c", '--header-file=yale.lex.h', $<]
+
+@endif
+
+@if($BYACC_AVAILABLE)
 
 'yale.tab.c' 'yale.tab.h': 'yale.y'
-@	["byacc", "-d", "-p", "yaleyy", "-o", "yale.tab.c", $<]
+@	[@$(BYACC), "-d", "-p", "yaleyy", "-o", "yale.tab.c", $<]
+
+@endif
 
 @deponly: 'yale.lex.d' 'yale.lex.o' 'yale.tab.d' 'yale.tab.o': \
           'yale.tab.h' 'yale.lex.h'

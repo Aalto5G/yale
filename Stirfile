@@ -30,6 +30,32 @@ $(LDFLAGS) ?= @nil
   @endif
 @endif
 
+$(FLEX) ?= @nil
+@if(@type($(FLEX)) == @type(@nil))
+  $(FLEX) ``= ["sh", "-c", "echo $FLEX"]
+  @if($(FLEX)[] == 0)
+    $(WHICHFLEX) `= ["sh", "-c", "which flex || true"]
+    @if(@strcmp($(WHICHFLEX), "") == 0)
+      $(FLEX_AVAILABLE) ?= @false
+    @endif
+    $(FLEX) = ["flex"]
+  @endif
+@endif
+$(FLEX_AVAILABLE) ?= @true
+
+$(BYACC) ?= @nil
+@if(@type($(BYACC)) == @type(@nil))
+  $(BYACC) ``= ["sh", "-c", "echo $BYACC"]
+  @if($(BYACC)[] == 0)
+    $(WHICHBYACC) `= ["sh", "-c", "which byacc || true"]
+    @if(@strcmp($(WHICHBYACC), "") == 0)
+      $(BYACC_AVAILABLE) ?= @false
+    @endif
+    $(BYACC) = ["byacc"]
+  @endif
+@endif
+$(BYACC_AVAILABLE) ?= @true
+
 # You can modify these for compilation
 $WITH_WERROR ?= @false
 $WITH_PYTHON ?= @false
