@@ -199,7 +199,7 @@ void epsilonclosure(struct epsilonclosure_workarea *area,
         {
           abort();
         }
-        stack[stacksz++] = i;
+        stack[stacksz++] = bit;
       }
     }
   }
