@@ -105,7 +105,7 @@ static void backtracktestcbmain(void)
     "1: [e]\n"
     "1: []-\n"
     "Succeed i = 8\n";
-  testmain("test/backtracktestcbmain", expected);
+  testmain("./backtracktestcbmain", expected);
 }
 
 static void backtracktestmain(void)
@@ -159,7 +159,7 @@ static void backtracktestmain(void)
     "Succeed i = 14\n"
     "Succeed i = 15\n"
     "Succeed i = 16\n";
-  testmain("test/backtracktestmain", expected);
+  testmain("./backtracktestmain", expected);
 }
 
 static void httpcmainprint(void)
@@ -171,7 +171,7 @@ static void httpcmainprint(void)
     "<www.google2.fi>\n"
     "<>-\n"
     "Consumed: 665\n";
-  testmain("test/httpcmainprint", expected);
+  testmain("./httpcmainprint", expected);
 }
 
 static void sslcmainprint(void)
@@ -191,7 +191,7 @@ static void sslcmainprint(void)
     "[s]\n"
     "[t]\n"
     "[]-\n";
-  testmain("test/sslcmainprint", expected);
+  testmain("./sslcmainprint", expected);
 }
 
 static void lenprefixcmain(void)
@@ -434,7 +434,7 @@ static void lenprefixcmain(void)
     "<>A\n"
     "<>\n"
     "<>C\n";
-  testmain("test/lenprefixcmain", expected);
+  testmain("./lenprefixcmain", expected);
 }
 
 static void recursivecbmain(void)
@@ -449,7 +449,7 @@ static void recursivecbmain(void)
     "1: <>\n"
     "2: <>\n"
     "3: <>\n";
-  testmain("test/recursivecbmain", expected);
+  testmain("./recursivecbmain", expected);
 }
 
 static void reprefixcmain(void)
@@ -477,19 +477,19 @@ static void reprefixcmain(void)
     "<>A\n"
     "<>C\n"
     "<>\n";
-  testmain("test/reprefixcmain", expected);
+  testmain("./reprefixcmain", expected);
 }
 
 static void tokentheft1main(void)
 {
   char *expected = "CCLL(1)";
-  testmain("test/tokentheft1main", expected);
+  testmain("./tokentheft1main", expected);
 }
 
 static void tokentheft1smain(void)
 {
   char *expected = "SCCLL(1)";
-  testmain("test/tokentheft1smain", expected);
+  testmain("./tokentheft1smain", expected);
 }
 
 static void httpcpytest(void)
@@ -724,7 +724,7 @@ static void httpcpytest(void)
     "localhost\r\n"
     "\n"
     "END ok 1\n";
-  testmain("test/httpcpytest", expected);
+  testmain("./httpcpytest", expected);
 }
 
 static void fooparsertest(void)
@@ -735,7 +735,7 @@ static void fooparsertest(void)
     "<bar>\n"
     "[]-\n"
     "Consumed: 12\n";
-  testmain("test/footest", expected);
+  testmain("./footest", expected);
 }
 
 int main(int argc, char **argv)
