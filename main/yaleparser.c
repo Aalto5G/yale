@@ -176,6 +176,7 @@ int main(int argc, char **argv)
       fclose(f);
     }
     parsergen_free(&gen);
+    memset(&gen, 0, sizeof(gen));
   }
   yale_free(&yale);
   return 0;
