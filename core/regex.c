@@ -1343,6 +1343,7 @@ pick(struct nfa2dfa_workarea *area,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
      int *caseis)
 {
+  yale_uint_t i;
   yale_uint_t ncnt;
   struct re *re;
 #if 0
@@ -1360,6 +1361,10 @@ pick(struct nfa2dfa_workarea *area,
   set_accepting(dsglobal, 0, priorities);
   pick_those->ds = malloc(sizeof(*pick_those->ds)*pick_those->dscnt);
   memcpy(pick_those->ds, dsglobal, sizeof(*pick_those->ds)*pick_those->dscnt);
+  for (i = 0; i < ncnt; i++)
+  {
+    free(nsglobal[i]);
+  }
 }
 
 void
