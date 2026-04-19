@@ -8,6 +8,7 @@
 .Nd yet another lexer eliminator, or yacc/lex combined, for network protocol parsing
 .Sh SYNOPSIS
 .Nm yaleparser
+.Op Fl o Ar outputdir
 grammar.txt
 c | h | b | t | p
 .Sh DESCRIPTION
@@ -15,6 +16,14 @@ c | h | b | t | p
 is a network protocol parser generator. It does for parsing network protocols
 in a non-blocking middlebox the same that Yacc and Lex have done for computer
 languages.
+.Sh OPTIONS
+.Bl -tag -width ".It Fl o Ar outputdir"
+.It Fl o Ar outputdir
+Store the generated parser into the directory
+.Ao Ar outputdir Ac .
+Without this option, the generated parser is stored into the same directory
+where the source files are located.
+.El
 .Sh MODES
 .Nm yaleparser
 can be invoked in five different modes. The
