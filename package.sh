@@ -11,7 +11,7 @@ pwd="`pwd`"
 cd "$tmpdir" || die "Can't goto tmp dir"
 git clone --recursive https://github.com/Aalto5G/yale || die "Can't clone"
 cd yale
-smka yy/yale.lex.c yy/yale.lex.h yy/yale.tab.c yy/yale.tab.h
+smka yy/yale.lex.c yy/yale.lex.h yy/yale.tab.c yy/yale.tab.h git.h
 vname="`git describe --tags`"
 if [ "$vname" = "" ]; then
   die "git describe failed"

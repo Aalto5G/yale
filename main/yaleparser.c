@@ -3,10 +3,19 @@
 #include "yyutils.h"
 #include <stdio.h>
 #include <libgen.h>
+#include <unistd.h>
 #include "parser.h"
+#include "../git.h"
 
 struct ParserGen gen;
 struct yale yale = YALE_EMPTY;
+
+static void usage(const char *argv0)
+{
+  fprintf(stderr, "This is YaLe version %s\n", gitversion);
+  fprintf(stderr, "Usage: %s [-o outdir] file.txt [c|h|b|p|t]\n", argv0);
+  exit(1);
+}
 
 int main(int argc, char **argv)
 {
@@ -21,33 +30,46 @@ int main(int argc, char **argv)
   int h = 0;
   size_t iters = 1;
   int test = 0;
-  char *dir;
+  char *dir = NULL;
+  int opt;
 
-  if (argc != 3)
+  while ((opt = getopt(argc, argv, "o:")) != -1)
   {
-    fprintf(stderr, "Usage: %s file.txt [c|h|b|p|t]\n", argv[0]);
-    exit(1);
+    switch (opt)
+    {
+      case 'o':
+        dir = optarg;
+        break;
+      default:
+        usage(argv[0]);
+        break;
+    }
   }
-  if (strcmp(argv[2], "c") == 0)
+
+  if (argc != optind + 2)
+  {
+    usage(argv[0]);
+  }
+  if (strcmp(argv[optind+1], "c") == 0)
   {
     c = 1;
   }
-  else if (strcmp(argv[2], "h") == 0)
+  else if (strcmp(argv[optind+1], "h") == 0)
   {
     h = 1;
   }
-  else if (strcmp(argv[2], "b") == 0)
+  else if (strcmp(argv[optind+1], "b") == 0)
   {
     c = 1;
     h = 1;
   }
-  else if (strcmp(argv[2], "t") == 0)
+  else if (strcmp(argv[optind+1], "t") == 0)
   {
     test = 1;
     c = 1;
     h = 1;
   }
-  else if (strcmp(argv[2], "p") == 0)
+  else if (strcmp(argv[optind+1], "p") == 0)
   {
     iters = 1000;
     c = 1;
@@ -55,14 +77,13 @@ int main(int argc, char **argv)
   }
   else
   {
-    fprintf(stderr, "Usage: %s file.txt [c|h|b|p]\n", argv[0]);
-    exit(1);
+    usage(argv[0]);
   }
 
-  f = fopen(argv[1], "r");
+  f = fopen(argv[optind+0], "r");
   if (f == NULL)
   {
-    fprintf(stderr, "Can't open input file\n");
+    fprintf(stderr, "Can't open input file %s\n", argv[optind+0]);
     exit(1);
   }
   yaleyydoparse(f, &yale);
@@ -75,7 +96,10 @@ int main(int argc, char **argv)
   }
 #endif
 
-  dir = dirname(strdup(argv[1]));
+  if (dir == NULL)
+  {
+    dir = dirname(strdup(argv[optind+0]));
+  }
 
   snprintf(cnamebuf, sizeof(cnamebuf), "%s/%s%s", dir, yale.parsername, "cparser.c");
   snprintf(hnamebuf, sizeof(hnamebuf), "%s/%s%s", dir, yale.parsername, "cparser.h");
