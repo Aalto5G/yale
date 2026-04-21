@@ -381,6 +381,7 @@ static struct firstset_value firstset_value_deep_copy_cbadd(struct firstset_valu
   return result;
 }
 
+static int valcmp(const struct firstset_value *val1, const struct firstset_value *val2);
 static struct firstset_values firstset_values_deep_copy_cbadd(struct firstset_values orig, yale_uint_t cb)
 {
   struct firstset_values result;
@@ -391,7 +392,27 @@ static struct firstset_values firstset_values_deep_copy_cbadd(struct firstset_va
   {
     result.values[i] = firstset_value_deep_copy_cbadd(orig.values[i], cb);
   }
-  // FIXME eliminate duplicates
+  if (orig.valuessz > 1)
+  {
+    size_t j = 0; // Always retain the first element, last unique element found
+    size_t newsz;
+    for (i = 1; i < orig.valuessz; i++)
+    {
+      if (valcmp(&result.values[i], &result.values[j]) != 0)
+      {
+        j++;
+        result.values[j] = result.values[i];
+      }
+      else
+      {
+        free(result.values[i].cbs);
+        result.values[i].cbs = NULL;
+        result.values[i].cbsz = 0;
+      }
+    }
+    newsz = j+1;
+    result.valuessz = newsz;
+  }
   return result;
 }
 static int valcmp(const struct firstset_value *val1, const struct firstset_value *val2)
