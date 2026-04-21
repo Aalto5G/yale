@@ -1,0 +1,8 @@
+token c = "c" ;
+
+A = B c;
+B = C;
+C = | c;
+
+directive main = A;
+directive parsername = buggrammar;
