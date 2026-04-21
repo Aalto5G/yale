@@ -362,7 +362,7 @@ static struct firstset_value firstset_value_deep_copy_cbadd(struct firstset_valu
 {
   struct firstset_value result = orig;
   size_t i;
-  int found = 0;
+  int found = (cb == YALE_UINT_MAX_LEGAL);
   result.cbsz = orig.cbsz;
   result.cbs = malloc(sizeof(*result.cbs)*(orig.cbsz+1));
   for (i = 0; i < orig.cbsz; i++)
@@ -377,7 +377,15 @@ static struct firstset_value firstset_value_deep_copy_cbadd(struct firstset_valu
   {
     result.cbs[result.cbsz++] = cb;
   }
-  qsort(result.cbs, result.cbsz, sizeof(*result.cbs), cb_compar);
+  if (result.cbsz == 0)
+  {
+    free(result.cbs);
+    result.cbs = NULL;
+  }
+  else
+  {
+    qsort(result.cbs, result.cbsz, sizeof(*result.cbs), cb_compar);
+  }
   return result;
 }
 
