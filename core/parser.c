@@ -391,6 +391,7 @@ static struct firstset_values firstset_values_deep_copy_cbadd(struct firstset_va
   {
     result.values[i] = firstset_value_deep_copy_cbadd(orig.values[i], cb);
   }
+  // FIXME eliminate duplicates
   return result;
 }
 static int valcmp(const struct firstset_value *val1, const struct firstset_value *val2)
