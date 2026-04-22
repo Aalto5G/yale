@@ -1453,7 +1453,7 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
             if (  (!gen->shortcutting || !gen->nonterminal_conds[i].is_shortcut)
                 && e->conflict)
             {
-              printf("Error: callback conflict\n");
+              printf("Error: callback conflict, nonterminal %s, terminal bytes\n", yale->ns[i].name);
               exit(1);
             }
             break;
@@ -1474,7 +1474,7 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
             if (  (!gen->shortcutting || !gen->nonterminal_conds[i].is_shortcut)
                 && e->conflict)
             {
-              printf("Error: callback conflict\n");
+              printf("Error: callback conflict, nonterminal %s, terminal %s\n", yale->ns[i].name, yale->ns[x].name);
               exit(1);
             }
             break;
