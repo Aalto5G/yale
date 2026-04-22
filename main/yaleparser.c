@@ -173,7 +173,7 @@ int main(int argc, char **argv)
     {
       parsergen_shortcutting(&gen);
     }
-    gen_parser(&gen);
+    gen_parser(&gen, &yale);
     if (h)
     {
       f = fopen(hnamebuf, "w");

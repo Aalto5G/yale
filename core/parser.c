@@ -60,6 +60,7 @@ static uint32_t lookuptbl_hash_fn(struct yale_hash_list_node *node, void *ud)
 }
 
 static void lookuptbl_put(struct ParserGen *gen,
+                   struct yale *yale,
                    yale_uint_t nonterminal, yale_uint_t terminal,
                    yale_uint_t cond,
                    yale_uint_t val,
@@ -76,7 +77,7 @@ static void lookuptbl_put(struct ParserGen *gen,
     if (e->nonterminal == nonterminal && e->terminal == terminal &&
         e->cond == cond)
     {
-      printf("lookup table conflict\n");
+      printf("lookup table conflict, nonterminal %s, terminal %s\n", yale->ns[nonterminal].name, yale->ns[terminal].name);
       exit(1);
     }
   }
@@ -979,7 +980,7 @@ static int has_firstset(struct firstset_values *vals, yale_uint_t terminal)
   return 0;
 }
 
-void gen_parser(struct ParserGen *gen)
+void gen_parser(struct ParserGen *gen, struct yale *yale)
 {
   int changed;
   size_t i, j;
@@ -1154,7 +1155,7 @@ void gen_parser(struct ParserGen *gen)
             found = 1;
           }
         }
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
+        lookuptbl_put(gen, yale, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
       }
       fval = NULL;
       // ...or epsilon is in FI(w) and a is in FO(A)
@@ -1174,7 +1175,7 @@ void gen_parser(struct ParserGen *gen)
             found = 1;
           }
         }
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
+        lookuptbl_put(gen, yale, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
       }
     }
     for (a = YALE_UINT_MAX_LEGAL - 1; a < YALE_UINT_MAX_LEGAL; a++)
@@ -1200,7 +1201,7 @@ void gen_parser(struct ParserGen *gen)
             found = 1;
           }
         }
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
+        lookuptbl_put(gen, yale, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
       }
       fval = NULL;
       // ...or epsilon is in FI(w) and a is in FO(A)
@@ -1220,7 +1221,7 @@ void gen_parser(struct ParserGen *gen)
             found = 1;
           }
         }
-        lookuptbl_put(gen, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
+        lookuptbl_put(gen, yale, A, a, gen->rules[i].cond, i, fval->cbs, fval->cbsz, conflict);
       }
     }
   }
