@@ -141,6 +141,9 @@ $MODS_UNIT = @sufsuball($MODS, "", "/unit")
 
 @phonyrule: 'unit': $MODS_UNIT
 
+@deponly: 'main/yaleparser.d': 'git.h'
+@deponly: 'main/yaleparser.o': 'git.h'
+
 @dirinclude $MODS
 
 @if((@glob(".git/logs/HEAD"))[] == 1)

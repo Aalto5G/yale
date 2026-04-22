@@ -137,16 +137,6 @@ struct escaped_string yy_escape_string(char *orig)
   return resultstruct;
 }
 
-uint32_t yy_get_ip(char *orig)
-{
-  struct in_addr addr;
-  if (inet_aton(orig, &addr) == 0)
-  {
-    return 0;
-  }
-  return ntohl(addr.s_addr);
-}
-
 void yaleyynameparse(const char *fname, struct yale *yale, int require)
 {
   FILE *yalefile;
