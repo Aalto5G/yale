@@ -166,7 +166,7 @@ ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr);
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f);
 
-void parsergen_dump_parser(struct ParserGen *gen, FILE *f);
+void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f);
 
 void firstset2_update(struct ParserGen *gen, struct firstset_values *val2, const struct firstset_values *val1, int noepsilon, int *changed);
 

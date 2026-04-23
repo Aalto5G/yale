@@ -196,7 +196,7 @@ int main(int argc, char **argv)
         fprintf(f, "%s", yale.cs.data);
       }
       fprintf(f, "#include \"%s\"\n", hincbuf);
-      parsergen_dump_parser(&gen, f);
+      parsergen_dump_parser(&gen, &yale, f);
       fclose(f);
     }
     parsergen_free(&gen);

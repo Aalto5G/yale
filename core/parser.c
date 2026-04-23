@@ -1541,7 +1541,7 @@ end_cbs(FILE *f, const char *indent)
   fprintf(f, "%s}\n", indent);
 }
 
-void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
+void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
 {
   size_t i, j, X, x;
   size_t curidx = 0;
@@ -1674,6 +1674,7 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
       {
         printf("Error: state accepts both regexp and bytes tokens\n");
         printf("Can't know which one to choose\n");
+        printf("Nonterminal: %s\n", yale->ns[X].name);
         exit(1);
       }
       fprints(f, "{\n");
