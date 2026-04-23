@@ -7,7 +7,7 @@
 
 #undef DO_PRINT_STACKCONFIG
 
-#define STACKSZ_ERR 255
+#define STACKSZ_ERR YALE_UINT_MAX_LEGAL
 
 static void *parsergen_alloc(struct ParserGen *gen, size_t sz)
 {
@@ -1484,6 +1484,10 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
     }
   }
   gen->parserbits = 8;
+  if (gen->max_stack_size >= 255)
+  {
+    gen->parserbits = 16;
+  }
   if (gen->tokencnt + (size_t)gen->nonterminalcnt >= 255)
   {
     gen->parserbits = 16;
@@ -1864,8 +1868,8 @@ void parsergen_dump_parser(struct ParserGen *gen, FILE *f)
   fprintf(f, "\n"
              "#define EXTRA_SANITY\n"
              "\n"
-             "#define STACKSZ_ERR %d\n"
-             "\n", STACKSZ_ERR);
+             "#define STACKSZ_ERR PARSER_UINT%d_MAX\n"
+             "\n", gen->parserbits);
   fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator)//, void *baton)\n", gen->parsername, gen->parsername);
   fprintf(f, "{\n"
              "  size_t off = 0;\n"
