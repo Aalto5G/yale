@@ -2730,7 +2730,9 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
   gen->rulecnt = rulecnt;
   for (i = 0; i < rulecnt; i++)
   {
+    const char *name = ns[gen->rules[i].lhs].name;
     gen->rules[i] = rules[i];
+    gen->rules[i].lhs = ns[gen->rules[i].lhs].val; // Update lhs to be value
     for (j = 0; j < gen->rules[i].itemcnt; j++)
     {
       if (gen->rules[i].rhs[j].is_action)
@@ -2742,7 +2744,7 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
         if (gen->rules[i].rhs[j].cb == YALE_UINT_MAX_LEGAL)
         {
           printf("Error: action without callback\n");
-          printf("Nonterminal: %s\n", ns[gen->rules[i].lhs].name);
+          printf("Nonterminal: %s\n", name);
           exit(1);
         }
       }
