@@ -127,7 +127,7 @@ int main(int argc, char **argv)
     {
       yale.ns[yale.tokens[i].nsitem].val =
         parsergen_add_token(&gen, yale.tokens[i].re.str, yale.tokens[i].re.sz, yale.tokens[i].priority,
-                            yale.tokens[i].i); // FIXME '\0'
+                            yale.tokens[i].i, yale.ns[yale.tokens[i].nsitem].name); // FIXME '\0'
     }
     parsergen_finalize_tokens(&gen);
     for (i = 0; i < yale.nscnt; i++)
@@ -147,7 +147,7 @@ int main(int argc, char **argv)
         fprintf(stderr, "Error: token %s neither terminal nor nonterminal\n", nsit->name);
         exit(1);
       }
-      nsit->val = parsergen_add_nonterminal(&gen);
+      nsit->val = parsergen_add_nonterminal(&gen, yale.ns[i].name);
     }
     if (yale.si.data != NULL)
     {

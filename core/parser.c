@@ -2638,7 +2638,7 @@ static void *memdup(const void *base, size_t sz)
   return result;
 }
 
-yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio, int casei)
+yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio, int casei, const char *name)
 {
   if (gen->tokens_finalized)
   {
@@ -2651,6 +2651,7 @@ yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, in
   if (gen->tokencnt >= YALE_UINT_MAX_LEGAL - 2)
   {
     printf("Error: too many tokens, can't add token\n");
+    printf("Token name: %s\n", name);
     exit(1);
   }
   gen->re_by_idx[gen->tokencnt].iov_base = memdup(re, resz);
@@ -2669,7 +2670,7 @@ void parsergen_finalize_tokens(struct ParserGen *gen)
   gen->tokens_finalized = 1;
 }
 
-yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen)
+yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen, const char *name)
 {
   if (!gen->tokens_finalized)
   {
@@ -2682,6 +2683,7 @@ yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen)
   if (gen->tokencnt + gen->nonterminalcnt >= YALE_UINT_MAX_LEGAL - 2)
   {
     printf("Error: too many tokens+nonterminals, can't add nonterminal\n");
+    printf("Nonterminal name: %s\n", name);
     exit(1);
   }
   return gen->tokencnt + (gen->nonterminalcnt++);

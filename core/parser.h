@@ -150,11 +150,11 @@ void parsergen_set_bytessizetype(struct ParserGen *gen, char *type);
 
 void parsergen_set_start_state(struct ParserGen *gen, yale_uint_t start_state);
 
-yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio, int casei);
+yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, int prio, int casei, const char *name);
 
 void parsergen_finalize_tokens(struct ParserGen *gen);
 
-yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen);
+yale_uint_t parsergen_add_nonterminal(struct ParserGen *gen, const char *name);
 
 void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_uint_t rulecnt, const struct namespaceitem *ns);
 
