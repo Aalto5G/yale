@@ -148,6 +148,7 @@ int main(int argc, char **argv)
         exit(1);
       }
       nsit->val = parsergen_add_nonterminal(&gen, yale.ns[i].name);
+      yale.nonterminals[nsit->val].nsitem = i;
     }
     if (yale.si.data != NULL)
     {

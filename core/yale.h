@@ -90,12 +90,17 @@ struct rule {
   yale_uint_t noactcnt;
 };
 
+struct nonterminal {
+  yale_uint_t nsitem;
+};
+
 struct yale {
   struct CSnippet cs;
   struct CSnippet hs;
   struct CSnippet si;
   struct CSnippet ii;
   struct token tokens[YALE_UINT_MAX_LEGAL];
+  struct nonterminal nonterminals[YALE_UINT_MAX_LEGAL];
   struct namespaceitem ns[YALE_UINT_MAX_LEGAL];
   struct cb cbs[YALE_UINT_MAX_LEGAL];
   struct rule rules[YALE_UINT_MAX_LEGAL];

@@ -77,7 +77,7 @@ static void lookuptbl_put(struct ParserGen *gen,
     if (e->nonterminal == nonterminal && e->terminal == terminal &&
         e->cond == cond)
     {
-      printf("lookup table conflict, nonterminal %s, terminal %s\n", yale->ns[nonterminal].name, yale->ns[terminal].name);
+      printf("lookup table conflict, nonterminal %s, terminal %s\n", yale->ns[yale->nonterminals[nonterminal].nsitem].name, yale->ns[yale->tokens[terminal].nsitem].name);
       exit(1);
     }
   }
@@ -1352,17 +1352,19 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
       printf("too long or unbounded DFA backtrack\n");
       for (A = gen->tokencnt; A < gen->tokencnt + gen->nonterminalcnt; A++)
       {
+        //printf("Iterating %d\n", (int)A);
         for (j = 0; j < gen->nonterminal_conds[A].condcnt; j++)
         {
+          //printf("Iterating %d %d %d %d\n", (int)A, (int)j, (int)gen->nonterminal_conds[A].conds[j].pick_those, (int)i);
           if (gen->nonterminal_conds[A].conds[j].pick_those == i)
           {
-            printf("example nonterminal (in first-set): %s\n", yale->ns[A].name);
+            printf("example nonterminal (in first-set): %s\n", yale->ns[yale->nonterminals[A].nsitem].name);
           }
         }
       }
       for (j = 0; j < gen->pick_thoses[i].len; j++)
       {
-        printf("example terminal: %s\n", yale->ns[gen->pick_thoses[i].pick_those[j]].name);
+        printf("example terminal: %s\n", yale->ns[yale->tokens[gen->pick_thoses[i].pick_those[j]].nsitem].name);
       }
       exit(1);
     }
@@ -1469,7 +1471,7 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
             if (  (!gen->shortcutting || !gen->nonterminal_conds[i].is_shortcut)
                 && e->conflict)
             {
-              printf("Error: callback conflict, nonterminal %s, terminal bytes\n", yale->ns[i].name);
+              printf("Error: callback conflict, nonterminal %s, terminal bytes\n", yale->ns[yale->nonterminals[i].nsitem].name);
               exit(1);
             }
             break;
@@ -1490,7 +1492,7 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
             if (  (!gen->shortcutting || !gen->nonterminal_conds[i].is_shortcut)
                 && e->conflict)
             {
-              printf("Error: callback conflict, nonterminal %s, terminal %s\n", yale->ns[i].name, yale->ns[x].name);
+              printf("Error: callback conflict, nonterminal %s, terminal %s\n", yale->ns[yale->nonterminals[i].nsitem].name, yale->ns[yale->tokens[x].nsitem].name);
               exit(1);
             }
             break;
@@ -1690,7 +1692,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
       {
         printf("Error: state accepts both regexp and bytes tokens\n");
         printf("Can't know which one to choose\n");
-        printf("Nonterminal: %s\n", yale->ns[X].name);
+        printf("Nonterminal: %s\n", yale->ns[yale->nonterminals[X].nsitem].name);
         exit(1);
       }
       fprints(f, "{\n");
