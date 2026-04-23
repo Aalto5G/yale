@@ -129,7 +129,9 @@ struct ParserGen {
   //struct stackconfig stackconfigs[32768]; // 1.25 MB
   struct stackconfig *stackconfigs[32768]; // 0.25 MB
   struct transitionbufs bufs; // 16 MB, this could be made to use dynamic alloc
-  char userarea[64*1024*1024];
+  char *userarea;
+  size_t userareasz;
+  char userarea_init[16*1024*1024];
 };
 
 void parsergen_init(struct ParserGen *gen, char *parsername);

@@ -13,9 +13,26 @@ static void *parsergen_alloc(struct ParserGen *gen, size_t sz)
 {
   void *result = gen->userareaptr;
   size_t alloc_sz = (sz+7)/8 * 8;
-  if (gen->userareaptr + alloc_sz - gen->userarea > (ssize_t)sizeof(gen->userarea))
+  if (alloc_sz > gen->userareasz/16)
   {
     return NULL;
+  }
+  if (gen->userareaptr + alloc_sz - gen->userarea > (ssize_t)(gen->userareasz))
+  {
+    size_t sz = 16*1024*1024;
+    char *userarea2 = malloc(sz);
+    if (userarea2 == NULL)
+    {
+      return NULL;
+    }
+    gen->userarea = userarea2;
+    gen->userareaptr = userarea2;
+    gen->userareasz = sz;
+    if (gen->userareaptr + alloc_sz - gen->userarea > (ssize_t)(gen->userareasz))
+    {
+      return NULL;
+    }
+    result = gen->userareaptr;
   }
   gen->userareaptr += alloc_sz;
   return result;
@@ -149,6 +166,8 @@ static uint32_t firstset2_hash_fn(struct yale_hash_list_node *node, void *ud)
 void parsergen_init(struct ParserGen *gen, char *parsername)
 {
   size_t i;
+  gen->userarea = gen->userarea_init;
+  gen->userareasz = sizeof(gen->userarea_init);
   gen->userareaptr = gen->userarea;
   gen->tokencnt = 0;
   gen->nonterminalcnt = 0;
