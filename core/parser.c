@@ -2730,7 +2730,7 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
   gen->rulecnt = rulecnt;
   for (i = 0; i < rulecnt; i++)
   {
-    const char *name = ns[gen->rules[i].lhs].name;
+    const char *name = ns[rules[i].lhs].name;
     gen->rules[i] = rules[i];
     gen->rules[i].lhs = ns[gen->rules[i].lhs].val; // Update lhs to be value
     for (j = 0; j < gen->rules[i].itemcnt; j++)
