@@ -285,7 +285,17 @@ static void firstset2_setdefault(struct ParserGen *gen, const struct ruleitem *r
   }
   struct firstset_entry2 *Fi;
   Fi = parsergen_alloc(gen, sizeof(*Fi));
+  if (!Fi)
+  {
+    printf("Out of memory\n");
+    exit(1);
+  }
   Fi->rhs = parsergen_alloc(gen, sizeof(*Fi->rhs) * rhssz);
+  if (!Fi->rhs)
+  {
+    printf("Out of memory\n");
+    exit(1);
+  }
   Fi->rhssz = rhssz;
   memcpy(Fi->rhs, rhs, rhssz*sizeof(*rhs));
   Fi->values.values = NULL;
@@ -763,7 +773,17 @@ static size_t stackconfig_append(struct ParserGen *gen, const struct stackconfig
       exit(1);
     }
     gen->stackconfigs[i] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[i]));
+    if (!gen->stackconfigs[i])
+    {
+      printf("Out of memory\n");
+      exit(1);
+    }
     gen->stackconfigs[i]->stack = parsergen_alloc(gen, sz*sizeof(*stack));
+    if (!gen->stackconfigs[i]->stack)
+    {
+      printf("Out of memory\n");
+      exit(1);
+    }
     memcpy(gen->stackconfigs[i]->stack, stack, sz*sizeof(*stack));
     gen->stackconfigs[i]->sz = sz;
     gen->stackconfigs[i]->cbsz = cbsz;
@@ -790,7 +810,17 @@ ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
   yale_uint_t a;
   gen->stackconfigcnt = 1;
   gen->stackconfigs[0] = parsergen_alloc(gen, sizeof(*gen->stackconfigs[0]));
+  if (!gen->stackconfigs[0])
+  {
+    printf("Out of memory\n");
+    exit(1);
+  }
   gen->stackconfigs[0]->stack = parsergen_alloc(gen, 1*sizeof(*stack));
+  if (!gen->stackconfigs[0]->stack)
+  {
+    printf("Out of memory\n");
+    exit(1);
+  }
   gen->stackconfigs[0]->stack[0].val = gen->start_state;
   gen->stackconfigs[0]->stack[0].cb = YALE_UINT_MAX_LEGAL;
   gen->stackconfigs[0]->sz = 1;
@@ -996,7 +1026,17 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
     uint32_t hashval = firstset2_hash(&rhs, 1);
     struct firstset_entry2 *Fi;
     Fi = parsergen_alloc(gen, sizeof(*Fi));
+    if (!Fi)
+    {
+      printf("Out of memory\n");
+      exit(1);
+    }
     Fi->rhs = parsergen_alloc(gen, sizeof(*Fi->rhs) * 1);
+    if (!Fi->rhs)
+    {
+      printf("Out of memory\n");
+      exit(1);
+    }
     Fi->rhs[0] = rhs;
     Fi->rhssz = 1;
     Fi->values.values = NULL;
@@ -1229,6 +1269,11 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
   {
     gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
       parsergen_alloc(gen, 1*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
+    if (!gen->pick_thoses[gen->pick_thoses_cnt].pick_those)
+    {
+      printf("Out of memory\n");
+      exit(1);
+    }
     gen->pick_thoses[gen->pick_thoses_cnt].pick_those[0] = i;
     gen->pick_thoses[gen->pick_thoses_cnt].len = 1;
     gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
@@ -1326,8 +1371,13 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
           }
         }
         gen->pick_thoses[gen->pick_thoses_cnt].pick_those =
-	  parsergen_alloc(gen, len*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
-	memcpy(gen->pick_thoses[gen->pick_thoses_cnt].pick_those, pick_those, len*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
+          parsergen_alloc(gen, len*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
+        if (!gen->pick_thoses[gen->pick_thoses_cnt].pick_those)
+        {
+          printf("Out of memory\n");
+          exit(1);
+        }
+        memcpy(gen->pick_thoses[gen->pick_thoses_cnt].pick_those, pick_those, len*sizeof(*gen->pick_thoses[gen->pick_thoses_cnt].pick_those));
         gen->pick_thoses[gen->pick_thoses_cnt].len = len;
         gen->pick_thoses[gen->pick_thoses_cnt].ds = NULL;
         gen->pick_thoses[gen->pick_thoses_cnt].dscnt = 0;
