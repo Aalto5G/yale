@@ -1347,7 +1347,23 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
     curbt = maximal_backtrack(gen->pick_thoses[i].ds, 0, 250);
     if (curbt < 0)
     {
+      yale_uint_t A;
+      yale_uint_t j;
       printf("too long or unbounded DFA backtrack\n");
+      for (A = gen->tokencnt; A < gen->tokencnt + gen->nonterminalcnt; A++)
+      {
+        for (j = 0; j < gen->nonterminal_conds[A].condcnt; j++)
+        {
+          if (gen->nonterminal_conds[A].conds[j].pick_those == i)
+          {
+            printf("example nonterminal (in first-set): %s\n", yale->ns[A].name);
+          }
+        }
+      }
+      for (j = 0; j < gen->pick_thoses[i].len; j++)
+      {
+        printf("example terminal: %s\n", yale->ns[gen->pick_thoses[i].pick_those[j]].name);
+      }
       exit(1);
     }
     if (gen->max_bt < curbt)
