@@ -1,0 +1,7 @@
+token c = "c" ;
+
+A = C c;
+C = | c;
+
+directive main = A;
+directive parsername = conflict;

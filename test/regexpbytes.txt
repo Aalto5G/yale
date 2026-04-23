@@ -1,0 +1,8 @@
+token a = "a";
+B = a;
+token c = "c.*d" ;
+
+A = c | bytes;
+
+directive main = A;
+directive parsername = regexpbytes;

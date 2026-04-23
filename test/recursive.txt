@@ -1,0 +1,8 @@
+token a = "a";
+token b = "b";
+
+A = B a;
+B = b A;
+
+directive main = A;
+directive parsername = recursive;
