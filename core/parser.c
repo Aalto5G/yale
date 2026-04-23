@@ -2722,6 +2722,7 @@ void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_u
         if (gen->rules[i].rhs[j].cb == YALE_UINT_MAX_LEGAL)
         {
           printf("Error: action without callback\n");
+          printf("Nonterminal: %s\n", ns[gen->rules[i].lhs].name);
           exit(1);
         }
       }
