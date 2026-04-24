@@ -114,7 +114,8 @@ yalerule:
   yale_uint_t i;
   if (yale->tokencnt >= sizeof(yale->tokens)/sizeof(*yale->tokens))
   {
-    printf("1\n");
+    fprintf(stderr, "Too many tokens, can't add token %s\n", $3);
+    yaleyyerror(scanner, yale, "error");
     YYABORT;
   }
   for (i = 0; i < yale->nscnt; i++)
@@ -124,7 +125,8 @@ yalerule:
       yale->ns[i].is_token = 1;
       if (yale->ns[i].is_lhs)
       {
-        printf("1.1\n");
+        fprintf(stderr, "Name %s is already a nonterminal, can't make it terminal\n", $3);
+        yaleyyerror(scanner, yale, "error");
         YYABORT;
       } 
       free($3);
@@ -135,7 +137,8 @@ yalerule:
   {
     if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
-      printf("1.2\n");
+      fprintf(stderr, "Namespace full, can't add terminal %s\n", $3);
+      yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
     yale->ns[i].name = $3;
@@ -154,7 +157,8 @@ yalerule:
   yale_uint_t i;
   if (yale->rulecnt >= sizeof(yale->rules)/sizeof(*yale->rules))
   {
-    printf("3\n");
+    fprintf(stderr, "Too many rules, can't add rule for nonterminal %s\n", $1);
+    yaleyyerror(scanner, yale, "error");
     YYABORT;
   }
   rule = &yale->rules[yale->rulecnt++];
@@ -166,7 +170,8 @@ yalerule:
       yale->ns[i].is_lhs = 1;
       if (yale->ns[i].is_token)
       {
-        printf("3.1 is_token %s %d\n", $1, i);
+        fprintf(stderr, "Can't add nonterminal %s as it's already a terminal\n", $1);
+        yaleyyerror(scanner, yale, "error");
         YYABORT;
       } 
       free($1);
@@ -177,7 +182,8 @@ yalerule:
   {
     if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
-      printf("3.2\n");
+      fprintf(stderr, "Namespace full, can't add nonterminal %s\n", $1);
+      yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
     yale->ns[i].name = $1;
@@ -308,7 +314,8 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
       yale->ns[i].is_lhs = 1;
       if (yale->ns[i].is_token)
       {
-        printf("M.1\n");
+        fprintf(stderr, "Main nonterminal %s is actually a terminal\n", $3);
+        yaleyyerror(scanner, yale, "error");
         YYABORT;
       } 
       free($3);
@@ -319,7 +326,8 @@ MAIN EQUALS FREEFORM_TOKEN SEMICOLON
   {
     if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
-      printf("M.2\n");
+      fprintf(stderr, "Main nonterminal %s not seen, can't be added, namespace full\n", $3);
+      yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
     yale->ns[i].is_lhs = 1;
@@ -358,7 +366,8 @@ alternation:
   struct rule *rule;
   if (yale->rulecnt >= sizeof(yale->rules)/sizeof(*yale->rules))
   {
-    printf("6\n");
+    fprintf(stderr, "Too many rules, can't add rule\n");
+    yaleyyerror(scanner, yale, "error");
     YYABORT;
   }
   rule = &yale->rules[yale->rulecnt];
@@ -386,7 +395,8 @@ ACTION maybe_token_ltgt
   rule = &yale->rules[yale->rulecnt - 1];
   if (rule->itemcnt == YALE_UINT_MAX_LEGAL)
   {
-    printf("7\n");
+    fprintf(stderr, "Too many items in rule, can't add item\n");
+    yaleyyerror(scanner, yale, "error");
     YYABORT;
   }
   if (rule->itemcnt >= rule->rhs_capacity)
@@ -411,7 +421,8 @@ ACTION maybe_token_ltgt
   rule = &yale->rules[yale->rulecnt - 1];
   if (rule->itemcnt == YALE_UINT_MAX_LEGAL || rule->noactcnt == YALE_UINT_MAX_LEGAL)
   {
-    printf("7\n");
+    fprintf(stderr, "Too many items in rule, can't add item\n");
+    yaleyyerror(scanner, yale, "error");
     YYABORT;
   }
   for (i = 0; i < yale->nscnt; i++) // FIXME check all cnt uses
@@ -436,7 +447,8 @@ ACTION maybe_token_ltgt
 #if 0 // This is no longer an error as callbacks on nonterminals are allowed
     if ($2 != YALE_UINT_MAX_LEGAL && yale->ns[i].is_lhs)
     {
-      printf("7.1\n");
+      fprintf(stderr, "Callback in nonterminal %s\n", $1);
+      yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
 #endif
@@ -445,7 +457,8 @@ ACTION maybe_token_ltgt
   {
     if (i >= YALE_UINT_MAX_LEGAL - 1)
     {
-      printf("7.2\n");
+      fprintf(stderr, "Can't add (non)terminal %s as namespace is full\n", $1);
+      yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
     yale->ns[i].name = strdup($1);
@@ -475,7 +488,8 @@ ACTION maybe_token_ltgt
   rule = &yale->rules[yale->rulecnt - 1];
   if (rule->itemcnt == YALE_UINT_MAX_LEGAL)
   {
-    printf("7\n");
+    fprintf(stderr, "Too many items in rule, can't add item\n");
+    yaleyyerror(scanner, yale, "error");
     YYABORT;
   }
   if (rule->itemcnt >= rule->rhs_capacity)
@@ -549,7 +563,8 @@ CB EQUALS FREEFORM_TOKEN
   {
     if (i == YALE_UINT_MAX_LEGAL)
     {
-      printf("9\n");
+      fprintf(stderr, "Too many callbacks, can't add callback %s\n", $3);
+      yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
     yale->cbs[i].name = $3;
@@ -585,7 +600,8 @@ bytes_ltgtexp:
   {
     if (i == YALE_UINT_MAX_LEGAL)
     {
-      printf("9\n");
+      fprintf(stderr, "Too many callbacks, can't add callback %s\n", $3);
+      yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
     yale->cbs[i].name = $3;
