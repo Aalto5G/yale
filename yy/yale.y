@@ -433,11 +433,13 @@ ACTION maybe_token_ltgt
   {
     it->value = i;
     it->cb = $2;
+#if 0 // This is no longer an error as callbacks on nonterminals are allowed
     if ($2 != YALE_UINT_MAX_LEGAL && yale->ns[i].is_lhs)
     {
       printf("7.1\n");
       YYABORT;
     }
+#endif
   }
   else
   {
