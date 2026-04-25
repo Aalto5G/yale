@@ -1407,7 +1407,7 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
     pick(&gen->nfa2dfa_area, gen->ns, gen->ds, gen->re_by_idx, &gen->pick_thoses[i], gen->priorities,
-         gen->caseis);
+         gen->caseis, yale);
   }
   collect(gen->pick_thoses, gen->pick_thoses_cnt, &gen->bufs, parsergen_alloc_fn, gen);
   for (i = 0; i < gen->pick_thoses_cnt; i++)

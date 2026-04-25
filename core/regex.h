@@ -170,7 +170,7 @@ void dfa_connect_default(struct dfa_node *n, yale_uint_t node2);
 // FIXME this algorithm requires thorough review
 ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
 
-void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities);
+void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities, struct yale *yale);
 
 ssize_t maximal_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
 
@@ -262,7 +262,7 @@ perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
 void
 pick(struct nfa2dfa_workarea *area, struct nfa_node **nsglobal, struct dfa_node **dsglobal,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
-     int *caseis);
+     int *caseis, struct yale *yale);
 
 void
 collect(struct pick_those_struct *pick_thoses, size_t cnt,

@@ -357,7 +357,7 @@ ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound)
   return max_backtrack;
 }
 
-void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities)
+void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities, struct yale *yale)
 {
   struct bitset tovisit = BITSET_EMPTY;
   struct bitset visited = BITSET_EMPTY;
@@ -423,6 +423,19 @@ void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t s
       if (count_thisprio > 1)
       {
         printf("Token conflict. Please adjust priorities.\n");
+        for (i = 0; i < YALE_UINT_MAX_LEGAL + 1; i++)
+        {
+          wordoff = i/64;
+          bitoff = i%64;
+          if (ds[queued]->acceptidset.bitset[wordoff] & (1ULL<<bitoff))
+          {
+            if (priorities[i] == priority)
+            {
+              count_thisprio++;
+            }
+            printf("Token name %s\n", yale->ns[yale->tokens[i].nsitem].name);
+          }
+        }
         exit(1);
       }
       if (count_thisprio == 0)
@@ -1341,7 +1354,7 @@ void
 pick(struct nfa2dfa_workarea *area,
      struct nfa_node **nsglobal, struct dfa_node **dsglobal,
      struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
-     int *caseis)
+     int *caseis, struct yale *yale)
 {
   yale_uint_t i;
   yale_uint_t ncnt;
@@ -1358,7 +1371,7 @@ pick(struct nfa2dfa_workarea *area,
   gennfa_alternmulti(re, nsglobal, &ncnt);
   free_re(re);
   pick_those->dscnt = nfa2dfa(area, nsglobal, dsglobal, 0);
-  set_accepting(dsglobal, 0, priorities);
+  set_accepting(dsglobal, 0, priorities, yale);
   pick_those->ds = malloc(sizeof(*pick_those->ds)*pick_those->dscnt);
   memcpy(pick_those->ds, dsglobal, sizeof(*pick_those->ds)*pick_those->dscnt);
   for (i = 0; i < ncnt; i++)
