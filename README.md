@@ -38,7 +38,7 @@ YaLe:
 git clone https://github.com/Aalto5G/yale
 cd yale
 smka
-./install.sh ~/.local (to install locally to ~/.local/binm)
+./install.sh ~/.local (to install locally to ~/.local/bin)
 sudo ./install.sh /usr/local (to install globally)
 ```
 
