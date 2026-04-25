@@ -117,5 +117,5 @@ milliseconds.
 
 The performance of YaLe compares favorably with that of BinPAC. In the BinPAC
 paper, a HTTP parser was illustrated. Using this parser, BinPAC parses HTTP
-headers at a rate of 0.55 gigabits per second on a modern computer, using a
+headers at a rate of 1.8 gigabits per second on a modern computer, using a
 single thread.
