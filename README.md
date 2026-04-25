@@ -42,6 +42,9 @@ smka
 sudo ./install.sh /usr/local (to install globally)
 ```
 
+To learn how to use YaLe, first read its man page with "man yaleparser" and
+then look at the installed examples in /usr/local/share/examples/yaleparser.
+
 # Technical details
 
 YaLe was originally implemented in Python. Either a recent version of Python 2
