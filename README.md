@@ -68,9 +68,10 @@ protocols, typically the grammar is extremely simple with no infinite
 recursion, and the main difficulty lies in the parser state dependent lexer
 that YaLe successfully implements.
 
-A number of object types is limited to at most close to 256 items of the given
+A number of object types is limited to at most close to 8192 items of the given
 type (few last numbers may be reseved for special purposes). The reason is that
-many integers are limited to 8 bits for space reasons.
+inoptimal data structures (bitsets) would be too large and slow if they had
+65536 bits.
 
 Callbacks and actions are supported. Actions are executed when the parser
 reaches a given state. Callbacks are executed when lexing. The callback system
