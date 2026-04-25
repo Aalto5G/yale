@@ -14,6 +14,34 @@ generated, explaining the name of YaLe. There is an internal architecture that
 separates lexing and parsing to different functions, but as explained, the
 state machine the lexer uses is dependent on the parser state.
 
+# Compiling
+
+YaLe is compiled with stirmake. It also needs flex and byacc to be installed.
+How to install:
+
+First, install stirmake:
+
+```
+sudo apt install flex byacc (Debian-based)
+sudo yum install flex byacc (RedHat-based)
+git clone --recursive https://github.com/Aalto5G/stirmake
+cd stirmake/stirc
+./bootstrapnomake.sh
+./install.sh (to install locally to ~/.local/bin)
+sudo ./install.sh /usr/local (to install globally)
+```
+
+Then, you may need to relogin if command "smka" does not work. Then install
+YaLe:
+
+```
+git clone https://github.com/Aalto5G/yale
+cd yale
+smka
+./install.sh ~/.local (to install locally to ~/.local/binm)
+sudo ./install.sh /usr/local (to install globally)
+```
+
 # Technical details
 
 YaLe was originally implemented in Python. Either a recent version of Python 2
