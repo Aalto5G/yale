@@ -178,25 +178,27 @@ void dfaviz(struct dfa_node *ds, yale_uint_t cnt);
 
 void nfaviz(struct nfa_node *ns, yale_uint_t cnt);
 
-yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct dfa_node **ds, yale_uint_t begin);
+struct pick_those_struct;
 
-struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart);
+yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct dfa_node **ds, yale_uint_t begin, struct pick_those_struct *pick_those, struct yale *yale);
+
+struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name);
 
 struct re *
-parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart);
+parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name);
 
-struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainderstart);
+struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name);
 
-struct re *parse_piece(int casei, const char *re, size_t resz, size_t *remainderstart);
+struct re *parse_piece(int casei, const char *re, size_t resz, size_t *remainderstart, const char *namr);
 
 // branch: piece branch
-struct re *parse_branch(int casei, const char *re, size_t resz, size_t *remainderstart);
+struct re *parse_branch(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name);
 
 // RE: branch | RE
-struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart);
+struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name);
 
 struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz,
-                     int *caseis);
+                     int *caseis, struct yale *yale);
 
 void gennfa(struct re *regexp,
             struct nfa_node **ns, yale_uint_t *ncnt,

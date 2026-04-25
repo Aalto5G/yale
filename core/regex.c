@@ -567,7 +567,7 @@ void nfaviz(struct nfa_node *ns, yale_uint_t cnt)
   printf("}\n");
 }
 
-yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct dfa_node **ds, yale_uint_t begin)
+yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct dfa_node **ds, yale_uint_t begin, struct pick_those_struct *pick_those, struct yale *yale)
 {
   struct bitset *initial = &area->initial;
   struct bitset *dfabegin = &area->dfabegin;
@@ -706,7 +706,12 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
         }
         if (curdfanode >= YALE_UINT_MAX_LEGAL)
         {
+          size_t i;
           fprintf(stderr, "too big regexp, too many states\n");
+          for (i = 0; i < pick_those->len; i++)
+          {
+            fprintf(stderr, "Token name %s\n", yale->ns[yale->tokens[pick_those->pick_those[i]].nsitem].name);
+          }
           exit(1);
         }
         if (d->tblsz >= d->tblcapacity)
@@ -771,7 +776,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
   return curdfanode;
 }
 
-struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart);
+struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name);
 
 static inline void set_char(uint64_t bitmask[4], unsigned char ch)
 {
@@ -781,7 +786,7 @@ static inline void set_char(uint64_t bitmask[4], unsigned char ch)
 }
 
 struct re *
-parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart)
+parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name)
 {
   uint64_t bitmask[4] = {0};
   const char *start;
@@ -793,6 +798,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
   if (resz == 0)
   {
     printf("Error: empty bracket expression in regexp\n");
+    printf("Token name: %s\n", name);
     exit(1);
   }
   if (re[0] == '^')
@@ -800,6 +806,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
     if (resz < 2)
     {
       printf("Error: too short bracket expression in regexp\n");
+      printf("Token name: %s\n", name);
       exit(1);
     }
     inverse = 1;
@@ -827,6 +834,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
       if (i == len)
       {
         printf("Error: backslash at the end of regular expression\n");
+        printf("Token name: %s\n", name);
         exit(1);
       }
       first = start[i];
@@ -849,6 +857,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         if (i+2 >= len)
         {
           printf("Error: \\xAB too short in regexp\n");
+          printf("Token name: %s\n", name);
           exit(1);
         }
         hexbuf[0] = start[i++];
@@ -856,6 +865,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         if (!isxdigit(hexbuf[0]) || !isxdigit(hexbuf[1]))
         {
           printf("Error: \\xAB does not have hex digits in regexp\n");
+          printf("Token name: %s\n", name);
           exit(1);
         }
         newlast = strtol(hexbuf, NULL, 16);
@@ -863,6 +873,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
       else
       {
         printf("Error: unknown escape sequence in regexp\n");
+        printf("Token name: %s\n", name);
         exit(1);
       }
       if (has_last)
@@ -887,6 +898,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         if (i == len)
         {
           printf("Error: backslash at the end of regular expression\n");
+          printf("Token name: %s\n", name);
           exit(1);
         }
         first = start[i];
@@ -909,6 +921,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
           if (i+2 >= len)
           {
             printf("Error: \\xAB too short in regexp\n");
+            printf("Token name: %s\n", name);
             exit(1);
           }
           hexbuf[0] = start[i++];
@@ -916,6 +929,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
           if (!isxdigit(hexbuf[0]) || !isxdigit(hexbuf[1]))
           {
             printf("Error: \\xAB does not have hex digits in regexp\n");
+            printf("Token name: %s\n", name);
             exit(1);
           }
           lastlast = strtol(hexbuf, NULL, 16);
@@ -923,12 +937,14 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         else
         {
           printf("Error: unknown escape sequence in regexp\n");
+          printf("Token name: %s\n", name);
           exit(1);
         }
       }
       else if (first == '-')
       {
         printf("Error: two consecutive '-' characters in regexp\n");
+        printf("Token name: %s\n", name);
         exit(1);
       }
       else
@@ -994,7 +1010,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
   return result;
 }
 
-struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name)
 {
   struct re *result;
   if (resz == 0 || re[0] == ')' || re[0] == '|')
@@ -1007,7 +1023,7 @@ struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainders
   else if (re[0] == '[')
   {
     size_t bracketexprsz;
-    result = parse_bracketexpr(casei, re+1, resz-1, &bracketexprsz);
+    result = parse_bracketexpr(casei, re+1, resz-1, &bracketexprsz, name);
     *remainderstart = bracketexprsz + 1;
     return result;
   }
@@ -1022,10 +1038,11 @@ struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainders
   else if (re[0] == '(')
   {
     size_t resz2 = 0;
-    result = parse_re(casei, re+1, resz2-1, &resz2);
+    result = parse_re(casei, re+1, resz2-1, &resz2, name);
     if (re[1+resz2] != ')')
     {
       printf("error: unterminated parenthesis in regexp\n");
+      printf("Token name: %s\n", name);
       exit(1);
     }
     *remainderstart = 2+resz2;
@@ -1056,13 +1073,13 @@ struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainders
   }
 }
 
-struct re *parse_piece(int casei, const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_piece(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name)
 {
   size_t atomsz;
   struct re *re1;
   struct re *result;
   struct re *intermediate;
-  re1 = parse_atom(casei, re, resz, &atomsz);
+  re1 = parse_atom(casei, re, resz, &atomsz, name);
   if (atomsz < resz)
   {
     if (re[atomsz] == '*')
@@ -1102,14 +1119,14 @@ struct re *parse_piece(int casei, const char *re, size_t resz, size_t *remainder
 }
 
 // branch: piece branch
-struct re *parse_branch(int casei, const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_branch(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name)
 {
   size_t piecesz, branchsz2;
   struct re *re1, *re2, *result;
-  re1 = parse_piece(casei, re, resz, &piecesz);
+  re1 = parse_piece(casei, re, resz, &piecesz, name);
   if (piecesz < resz && re[piecesz] != '|' && re[piecesz] != ')')
   {
-    re2 = parse_branch(casei, re+piecesz, resz-piecesz, &branchsz2);
+    re2 = parse_branch(casei, re+piecesz, resz-piecesz, &branchsz2, name);
     result = alloc_re();
     result->type = CONCAT;
     result->u.cat.re1 = re1;
@@ -1126,15 +1143,15 @@ struct re *parse_branch(int casei, const char *re, size_t resz, size_t *remainde
 
 // RE: branch | RE
 
-struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart)
+struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name)
 {
   struct re *result;
   size_t branchsz, branchsz2;
   struct re *re1, *re2;
-  re1 = parse_branch(casei, re, resz, &branchsz);
+  re1 = parse_branch(casei, re, resz, &branchsz, name);
   if (branchsz < resz && re[branchsz] == '|')
   {
-    re2 = parse_re(casei, re+branchsz+1, resz-branchsz-1, &branchsz2);
+    re2 = parse_re(casei, re+branchsz+1, resz-branchsz-1, &branchsz2, name);
     result = alloc_re();
     result->type = ALTERN;
     result->u.alt.re1 = re1;
@@ -1149,7 +1166,7 @@ struct re *parse_re(int casei, const char *re, size_t resz, size_t *remaindersta
   }
 }
 
-struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz, int *caseis)
+struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz, int *caseis, struct yale *yale)
 {
   struct re **res;
   struct re *result;
@@ -1166,10 +1183,12 @@ struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz
   {
     size_t regexplen = regexps[pick_those[i]].iov_len;
     size_t remainderstart;
-    res[i] = parse_re(caseis[pick_those[i]], (const char*)regexps[pick_those[i]].iov_base, regexplen, &remainderstart);
+    const char *name = yale->ns[yale->tokens[pick_those[i]].nsitem].name;
+    res[i] = parse_re(caseis[pick_those[i]], (const char*)regexps[pick_those[i]].iov_base, regexplen, &remainderstart, name);
     if (remainderstart != regexplen)
     {
       printf("error: regexp not fully parsed to end\n");
+      printf("Token name %s\n", name);
       exit(1);
     }
   }
@@ -1367,10 +1386,10 @@ pick(struct nfa2dfa_workarea *area,
   }
 #endif
   ncnt = 0;
-  re = parse_res(res, pick_those->pick_those, pick_those->len, caseis);
+  re = parse_res(res, pick_those->pick_those, pick_those->len, caseis, yale);
   gennfa_alternmulti(re, nsglobal, &ncnt);
   free_re(re);
-  pick_those->dscnt = nfa2dfa(area, nsglobal, dsglobal, 0);
+  pick_those->dscnt = nfa2dfa(area, nsglobal, dsglobal, 0, pick_those, yale);
   set_accepting(dsglobal, 0, priorities, yale);
   pick_those->ds = malloc(sizeof(*pick_those->ds)*pick_those->dscnt);
   memcpy(pick_those->ds, dsglobal, sizeof(*pick_those->ds)*pick_those->dscnt);

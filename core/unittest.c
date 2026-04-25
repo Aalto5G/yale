@@ -22,10 +22,10 @@ static void bracketexpr_unit(void)
   const char bracketexpr1[] = "[\\r\\n]*";
   const char bracketexpr2[] = "[^\\r\\n]*";
 
-  re = parse_bracketexpr(0, bracketexpr1+1, strlen(bracketexpr1)-1, &remst);
+  re = parse_bracketexpr(0, bracketexpr1+1, strlen(bracketexpr1)-1, &remst, "");
   printf("%c\n", bracketexpr1[1+remst]);
 
-  re = parse_bracketexpr(0, bracketexpr2+1, strlen(bracketexpr2)-1, &remst);
+  re = parse_bracketexpr(0, bracketexpr2+1, strlen(bracketexpr2)-1, &remst, "");
   printf("%c\n", bracketexpr2[1+remst]);
 }
 
