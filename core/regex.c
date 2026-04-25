@@ -1195,10 +1195,22 @@ struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz
   return result;
 }
 
+static void print_tokens(struct pick_those_struct *pick_those,
+                         struct yale *yale)
+{
+  size_t i;
+  for (i = 0; i < pick_those->len; i++)
+  {
+    yale_uint_t token = pick_those->pick_those[i];
+    fprintf(stderr, "Token: %s\n", yale->ns[yale->tokens[token].nsitem].name);
+  }
+}
+
 void gennfa(struct re *regexp,
             struct nfa_node **ns, yale_uint_t *ncnt,
             yale_uint_t begin, yale_uint_t end,
-            yale_uint_t taintid)
+            yale_uint_t taintid,
+            struct pick_those_struct *pick_those, struct yale *yale)
 {
   switch (regexp->type)
   {
@@ -1209,13 +1221,14 @@ void gennfa(struct re *regexp,
       if (begin1 >= YALE_UINT_MAX_LEGAL || end1 >= YALE_UINT_MAX_LEGAL)
       {
         fprintf(stderr, "too big regexp, too many states\n");
+        print_tokens(pick_those, yale);
         exit(1);
       }
       ns[begin1] = malloc(sizeof(*ns[begin1]));
       ns[end1] = malloc(sizeof(*ns[end1]));
       nfa_init(ns[begin1], 0, taintid);
       nfa_init(ns[end1], 0, taintid);
-      gennfa(regexp->u.star.re, ns, ncnt, begin1, end1, taintid);
+      gennfa(regexp->u.star.re, ns, ncnt, begin1, end1, taintid, pick_those, yale);
       nfa_connect_epsilon(ns[begin], begin1);
       nfa_connect_epsilon(ns[begin], end);
       nfa_connect_epsilon(ns[end1], begin1);
@@ -1247,8 +1260,8 @@ void gennfa(struct re *regexp,
     }
     case ALTERN:
     {
-      gennfa(regexp->u.cat.re1, ns, ncnt, begin, end, taintid);
-      gennfa(regexp->u.cat.re2, ns, ncnt, begin, end, taintid);
+      gennfa(regexp->u.cat.re1, ns, ncnt, begin, end, taintid, pick_those, yale);
+      gennfa(regexp->u.cat.re2, ns, ncnt, begin, end, taintid, pick_those, yale);
       return;
     }
     case ALTERNMULTI:
@@ -1261,12 +1274,13 @@ void gennfa(struct re *regexp,
       if (middle >= YALE_UINT_MAX_LEGAL)
       {
         fprintf(stderr, "too big regexp, too many states\n");
+        print_tokens(pick_those, yale);
         exit(1);
       }
       ns[middle] = malloc(sizeof(*ns[middle]));
       nfa_init(ns[middle], 0, taintid);
-      gennfa(regexp->u.cat.re1, ns, ncnt, begin, middle, taintid);
-      gennfa(regexp->u.cat.re2, ns, ncnt, middle, end, taintid);
+      gennfa(regexp->u.cat.re1, ns, ncnt, begin, middle, taintid, pick_those, yale);
+      gennfa(regexp->u.cat.re2, ns, ncnt, middle, end, taintid, pick_those, yale);
       return;
     }
   }
@@ -1274,30 +1288,34 @@ void gennfa(struct re *regexp,
 
 void gennfa_main(struct re *regexp,
                  struct nfa_node **ns, yale_uint_t *ncnt,
-                 yale_uint_t taintid)
+                 yale_uint_t taintid,
+                 struct pick_those_struct *pick_those, struct yale *yale)
 {
   yale_uint_t begin = (*ncnt)++;
   yale_uint_t end = (*ncnt)++;
   if (begin >= YALE_UINT_MAX_LEGAL || end >= YALE_UINT_MAX_LEGAL)
   {
     fprintf(stderr, "too big regexp, too many states\n");
+    print_tokens(pick_those, yale);
     exit(1);
   }
   ns[begin] = malloc(sizeof(*ns[begin]));
   ns[end] = malloc(sizeof(*ns[end]));
   nfa_init(ns[begin], 0, YALE_UINT_MAX_LEGAL);
   nfa_init(ns[end], 1, YALE_UINT_MAX_LEGAL);
-  gennfa(regexp, ns, ncnt, begin, end, taintid);
+  gennfa(regexp, ns, ncnt, begin, end, taintid, pick_those, yale);
 }
 
 void gennfa_alternmulti(struct re *regexp,
-                        struct nfa_node **ns, yale_uint_t *ncnt)
+                        struct nfa_node **ns, yale_uint_t *ncnt,
+                        struct pick_those_struct *pick_those, struct yale *yale)
 {
   yale_uint_t begin = (*ncnt)++;
   size_t i;
   if (begin >= YALE_UINT_MAX_LEGAL)
   {
     fprintf(stderr, "too big regexp, too many states\n");
+    print_tokens(pick_those, yale);
     exit(1);
   }
   ns[begin] = malloc(sizeof(*ns[begin]));
@@ -1308,11 +1326,13 @@ void gennfa_alternmulti(struct re *regexp,
     if (end >= YALE_UINT_MAX_LEGAL)
     {
       fprintf(stderr, "too big regexp, too many states\n");
+      print_tokens(pick_those, yale);
       exit(1);
     }
     ns[end] = malloc(sizeof(*ns[begin]));
     nfa_init(ns[end], 1, regexp->u.altmulti.pick_those[i]);
-    gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, regexp->u.altmulti.pick_those[i]);
+    gennfa(regexp->u.altmulti.res[i], ns, ncnt, begin, end, regexp->u.altmulti.pick_those[i],
+           pick_those, yale);
   }
 }
 
@@ -1387,7 +1407,7 @@ pick(struct nfa2dfa_workarea *area,
 #endif
   ncnt = 0;
   re = parse_res(res, pick_those->pick_those, pick_those->len, caseis, yale);
-  gennfa_alternmulti(re, nsglobal, &ncnt);
+  gennfa_alternmulti(re, nsglobal, &ncnt, pick_those, yale);
   free_re(re);
   pick_those->dscnt = nfa2dfa(area, nsglobal, dsglobal, 0, pick_those, yale);
   set_accepting(dsglobal, 0, priorities, yale);

@@ -203,14 +203,17 @@ struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz
 void gennfa(struct re *regexp,
             struct nfa_node **ns, yale_uint_t *ncnt,
             yale_uint_t begin, yale_uint_t end,
-            yale_uint_t taintid);
+            yale_uint_t taintid,
+            struct pick_those_struct *pick_those, struct yale *yale);
 
 void gennfa_main(struct re *regexp,
                  struct nfa_node **ns, yale_uint_t *ncnt,
-                 yale_uint_t taintid);
+                 yale_uint_t taintid,
+                 struct pick_those_struct *pick_those, struct yale *yale);
 
 void gennfa_alternmulti(struct re *regexp,
-                        struct nfa_node **ns, yale_uint_t *ncnt);
+                        struct nfa_node **ns, yale_uint_t *ncnt,
+                        struct pick_those_struct *pick_those, struct yale *yale);
 
 struct pick_those_struct {
   yale_uint_t *pick_those;
