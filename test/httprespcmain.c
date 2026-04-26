@@ -18,7 +18,7 @@ ssize_t sztxt(const char *buf, size_t siz, int flags, struct httpresp_parserctx 
       printf("EINVAL 1\n");
       return -EINVAL;
     }
-    pctx->bytes_sz += buf[i] - '0';
+    pctx->bytes_sz += (size_t)(buf[i] - '0');
   }
   return -EAGAIN;
 }

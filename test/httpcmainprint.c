@@ -98,7 +98,7 @@ int main(int argc, char **argv)
     term = strstr(buf, "\r\n\r\n");
     if (term != NULL)
     {
-      bytes_read = term - buf + 4;
+      bytes_read = (size_t)(term - buf + 4);
     }
     http_parserctx_init(&pctx);
     consumed = http_parse_block(&pctx, buf, bytes_read, 1);
