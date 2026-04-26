@@ -1722,7 +1722,7 @@ if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, co
   }
   else
   {
-    fprintf(f, "%s      ffsres = ffsll(%s.elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n", indent, varname);
+    fprintf(f, "%s      ffsres = ffsll((long long)(%s.elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n", indent, varname);
     fprintf(f, "%s      if (ffsres == 0)\n", indent);
     fprintf(f, "%s      {\n", indent);
     fprintf(f, "%s        bitoff = 64;\n", indent); // FIXME break?
