@@ -1015,6 +1015,12 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
           set_char(bitmask, toupper((unsigned char)last));
         }
       }
+      if (first == '-' && !has_last && i != 1 && i != len)
+      {
+        printf("Error: invalid range expression, i %zu len %zu\n", (size_t)i, (size_t)len);
+        printf("Token name: %s\n", name);
+        exit(1);
+      }
       last_is_escape = 0;
       last_is_hexescape = 0;
       last = first;
