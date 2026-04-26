@@ -2017,7 +2017,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     }
     //fprintf(f, "      uint16_t bitoff;\n");
     fprintf(f, "      parser_uint%d_t bytes_cb = curcb;\n", gen->parserbits);
-    fprintf(f, "      ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
+    fprintf(f, "      ret = (ssize_t)(pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off));\n");
 #if 0
     fprintf(f, "      if (bytes_cb != PARSER_UINT%d_MAX)\n", gen->parserbits);
     fprints(f, "      {\n");
@@ -2034,7 +2034,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     }
     fprintf(f, "      if (%s_bitnz(&cbmask))\n", gen->parsername);
     fprintf(f, "      {\n");
-    fprintf(f, "        cbr = %s_call_cbs1(pctx, &cbmask, blk+off, ret, %s_callbacks);\n", gen->parsername, gen->parsername);
+    fprintf(f, "        cbr = %s_call_cbs1(pctx, &cbmask, blk+off, (size_t)ret, %s_callbacks);\n", gen->parsername, gen->parsername);
     fprintf(f, "        if (cbr != -EAGAIN)\n");
     fprintf(f, "        {\n");
     fprintf(f, "          pctx->stacksz = STACKSZ_ERR;\n");
@@ -2071,8 +2071,8 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     fprintf(f, "      %s_bitandnot(&pctx->rctx.lastack_status, &endmask);\n", gen->parsername);
     fprintf(f, "      %s_bitandnot(&pctx->rctx.start_status, &mismask);\n", gen->parsername);
     fprintf(f, "      %s_bitandnot(&pctx->rctx.lastack_status, &mismask);\n", gen->parsername);
-    fprintf(f, "      pctx->bytes_sz -= ret;\n");
-    fprintf(f, "      off += ret;\n");
+    fprintf(f, "      pctx->bytes_sz -= (size_t)ret;\n");
+    fprintf(f, "      off += (size_t)ret;\n");
     fprintf(f, "      if (pctx->bytes_sz)\n");
     fprintf(f, "      {\n");
     fprintf(f, "        //off = sz;\n");
@@ -2207,7 +2207,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
       }
       //fprintf(f, "        uint16_t bitoff;\n");
       fprintf(f, "        const struct %s_callbacks *bytes_cb2 = &%s_parserstatetblentries[curstateoff].bytes_cb2;\n", gen->parsername, gen->parsername);
-      fprintf(f, "        ret = pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off);\n");
+      fprintf(f, "        ret = (ssize_t)(pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off));\n");
 #if 0
       fprintf(f, "        if (curcb != PARSER_UINT%d_MAX)\n", gen->parserbits);
       fprintf(f, "        {\n");
@@ -2226,7 +2226,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
       }
       fprintf(f, "        if (%s_bitnz(&cbmask))\n", gen->parsername);
       fprintf(f, "        {\n");
-      fprintf(f, "          cbr = %s_call_cbs1(pctx, &cbmask, blk+off, ret, %s_callbacks);\n", gen->parsername, gen->parsername);
+      fprintf(f, "          cbr = %s_call_cbs1(pctx, &cbmask, blk+off, (size_t)ret, %s_callbacks);\n", gen->parsername, gen->parsername);
       fprintf(f, "          if (cbr != -EAGAIN)\n");
       fprintf(f, "          {\n");
       fprintf(f, "            pctx->stacksz = STACKSZ_ERR;\n");
@@ -2263,8 +2263,8 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
       fprintf(f, "        %s_bitandnot(&pctx->rctx.lastack_status, &endmask);\n", gen->parsername);
       fprintf(f, "        %s_bitandnot(&pctx->rctx.start_status, &mismask);\n", gen->parsername);
       fprintf(f, "        %s_bitandnot(&pctx->rctx.lastack_status, &mismask);\n", gen->parsername);
-      fprintf(f, "        pctx->bytes_sz -= ret;\n");
-      fprintf(f, "        off += ret;\n");
+      fprintf(f, "        pctx->bytes_sz -= (size_t)ret;\n");
+      fprintf(f, "        off += (size_t)ret;\n");
       fprintf(f, "        if (pctx->bytes_sz)\n");
       fprintf(f, "        {\n");
       fprintf(f, "          //off = sz;\n");
