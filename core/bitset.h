@@ -22,9 +22,9 @@ struct charbitset {
   uint64_t bitset[4];
 };
 
-static inline int myffsll(long long int i)
+static inline int myffsll(uint64_t i)
 {
-  int res = ffsll(i);
+  int res = ffsll((long long)i);
   if (res == 0)
   {
     return 65;
@@ -55,12 +55,12 @@ static inline yale_uint_t pick_rm_first(struct bitset *bs)
   int ffsres;
   for (i = 0; i < sizeof(bs->bitset)/sizeof(*bs->bitset); i++)
   {
-    ffsres = ffsll(bs->bitset[i]);
+    ffsres = ffsll((long long)bs->bitset[i]);
     if (ffsres)
     {
       j = ffsres - 1;
       bs->bitset[i] &= ~(1ULL<<j);
-      return i*64 + j;
+      return (yale_uint_t)(i*64 + (size_t)j);
     }
   }
   abort();

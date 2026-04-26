@@ -123,7 +123,7 @@ void nfa_connect(struct nfa_node *n, char ch, yale_uint_t node2)
 {
   if (n->d[(unsigned char)ch].bits_size >= n->d[(unsigned char)ch].bits_capacity)
   {
-    size_t new_capacity = 2*n->d[(unsigned char)ch].bits_size + 16;
+    size_t new_capacity = (size_t)(2*n->d[(unsigned char)ch].bits_size + 16);
     n->d[(unsigned char)ch].bits = realloc(n->d[(unsigned char)ch].bits, new_capacity*sizeof(*n->d[(unsigned char)ch].bits));
     n->d[(unsigned char)ch].bits_capacity = new_capacity;
   }
@@ -134,7 +134,7 @@ void nfa_connect_epsilon(struct nfa_node *n, yale_uint_t node2)
 {
   if (n->epsilon.bits_size >= n->epsilon.bits_capacity)
   {
-    size_t new_capacity = 2*n->epsilon.bits_size + 16;
+    size_t new_capacity = (size_t)(2*n->epsilon.bits_size + 16);
     n->epsilon.bits = realloc(n->epsilon.bits, new_capacity*sizeof(*n->epsilon.bits));
     n->epsilon.bits_capacity = new_capacity;
   }
@@ -171,7 +171,7 @@ void epsilonclosure(struct epsilonclosure_workarea *area,
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + myffsll(nodes->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (size_t)((wordoff*64) + myffsll(nodes->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
     }
     else
     {
@@ -227,7 +227,7 @@ void epsilonclosure(struct epsilonclosure_workarea *area,
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + myffsll(closure->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (size_t)((wordoff*64) + myffsll(closure->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
     }
     else
     {
@@ -354,7 +354,7 @@ ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound)
       }
     }
   }
-  return max_backtrack;
+  return (ssize_t)max_backtrack;
 }
 
 void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities, struct yale *yale)
@@ -409,7 +409,7 @@ void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t s
         }
         if (bitoff != 63)
         {
-          i = (wordoff*64) + myffsll(ds[queued]->acceptidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+          i = (size_t)((wordoff*64) + myffsll(ds[queued]->acceptidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
         }
         else
         {
@@ -605,7 +605,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
     }
     if (bitoff != 63)
     {
-      i = (wordoff*64) + myffsll(dfabegin->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+      i = (size_t)((wordoff*64) + myffsll(dfabegin->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
     }
     else
     {
@@ -615,7 +615,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
 
   if (d->tblsz >= d->tblcapacity)
   {
-    size_t new_capacity = 2*d->tblsz+16;
+    size_t new_capacity = (size_t)(2*d->tblsz+16);
     d->tbl = realloc(d->tbl, new_capacity*sizeof(*d->tbl));
     d->tblcapacity = new_capacity;
   }
@@ -655,7 +655,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
       }
       if (bitoff != 63)
       {
-        i = (wordoff*64) + myffsll(nns.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        i = (size_t)((wordoff*64) + myffsll(nns.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
       }
       else
       {
@@ -697,7 +697,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
           }
           if (bitoff != 63)
           {
-            j = (wordoff*64) + myffsll(ec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+            j = (size_t)((wordoff*64) + myffsll(ec.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
           }
           else
           {
@@ -716,7 +716,7 @@ yale_uint_t nfa2dfa(struct nfa2dfa_workarea *area, struct nfa_node **ns, struct 
         }
         if (d->tblsz >= d->tblcapacity)
         {
-          size_t new_capacity = 2*d->tblsz+16;
+          size_t new_capacity = (size_t)(2*d->tblsz+16);
           d->tbl = realloc(d->tbl, new_capacity*sizeof(*d->tbl));
           d->tblcapacity = new_capacity;
         }
@@ -818,7 +818,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
     start = re;
     term = memchr(re+1, ']', resz-1);
   }
-  len = term - start + inverse;
+  len = (size_t)(term - start + inverse);
   i = 0;
   while (i < len)
   {
@@ -878,7 +878,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
       }
       if (has_last)
       {
-        set_char(bitmask, last);
+        set_char(bitmask, (unsigned char)last);
       }
       last = newlast;
       has_last = 1;
@@ -965,7 +965,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
     {
       if (has_last)
       {
-        set_char(bitmask, last);
+        set_char(bitmask, (unsigned char)last);
         if (casei && last >= 'a' && last <= 'z')
         {
           set_char(bitmask, toupper((unsigned char)last));
@@ -977,7 +977,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
   }
   if (has_last)
   {
-    set_char(bitmask, last);
+    set_char(bitmask, (unsigned char)last);
     if (casei && last >= 'a' && last <= 'z')
     {
       set_char(bitmask, toupper((unsigned char)last));
@@ -1050,7 +1050,7 @@ struct re *parse_atom(int casei, const char *re, size_t resz, size_t *remainders
   }
   else
   {
-    unsigned char uch = re[0];
+    unsigned char uch = (unsigned char)re[0];
     if (casei && uch >= 'A' && uch <= 'Z')
     {
       uch = tolower((unsigned char)uch);
@@ -1248,7 +1248,7 @@ void gennfa(struct re *regexp,
         yale_uint_t bitoff = i%64;
         if (regexp->u.lit.bitmask.bitset[wordoff] & (1ULL<<bitoff))
         {
-          nfa_connect(ns[begin], (unsigned char)i, end);
+          nfa_connect(ns[begin], (char)(unsigned char)i, end);
         }
       }
       return;
@@ -1585,7 +1585,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
       }
       if (bitoff != 63)
       {
-        j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        j = (size_t)((wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
       }
       else
       {
@@ -1603,7 +1603,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
       }
       if (bitoff != 63)
       {
-        j = (wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        j = (size_t)((wordoff*64) + myffsll(ds->taintidset.bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
       }
       else
       {
@@ -2645,7 +2645,7 @@ void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *
       }
       if (bitoff != 63)
       {
-        j = (wordoff*64) + myffsll(numbers->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        j = (size_t)((wordoff*64) + myffsll(numbers->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
       }
       else
       {
@@ -2663,7 +2663,7 @@ void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *
       }
       if (bitoff != 63)
       {
-        j = (wordoff*64) + myffsll(numbers->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1;
+        j = (size_t)((wordoff*64) + myffsll(numbers->bitset[wordoff] & ~((1ULL<<(bitoff+1))-1)) - 1);
       }
       else
       {
