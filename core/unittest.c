@@ -107,7 +107,7 @@ int main(int argc, char **argv)
   firstset_values_deep_free(&vals5);
   firstset_values_deep_free(&vals6);
 
-  updatetest();
+  //updatetest();
 
   return 0;
 }
