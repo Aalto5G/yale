@@ -21,12 +21,59 @@ static void bracketexpr_unit(void)
   size_t remst;
   const char bracketexpr1[] = "[\\r\\n]*";
   const char bracketexpr2[] = "[^\\r\\n]*";
+  char cr = '\n';
+  char lf = '\r';
 
   re = parse_bracketexpr(0, bracketexpr1+1, strlen(bracketexpr1)-1, &remst, "");
-  printf("%c\n", bracketexpr1[1+remst]);
+  if (bracketexpr1[1+remst] != '*')
+  {
+    abort();
+  }
+  if (re->type != LITERALS)
+  {
+    abort();
+  }
+  if (!(re->u.lit.bitmask.bitset[cr>>6] & (1ULL<<(cr&0x3f))))
+  {
+    abort();
+  }
+  re->u.lit.bitmask.bitset[cr>>6] &= ~(1ULL<<(cr&0x3f));
+  if (!(re->u.lit.bitmask.bitset[lf>>6] & (1ULL<<(lf&0x3f))))
+  {
+    abort();
+  }
+  re->u.lit.bitmask.bitset[lf>>6] &= ~(1ULL<<(lf&0x3f));
+  if (re->u.lit.bitmask.bitset[0] || re->u.lit.bitmask.bitset[1] ||
+      re->u.lit.bitmask.bitset[2] || re->u.lit.bitmask.bitset[3])
+  {
+    abort();
+  }
 
   re = parse_bracketexpr(0, bracketexpr2+1, strlen(bracketexpr2)-1, &remst, "");
-  printf("%c\n", bracketexpr2[1+remst]);
+  if (bracketexpr2[1+remst] != '*')
+  {
+    abort();
+  }
+
+  if (re->u.lit.bitmask.bitset[cr>>6] & (1ULL<<(cr&0x3f)))
+  {
+    abort();
+  }
+  re->u.lit.bitmask.bitset[cr>>6] |= (1ULL<<(cr&0x3f));
+  if (re->u.lit.bitmask.bitset[lf>>6] & (1ULL<<(lf&0x3f)))
+  {
+    abort();
+  }
+  re->u.lit.bitmask.bitset[lf>>6] |= (1ULL<<(lf&0x3f));
+  re->u.lit.bitmask.bitset[0] ^= UINT64_MAX;
+  re->u.lit.bitmask.bitset[1] ^= UINT64_MAX;
+  re->u.lit.bitmask.bitset[2] ^= UINT64_MAX;
+  re->u.lit.bitmask.bitset[3] ^= UINT64_MAX;
+  if (re->u.lit.bitmask.bitset[0] || re->u.lit.bitmask.bitset[1] ||
+      re->u.lit.bitmask.bitset[2] || re->u.lit.bitmask.bitset[3])
+  {
+    abort();
+  }
 }
 
 int main(int argc, char **argv)
@@ -59,5 +106,8 @@ int main(int argc, char **argv)
   firstset_values_deep_free(&vals4);
   firstset_values_deep_free(&vals5);
   firstset_values_deep_free(&vals6);
+
+  updatetest();
+
   return 0;
 }
