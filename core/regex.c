@@ -795,6 +795,8 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
   int inverse = 0;
   int has_last = 0;
   char last = 0;
+  int last_is_escape = 0;
+  int last_is_hexescape = 0;
   if (resz == 0)
   {
     printf("Error: empty bracket expression in regexp\n");
@@ -837,6 +839,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
     if (first == '\\')
     {
       char newlast;
+      int newlast_is_hexescape = 0;
       if (i == len)
       {
         printf("Error: backslash at the end of regular expression\n");
@@ -860,7 +863,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
       else if (first == 'x')
       {
         char hexbuf[3] = {0};
-        if (i+2 >= len)
+        if (i+2 > len)
         {
           printf("Error: \\xAB too short in regexp\n");
           printf("Token name: %s\n", name);
@@ -875,6 +878,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
           exit(1);
         }
         newlast = strtol(hexbuf, NULL, 16);
+        newlast_is_hexescape = 1;
       }
       else
       {
@@ -887,11 +891,15 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         set_char(bitmask, (unsigned char)last);
       }
       last = newlast;
+      last_is_escape = 1;
+      last_is_hexescape = newlast_is_hexescape;
       has_last = 1;
     }
     else if (first == '-' && has_last && i < len)
     {
       char lastlast;
+      int lastlast_is_escape = 0;
+      int lastlast_is_hexescape = 0;
       has_last = 0;
       first = start[i];
       if (casei && first >= 'A' && first <= 'Z')
@@ -924,7 +932,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         else if (first == 'x')
         {
           char hexbuf[3] = {0};
-          if (i+2 >= len)
+          if (i+2 > len)
           {
             printf("Error: \\xAB too short in regexp\n");
             printf("Token name: %s\n", name);
@@ -939,6 +947,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
             exit(1);
           }
           lastlast = strtol(hexbuf, NULL, 16);
+          lastlast_is_hexescape = 1;
         }
         else
         {
@@ -946,6 +955,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
           printf("Token name: %s\n", name);
           exit(1);
         }
+        lastlast_is_escape = 1;
       }
       else if (first == '-')
       {
@@ -958,6 +968,33 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         lastlast = first;
       }
       size_t j;
+      if ((unsigned char)last > (unsigned char)lastlast)
+      {
+        printf("Error: end of range smaller than begin of range in regexp bracketexpr\n");
+        printf("Token name: %s\n", name);
+        exit(1);
+      }
+      if (last_is_hexescape != lastlast_is_hexescape)
+      {
+        printf("Error: hex-escaped range must begin and end with hex escape\n");
+        printf("Token name: %s\n", name);
+        exit(1);
+      }
+#if 0
+      if (!last_is_hexescape && last != lastlast)
+      {
+        if (isdigit((unsigned char)last) != isdigit((unsigned char)lastlast) ||
+            isupper((unsigned char)last) != isupper((unsigned char)lastlast) ||
+            islower((unsigned char)last) != islower((unsigned char)lastlast) ||
+            (!isdigit((unsigned char)last) && !isupper((unsigned char)last) &&
+             !islower((unsigned char)last)))
+        {
+          printf("Error: ranges must be entire uppercase or lowercase or digits\n");
+          printf("Token name: %s\n", name);
+          exit(1);
+        }
+      }
+#endif
       for (j = (unsigned char)last; j <= (unsigned char)lastlast; j++)
       {
         set_char(bitmask, j);
@@ -977,6 +1014,8 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
           set_char(bitmask, toupper((unsigned char)last));
         }
       }
+      last_is_escape = 0;
+      last_is_hexescape = 0;
       last = first;
       has_last = 1;
     }
