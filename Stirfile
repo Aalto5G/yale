@@ -16,7 +16,7 @@ $(CFLAGS) ?= @nil
   $(CFLAGS) ``= ["sh", "-c", "echo $CFLAGS"]
   @if($(CFLAGS)[] == 0)
     # TODO -Wsign-conversion
-    $(CFLAGS) = ["-Ofast", "-g", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wno-tautological-compare", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-Wno-unused-but-set-variable", "-fomit-frame-pointer", "-std=gnu99", "-pedantic"]
+    $(CFLAGS) = ["-Ofast", "-g", "-Wall", "-Wextra", "-Wno-missing-field-initializers", "-Wno-unused-parameter", "-Wno-tautological-compare", "-Wstrict-prototypes", "-Wmissing-prototypes", "-Wpointer-arith", "-Wsign-conversion", "-Wno-unused-but-set-variable", "-fomit-frame-pointer", "-std=gnu99", "-pedantic"]
   @endif
 @endif
 
