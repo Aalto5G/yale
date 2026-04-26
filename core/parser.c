@@ -134,7 +134,7 @@ static void lookuptbl_put(struct ParserGen *gen,
 #endif
   if (i >= gen->nonterminal_conds[nonterminal].conds_capacity)
   {
-    size_t new_capacity = 2*i+16;
+    size_t new_capacity = (size_t)(2*i+16);
     gen->nonterminal_conds[nonterminal].conds = realloc(
       gen->nonterminal_conds[nonterminal].conds,
       new_capacity*sizeof(*gen->nonterminal_conds[nonterminal].conds));
@@ -150,7 +150,7 @@ static uint32_t firstset2_hash(const struct ruleitem *rhs, size_t sz)
   size_t i;
   for (i = 0; i < sz; i++)
   {
-    yalemurmurctx_feed32(&ctx, (rhs[i].is_action<<1) | rhs[i].is_bytes);
+    yalemurmurctx_feed32(&ctx, (uint32_t)((!!rhs[i].is_action)<<1) | (uint32_t)!!rhs[i].is_bytes);
     yalemurmurctx_feed32(&ctx, rhs[i].value);
     yalemurmurctx_feed32(&ctx, rhs[i].cb);
   }
@@ -394,7 +394,7 @@ static struct firstset_value firstset_value_deep_copy_cbadd(struct firstset_valu
   size_t i;
   int found = (cb == YALE_UINT_MAX_LEGAL);
   result.cbsz = orig.cbsz;
-  result.cbs = malloc(sizeof(*result.cbs)*(orig.cbsz+1));
+  result.cbs = malloc(sizeof(*result.cbs)*(size_t)(orig.cbsz+1));
   for (i = 0; i < orig.cbsz; i++)
   {
     result.cbs[i] = orig.cbs[i];
@@ -502,7 +502,7 @@ static void firstset2_update_one(struct firstset_values *val2, const struct firs
 {
   yale_uint_t val2origsz = val2->valuessz;
   yale_uint_t i = 0, j = 0;
-  val2->values = realloc(val2->values, sizeof(*val2->values)*(val2origsz + val1->valuessz));
+  val2->values = realloc(val2->values, sizeof(*val2->values)*(size_t)(val2origsz + val1->valuessz));
   if (changed)
   {
     *changed = 0;
@@ -554,7 +554,7 @@ void firstset2_update(struct ParserGen *gen, struct firstset_values *val2, const
 {
   yale_uint_t val2origsz = val2->valuessz;
   yale_uint_t i = 0, j = 0;
-  val2->values = realloc(val2->values, sizeof(*val2->values)*(val2origsz + val1->valuessz));
+  val2->values = realloc(val2->values, sizeof(*val2->values)*(size_t)(val2origsz + val1->valuessz));
   if (changed)
   {
     *changed = 0;
@@ -897,8 +897,8 @@ ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
           if (rule != YALE_UINT_MAX_LEGAL)
           {
             //printf("Rule differs from YALE_UINT_MAX_LEGAL\n");
-            memcpy(stack, current->stack, (current->sz-1)*sizeof(*stack));
-            sz = current->sz - 1;
+            memcpy(stack, current->stack, sizeof(*stack)*(size_t)(current->sz-1));
+            sz = (size_t)(current->sz - 1);
             cbsz = current->cbsz;
             if (sz + gen->rules[rule].itemcnt > YALE_UINT_MAX_LEGAL)
             {
@@ -964,8 +964,8 @@ ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
           if (rule != YALE_UINT_MAX_LEGAL)
           {
             //printf("Rule differs from YALE_UINT_MAX_LEGAL\n");
-            memcpy(stack, current->stack, (current->sz-1)*sizeof(*stack));
-            sz = current->sz - 1;
+            memcpy(stack, current->stack, sizeof(*stack)*(size_t)(current->sz-1));
+            sz = (size_t)(current->sz - 1);
             cbsz = current->cbsz;
             if (sz + gen->rules[rule].itemcnt > YALE_UINT_MAX_LEGAL)
             {
@@ -1013,7 +1013,7 @@ ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
     }
   }
   *maxcbszptr = maxcbsz;
-  return maxsz;
+  return (ssize_t)maxsz;
 }
 
 static int has_firstset(struct firstset_values *vals, yale_uint_t terminal)
@@ -1874,7 +1874,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     fprintf(f, "const struct ruleentry%d %s_rule_%d[] = {\n", gen->parserbits, gen->parsername, (int)i);
     for (j = 0; j < gen->rules[i].itemcnt; j++)
     {
-      struct ruleitem *it = &gen->rules[i].rhs[gen->rules[i].itemcnt-1-j];
+      struct ruleitem *it = &gen->rules[i].rhs[(size_t)gen->rules[i].itemcnt-1-(size_t)j];
       fprintf(f, "{\n");
       if (it->is_action)
       {
