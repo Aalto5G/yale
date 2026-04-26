@@ -826,7 +826,8 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
     printf("Token name: %s\n", name);
     exit(1);
   }
-  len = (size_t)(term - start + inverse);
+  //len = (size_t)(term - start + inverse);
+  len = (size_t)(term - start);
   i = 0;
   while (i < len)
   {
@@ -1051,7 +1052,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
   }
   printf("]\n");
 #endif
-  *remainderstart = len + 1;
+  *remainderstart = len + 1 + (size_t)!!inverse;
   return result;
 }
 
