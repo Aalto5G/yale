@@ -1688,21 +1688,21 @@ if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, co
   fprintf(f, "%s      {\n", indent);
   fprintf(f, "%s        if (ctx->backtrack%s > ctx->backtrackstart)\n", indent, endpos);
   fprintf(f, "%s        {\n", indent);
-  fprintf(f, "%s          cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, ctx->backtrack%s - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent, endpos);
-  fprintf(f, "%s          if (should_return(cbr, ctx->backtrack%s - ctx->backtrackstart))\n", indent, endpos);
+  fprintf(f, "%s          cbr = cbtbl[64*elemidx+(size_t)bitoff]((char*)ctx->backtrack + ctx->backtrackstart, (size_t)(ctx->backtrack%s - ctx->backtrackstart), (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent, endpos);
+  fprintf(f, "%s          if (should_return(cbr, (ssize_t)(ctx->backtrack%s - ctx->backtrackstart)))\n", indent, endpos);
   fprintf(f, "%s          {\n", indent);
   fprintf(f, "%s            return cbr;\n", indent);
   fprintf(f, "%s          }\n", indent);
   fprintf(f, "%s        }\n", indent);
   fprintf(f, "%s        else\n", indent);
   fprintf(f, "%s        {\n", indent);
-  fprintf(f, "%s          cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent);
-  fprintf(f, "%s          if (should_return(cbr, sizeof(ctx->backtrack) - ctx->backtrackstart))\n", indent);
+  fprintf(f, "%s          cbr = cbtbl[64*elemidx+(size_t)bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent);
+  fprintf(f, "%s          if (should_return(cbr, (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart)))\n", indent);
   fprintf(f, "%s          {\n", indent);
   fprintf(f, "%s            return cbr;\n", indent);
   fprintf(f, "%s          }\n", indent);
-  fprintf(f, "%s          cbr = cbtbl[64*elemidx+bitoff]((char*)ctx->backtrack, ctx->backtrack%s, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent, endpos);
-  fprintf(f, "%s          if (should_return(cbr, ctx->backtrack%s))\n", indent, endpos);
+  fprintf(f, "%s          cbr = cbtbl[64*elemidx+(size_t)bitoff]((char*)ctx->backtrack, ctx->backtrack%s, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent, endpos);
+  fprintf(f, "%s          if (should_return(cbr, (ssize_t)ctx->backtrack%s))\n", indent, endpos);
   fprintf(f, "%s          {\n", indent);
   fprintf(f, "%s            return cbr;\n", indent);
   fprintf(f, "%s          }\n", indent);
@@ -1898,8 +1898,8 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   }
   fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
-  fprintf(f, "        cbr = cbtbl[64*elemidx + bitoff](buf, sz, (pctx->rctx.start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprintf(f, "        if (should_return(cbr, sz))\n");
+  fprintf(f, "        cbr = cbtbl[64*elemidx + (size_t)bitoff](buf, sz, (pctx->rctx.start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
+  fprintf(f, "        if (should_return(cbr, (ssize_t)sz))\n");
   fprintf(f, "        {\n");
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
@@ -1918,7 +1918,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   }
   else
   {
-    fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
+    fprintf(f, "      ffsres = ffsll((long long)(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n");
     fprintf(f, "      if (ffsres == 0)\n");
     fprintf(f, "      {\n");
     fprintf(f, "        bitoff = 64;\n"); // FIXME break?
@@ -1950,8 +1950,8 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   }
   fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
-  fprintf(f, "        cbr = cbtbl[64*elemidx + bitoff](buf, sz, flag, pctx);\n");
-  fprintf(f, "        if (should_return(cbr, sz))\n");
+  fprintf(f, "        cbr = cbtbl[64*elemidx + (size_t)bitoff](buf, sz, flag, pctx);\n");
+  fprintf(f, "        if (should_return(cbr, (ssize_t)sz))\n");
   fprintf(f, "        {\n");
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
@@ -1970,7 +1970,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   }
   else
   {
-    fprintf(f, "      ffsres = ffsll(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1));\n");
+    fprintf(f, "      ffsres = ffsll((long long)(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n");
     fprintf(f, "      if (ffsres == 0)\n");
     fprintf(f, "      {\n");
     fprintf(f, "        bitoff = 64;\n"); // FIXME break?
@@ -2224,7 +2224,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      ctx->state = 0;\n");
   fprints(f, "      j = i;\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprintf(f, "      if (j >= (size_t)((ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1)) j -= (ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1;\n", parserupper, parserupper, parserupper, parserupper);
+  fprintf(f, "      if (j >= (size_t)((ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1)) j -= (size_t)(ctx->backtrackend - ctx->backtrackstart + %s_BACKTRACKLEN_PLUS_1) %% %s_BACKTRACKLEN_PLUS_1;\n", parserupper, parserupper, parserupper, parserupper);
   fprintf(f, "#endif\n");
   fprints(f, "      if (st->accepting)\n");
   fprints(f, "      {\n");
@@ -2300,7 +2300,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "          }\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      return i;\n");
+  fprints(f, "      return (ssize_t)i;\n");
   fprints(f, "    }\n");
   fprints(f, "    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here\n");
   fprints(f, "    if (st->accepting)\n");
@@ -2350,7 +2350,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "        ctx->backtrackstart = ctx->backtrackend;\n");
   fprints(f, "#endif\n");
-  fprints(f, "        return i + 1;\n");
+  fprints(f, "        return (ssize_t)(i + 1);\n");
   fprints(f, "      }\n");
   fprints(f, "      else\n");
   fprints(f, "      {\n");
@@ -2457,7 +2457,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        }\n");
 #endif
   fprints(f, "      }\n");
-  fprints(f, "      return i;\n"); // FIXME what to return?
+  fprints(f, "      return (ssize_t)i;\n"); // FIXME what to return?
   fprints(f, "    }\n");
   fprintf(f, "    if (ctx->last_accept == LEXER_UINT%d_MAX)\n", lexerbits);
   fprints(f, "    {\n");

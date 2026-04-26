@@ -1990,7 +1990,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "        {\n");
   end_cbs(f, "          ");
   fprints(f, "        }\n"
-             "        return sz; // EOF\n"
+             "        return (ssize_t)sz; // EOF\n"
              "      }\n"
              "      else\n"
              "      {\n");
@@ -2114,7 +2114,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "      }\n"
              "      else\n"
              "      {\n"
-             "        off += ret;\n"
+             "        off += (size_t)ret;\n"
              "#if 0\n"
              "        if (off > sz)\n"
              "        {\n"
@@ -2324,7 +2324,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "        }\n"
              "        else\n"
              "        {\n"
-             "          off += ret;\n"
+             "          off += (size_t)ret;\n"
              "#if 0\n"
              "          if (off > sz)\n");
   fprints(f, "          {\n"
@@ -2559,7 +2559,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "        abort();\n"
              "      }\n"
              "#endif\n"
-             "      return sz; // EOF\n");
+             "      return (ssize_t)sz; // EOF\n");
   fprints(f, "    }\n"
              "  }\n"
              "#ifdef EXTRA_SANITY\n"
