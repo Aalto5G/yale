@@ -818,6 +818,12 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
     start = re;
     term = memchr(re+1, ']', resz-1);
   }
+  if (term == NULL)
+  {
+    printf("Error: bracket expression has no end in regexp\n");
+    printf("Token name: %s\n", name);
+    exit(1);
+  }
   len = (size_t)(term - start + inverse);
   i = 0;
   while (i < len)
