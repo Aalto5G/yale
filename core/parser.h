@@ -88,6 +88,7 @@ struct ParserGen {
   yale_uint_t epsilon;
   char *state_include_str;
   char *init_include_str;
+  char *empty_include_str;
   char *bytes_size_type;
   //size_t Ficnt;
   uint8_t nofastpath;
@@ -143,6 +144,8 @@ void gen_parser(struct ParserGen *gen, struct yale *yale);
 void parsergen_state_include(struct ParserGen *gen, char *stateinclude);
 
 void parsergen_init_include(struct ParserGen *gen, char *initinclude);
+
+void parsergen_empty_include(struct ParserGen *gen, char *emptyinclude);
 
 void parsergen_nofastpath(struct ParserGen *gen);
 

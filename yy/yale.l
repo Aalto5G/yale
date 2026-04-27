@@ -34,6 +34,7 @@ bytessizetype return BYTESSIZETYPE;
 stateinclude return STATEINCLUDE;
 parserinclude return PARSERINCLUDE;
 initinclude return INITINCLUDE;
+emptyinclude return EMPTYINCLUDE;
 hdrinclude return HDRINCLUDE;
 action    return ACTION;
 token     return TOKEN;

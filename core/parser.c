@@ -174,6 +174,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->parsername = strdup(parsername);
   gen->state_include_str = NULL;
   gen->init_include_str = NULL;
+  gen->empty_include_str = NULL;
   gen->start_state = YALE_UINT_MAX_LEGAL;
   gen->epsilon = YALE_UINT_MAX_LEGAL;
   gen->rulecnt = 0;
@@ -234,6 +235,7 @@ void parsergen_free(struct ParserGen *gen)
   }
   free(gen->state_include_str);
   free(gen->init_include_str);
+  free(gen->empty_include_str);
   free(gen->parsername);
   transitionbufs_fini(&gen->bufs);
   YALE_HASH_TABLE_FOR_EACH_SAFE(&gen->Fi2_hash, bucket, n, x)
@@ -2647,7 +2649,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "};\n");
   fprints(f, "\n");
-  fprintf(f, "#define %s_PARSERCTX_EMPTY {.saved_token = PARSER_UINT%d_MAX, .curstateoff = PARSER_UINT%d_MAX, .stacksz = 1, .stack = {{.rhs = %d, .cb = PARSER_UINT%d_MAX}}, .rctx = %s_RECTX_EMPTY}\n", parserupper, gen->parserbits, gen->parserbits, gen->start_state, gen->parserbits, parserupper); // RFE omits init_include_str
+  fprintf(f, "#define %s_PARSERCTX_EMPTY {.saved_token = PARSER_UINT%d_MAX, .curstateoff = PARSER_UINT%d_MAX, .stacksz = 1, .stack = {{.rhs = %d, .cb = PARSER_UINT%d_MAX}}, .rctx = %s_RECTX_EMPTY%s}\n", parserupper, gen->parserbits, gen->parserbits, gen->start_state, gen->parserbits, parserupper, gen->empty_include_str ? gen->empty_include_str : "");
   fprintf(f, "static inline void %s_parserctx_init(struct %s_parserctx *pctx)\n",
           gen->parsername, gen->parsername);
   fprints(f, "{\n");
@@ -2682,6 +2684,15 @@ void parsergen_state_include(struct ParserGen *gen, char *stateinclude)
     abort();
   }
   gen->state_include_str = strdup(stateinclude);
+}
+
+void parsergen_empty_include(struct ParserGen *gen, char *emptyinclude)
+{
+  if (gen->empty_include_str != NULL || emptyinclude == NULL)
+  {
+    abort();
+  }
+  gen->empty_include_str = strdup(emptyinclude);
 }
 
 void parsergen_init_include(struct ParserGen *gen, char *initinclude)

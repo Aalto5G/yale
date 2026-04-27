@@ -99,6 +99,7 @@ struct yale {
   struct CSnippet hs;
   struct CSnippet si;
   struct CSnippet ii;
+  struct CSnippet ei;
   struct token tokens[YALE_UINT_MAX_LEGAL];
   struct nonterminal nonterminals[YALE_UINT_MAX_LEGAL];
   struct namespaceitem ns[YALE_UINT_MAX_LEGAL];
@@ -160,6 +161,8 @@ static inline void yale_free(struct yale *yale)
   yale->si.data = NULL;
   free(yale->ii.data);
   yale->ii.data = NULL;
+  free(yale->ei.data);
+  yale->ei.data = NULL;
   free(yale->parsername);
   yale->parsername = NULL;
   free(yale->bytessizetype);
@@ -257,6 +260,21 @@ static inline void dump_string(FILE *f, const char *str)
 {
   size_t len = strlen(str);
   dump_string_len(f, str, len);
+}
+
+static inline char *yystrtoupper(const char *oldstr)
+{
+  char *newstr = strdup(oldstr);
+  size_t i;
+  if (newstr == NULL)
+  {
+    return NULL;
+  }
+  for (i = 0; newstr[i]; i++)
+  {
+    newstr[i] = toupper((unsigned char)newstr[i]);
+  }
+  return newstr;
 }
 
 static inline void dump_python(FILE *f, struct yale *yale)
