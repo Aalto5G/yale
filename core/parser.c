@@ -1651,8 +1651,8 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
   {
     dump_one(f, gen->parsername, &gen->pick_thoses[i], &gen->numbershash, parsergen_alloc_fn, gen, gen->parserbits, gen->lexerbits);
   }
-  fprintf(f, "const yale_parser_uint%d_t %s_num_terminals;\n", gen->parserbits, gen->parsername);
-  fprintf(f, "ssize_t(*%s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
+  fprintf(f, "static const yale_parser_uint%d_t %s_num_terminals;\n", gen->parserbits, gen->parsername);
+  fprintf(f, "static ssize_t(*const %s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
   for (i = 0; i < gen->cbcnt; i++)
   {
     fprintf(f, "%s, ", gen->cbs[i].name);
@@ -1665,9 +1665,9 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
   fprintf(f, "  const struct %s_callbacks bytes_cb2;\n", gen->parsername);
   fprints(f, "  const uint8_t special_flags;\n");
   fprints(f, "};\n");
-  fprintf(f, "const yale_parser_uint%d_t %s_num_terminals = %d;\n", gen->parserbits, gen->parsername, gen->tokencnt);
-  fprintf(f, "const yale_parser_uint%d_t %s_start_state = %d;\n", gen->parserbits, gen->parsername, gen->start_state);
-  fprintf(f, "const struct yale_reentry_p%dl%d %s_reentries[] = {\n", gen->parserbits, gen->lexerbits, gen->parsername);
+  fprintf(f, "static const yale_parser_uint%d_t %s_num_terminals = %d;\n", gen->parserbits, gen->parsername, gen->tokencnt);
+  //fprintf(f, "static const yale_parser_uint%d_t %s_start_state = %d;\n", gen->parserbits, gen->parsername, gen->start_state);
+  fprintf(f, "static const struct yale_reentry_p%dl%d %s_reentries[] = {\n", gen->parserbits, gen->lexerbits, gen->parsername);
   for (i = 0; i < gen->tokencnt; i++)
   {
     fprints(f, "{\n");
@@ -1714,7 +1714,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
       }
     }
   }
-  fprintf(f, "const struct %s_parserstatetblentry %s_parserstatetblentries[] = {\n", gen->parsername, gen->parsername);
+  fprintf(f, "static const struct %s_parserstatetblentry %s_parserstatetblentries[] = {\n", gen->parsername, gen->parsername);
   for (X = gen->tokencnt; X < gen->tokencnt + gen->nonterminalcnt; X++)
   {
     for (c = 0; c < gen->nonterminal_conds[X].condcnt; c++)
@@ -1873,7 +1873,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     fprintf(f, "#if %zu > YALE_PARSER_UINT%d_MAX\n", (size_t)gen->rules[i].itemcnt, gen->parserbits);
     fprintf(f, "#error \"Too long rule\"\n");
     fprintf(f, "#endif\n");
-    fprintf(f, "const struct yale_ruleentry%d %s_rule_%d[] = {\n", gen->parserbits, gen->parsername, (int)i);
+    fprintf(f, "static const struct yale_ruleentry%d %s_rule_%d[] = {\n", gen->parserbits, gen->parsername, (int)i);
     for (j = 0; j < gen->rules[i].itemcnt; j++)
     {
       struct ruleitem *it = &gen->rules[i].rhs[(size_t)gen->rules[i].itemcnt-1-(size_t)j];
@@ -1913,9 +1913,9 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     }
     fprints(f, "{.rhs=0,.cb=0},\n");
     fprints(f, "};\n");
-    fprintf(f, "const yale_parser_uint%d_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct yale_ruleentry%d) - 1;\n", gen->parserbits, gen->parsername, (int)i, gen->parsername, (int)i, gen->parserbits);
+    //fprintf(f, "static const yale_parser_uint%d_t %s_rule_%d_len = sizeof(%s_rule_%d)/sizeof(struct yale_ruleentry%d) - 1;\n", gen->parserbits, gen->parsername, (int)i, gen->parsername, (int)i, gen->parserbits);
   }
-  fprintf(f, "const struct yale_rule%d %s_rules[] = {\n", gen->parserbits, gen->parsername);
+  fprintf(f, "static const struct yale_rule%d %s_rules[] = {\n", gen->parserbits, gen->parsername);
   for (i = 0; i < gen->rulecnt; i++)
   {
     fprints(f, "{\n");

@@ -1555,12 +1555,12 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   if (cbssz)
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
   }
   else
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
   }
   fprints(f, "\n");
   free(parserupper);
@@ -1572,7 +1572,7 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uin
   size_t i;
   size_t j;
   fprints(f, "#ifdef YALE_SMALL_CODE\n");
-  fprintf(f, "const yale_lexer_uint%d_t %s_transitiontbl[][256] = {\n", lexerbits, parsername);
+  fprintf(f, "static const yale_lexer_uint%d_t %s_transitiontbl[][256] = {\n", lexerbits, parsername);
   for (i = 0; i < bufs->cnt; i++)
   {
     fprintf(f, "{");
@@ -1607,7 +1607,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     struct dfa_node *ds = pick_those->ds[i];
     numbers_sets_emit(f, numbershash, &ds->taintidset, alloc, allocud, parserbits);
   }
-  fprintf(f, "const struct yale_state_p%dl%d %s_states", parserbits, lexerbits, parsername);
+  fprintf(f, "static const struct yale_state_p%dl%d %s_states", parserbits, lexerbits, parsername);
   for (i = 0; i < pick_those->len; i++)
   {
     fprintf(f, "_%d", pick_those->pick_those[i]);
@@ -1929,7 +1929,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "}\n");
   fprintf(f, "static ssize_t\n");
   fprintf(f, "%s_call_cbs1(struct %s_parserctx *pctx, const struct %s_cbset *cbmask, const void *buf, size_t sz,\n", parsername, parsername, parsername);
-  fprintf(f, "               ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
+  fprintf(f, "               ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
   fprintf(f, "{\n");
   fprintf(f, "  int bitoff;\n");
   fprintf(f, "  ssize_t cbr;\n");
@@ -1981,7 +1981,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "static ssize_t\n");
   fprintf(f, "%s_call_cbsflg(struct %s_parserctx *pctx, const struct %s_cbset *cbmask, const void *buf, size_t sz,\n", parsername, parsername, parsername);
   fprintf(f, "                 int flag,\n");
-  fprintf(f, "                 ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
+  fprintf(f, "                 ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
   fprintf(f, "{\n");
   fprintf(f, "  int bitoff;\n");
   fprintf(f, "  ssize_t cbr;\n");
@@ -2033,12 +2033,12 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   if (cbssz)
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
   }
   else
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
   }
   fprints(f, "{\n");
   fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
