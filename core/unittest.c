@@ -58,6 +58,10 @@ static void bracketexpr_unit(void)
   const char bracketexpr6alt[] = "[^a-c-]*";
   const char bracketexpr7[] = "[]]*";
   const char bracketexpr8[] = "[^]]*";
+  const char bracketexpr9[] = "[\x05-\x07]*";
+  const char bracketexpr9alt[] = "[\\x05-\\x07]*";
+  const char bracketexpr10[] = "[^\x05-\x07]*";
+  const char bracketexpr10alt[] = "[^\\x05-\\x07]*";
 
   re = parse_bracketexpr(0, bracketexpr1+1, strlen(bracketexpr1)-1, &remst, "");
   if (bracketexpr1[1+remst] != '*')
@@ -128,6 +132,32 @@ static void bracketexpr_unit(void)
     abort();
   }
   assert_chars(re, "]", 1);
+
+  re = parse_bracketexpr(0, bracketexpr9+1, strlen(bracketexpr9)-1, &remst, "");
+  if (bracketexpr9[1+remst] != '*')
+  {
+    abort();
+  }
+  assert_chars(re, "\x05\x06\x07", 0);
+  re = parse_bracketexpr(0, bracketexpr9alt+1, strlen(bracketexpr9alt)-1, &remst, "");
+  if (bracketexpr9alt[1+remst] != '*')
+  {
+    abort();
+  }
+  assert_chars(re, "\x05\x06\x07", 0);
+
+  re = parse_bracketexpr(0, bracketexpr10+1, strlen(bracketexpr10)-1, &remst, "");
+  if (bracketexpr10[1+remst] != '*')
+  {
+    abort();
+  }
+  assert_chars(re, "\x05\x06\x07", 1);
+  re = parse_bracketexpr(0, bracketexpr10alt+1, strlen(bracketexpr10alt)-1, &remst, "");
+  if (bracketexpr10alt[1+remst] != '*')
+  {
+    abort();
+  }
+  assert_chars(re, "\x05\x06\x07", 1);
 }
 
 int main(int argc, char **argv)
