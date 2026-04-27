@@ -77,7 +77,7 @@ struct cb {
   char *name;
 };
 
-struct rule {
+struct yale_gen_rule {
   yale_uint_t lhs;
   yale_uint_t cond;
   struct ruleitem *rhs;
@@ -104,7 +104,7 @@ struct yale {
   struct nonterminal nonterminals[YALE_UINT_MAX_LEGAL];
   struct namespaceitem ns[YALE_UINT_MAX_LEGAL];
   struct cb cbs[YALE_UINT_MAX_LEGAL];
-  struct rule rules[YALE_UINT_MAX_LEGAL];
+  struct yale_gen_rule rules[YALE_UINT_MAX_LEGAL];
   yale_uint_t tokencnt;
   yale_uint_t nscnt;
   yale_uint_t cbcnt;
@@ -324,7 +324,7 @@ static inline void dump_python(FILE *f, struct yale *yale)
   fprintf(f, "p.set_rules([\n");
   for (i = 0; i < yale->rulecnt; i++)
   {
-    struct rule *rl = &yale->rules[i];
+    struct yale_gen_rule *rl = &yale->rules[i];
     yale_uint_t j;
     fprintf(f, "  ");
     fprintf(f, "(");

@@ -1768,7 +1768,7 @@ if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, co
   }
   else
   {
-    fprintf(f, "%s      ffsres = ffsll((long long)(%s.elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n", indent, varname);
+    fprintf(f, "%s      ffsres = yale_ffsu64((%s.elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n", indent, varname);
     fprintf(f, "%s      if (ffsres == 0)\n", indent);
     fprintf(f, "%s      {\n", indent);
     fprintf(f, "%s        bitoff = 64;\n", indent); // FIXME break?
@@ -1964,7 +1964,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   }
   else
   {
-    fprintf(f, "      ffsres = ffsll((long long)(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n");
+    fprintf(f, "      ffsres = yale_ffsu64((cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n");
     fprintf(f, "      if (ffsres == 0)\n");
     fprintf(f, "      {\n");
     fprintf(f, "        bitoff = 64;\n"); // FIXME break?
@@ -2016,7 +2016,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   }
   else
   {
-    fprintf(f, "      ffsres = ffsll((long long)(cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n");
+    fprintf(f, "      ffsres = yale_ffsu64((cbmask->elems[elemidx] & ~((1ULL<<(bitoff+1))-1)));\n");
     fprintf(f, "      if (ffsres == 0)\n");
     fprintf(f, "      {\n");
     fprintf(f, "        bitoff = 64;\n"); // FIXME break?

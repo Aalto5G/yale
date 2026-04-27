@@ -2,6 +2,7 @@
 #define _BITSET_H_
 
 #include "yale.h"
+#include "../runtime/yalecommon.h"
 #include "yaleuint.h"
 #include <sys/uio.h>
 #include <strings.h>
@@ -24,7 +25,7 @@ struct charbitset {
 
 static inline int myffsll(uint64_t i)
 {
-  int res = ffsll((long long)i);
+  int res = yale_ffsu64(i);
   if (res == 0)
   {
     return 65;
@@ -55,7 +56,7 @@ static inline yale_uint_t pick_rm_first(struct bitset *bs)
   int ffsres;
   for (i = 0; i < sizeof(bs->bitset)/sizeof(*bs->bitset); i++)
   {
-    ffsres = ffsll((long long)bs->bitset[i]);
+    ffsres = yale_ffsu64(bs->bitset[i]);
     if (ffsres)
     {
       j = ffsres - 1;

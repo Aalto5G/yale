@@ -154,7 +154,7 @@ yalerule:
 }
 | FREEFORM_TOKEN maybe_cond_ltgt EQUALS
 {
-  struct rule *rule;
+  struct yale_gen_rule *rule;
   yale_uint_t i;
   if (yale->rulecnt >= sizeof(yale->rules)/sizeof(*yale->rules))
   {
@@ -378,7 +378,7 @@ alternation:
 | concatenation
 | alternation PIPE
 {
-  struct rule *rule;
+  struct yale_gen_rule *rule;
   if (yale->rulecnt >= sizeof(yale->rules)/sizeof(*yale->rules))
   {
     fprintf(stderr, "Too many rules, can't add rule\n");
@@ -405,7 +405,7 @@ maybe_concatenationlist:
 element:
 ACTION maybe_token_ltgt
 {
-  struct rule *rule;
+  struct yale_gen_rule *rule;
   struct ruleitem *it;
   rule = &yale->rules[yale->rulecnt - 1];
   if (rule->itemcnt == YALE_UINT_MAX_LEGAL)
@@ -429,7 +429,7 @@ ACTION maybe_token_ltgt
 }
 | FREEFORM_TOKEN maybe_token_ltgt
 {
-  struct rule *rule;
+  struct yale_gen_rule *rule;
   struct ruleitem *it;
   struct ruleitem *it2;
   yale_uint_t i;
@@ -496,7 +496,7 @@ ACTION maybe_token_ltgt
 }
 | BYTES maybe_bytes_ltgt
 {
-  struct rule *rule;
+  struct yale_gen_rule *rule;
   struct ruleitem *it;
   struct ruleitem *it2;
 

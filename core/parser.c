@@ -2803,7 +2803,7 @@ void parsergen_set_conds(struct ParserGen *gen, char **conds, yale_uint_t condcn
   memcpy(gen->conds, conds, condcnt*sizeof(*conds));
 }
 
-void parsergen_set_rules(struct ParserGen *gen, const struct rule *rules, yale_uint_t rulecnt, const struct namespaceitem *ns)
+void parsergen_set_rules(struct ParserGen *gen, const struct yale_gen_rule *rules, yale_uint_t rulecnt, const struct namespaceitem *ns)
 {
   yale_uint_t i;
   yale_uint_t j;
