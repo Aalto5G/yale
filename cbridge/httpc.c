@@ -18,7 +18,7 @@ http_cctx_feed(struct http_cctx *cctx, const char *dat, size_t sz, int eof)
 
 ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *btn)
 {
-  struct http_cctx *cctx = CONTAINER_OF(btn, struct http_cctx, pctx);
+  struct http_cctx *cctx = YALE_CONTAINER_OF(btn, struct http_cctx, pctx);
   if (cctx->sz + siz > sizeof(cctx->buf) - 1)
   {
     siz = sizeof(cctx->buf) - cctx->sz - 1;

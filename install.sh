@@ -85,6 +85,8 @@ instman()
 
 instbin main yaleparser
 instinc2 runtime yalecommon.h
+instinc2 runtime yalecommon2.h
+instinc2 runtime yalecommoncommon.h
 instman yaleparser 1
 
 mkdir -p $P/share/examples/yaleparser

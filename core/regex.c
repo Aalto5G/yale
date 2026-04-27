@@ -1520,8 +1520,8 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprintf(f, "};\n");
   fprints(f, "\n");
   fprintf(f, "struct %s_rectx {\n", parsername);
-  fprintf(f, "  lexer_uint%d_t state; // 0 is initial state\n", lexerbits);
-  fprintf(f, "  lexer_uint%d_t last_accept; // LEXER_UINT%d_MAX means never accepted\n", lexerbits, lexerbits);
+  fprintf(f, "  yale_lexer_uint%d_t state; // 0 is initial state\n", lexerbits);
+  fprintf(f, "  yale_lexer_uint%d_t last_accept; // YALE_LEXER_UINT%d_MAX means never accepted\n", lexerbits, lexerbits);
   fprintf(f, "  struct %s_cbset start_status;\n", parsername);
   fprintf(f, "  struct %s_cbset confirm_status;\n", parsername);
   fprintf(f, "  struct %s_cbset btbuf_status;\n", parsername);
@@ -1533,14 +1533,14 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprintf(f, "  unsigned char backtrack[%s_BACKTRACKLEN_PLUS_1];\n", parserupper);
   fprints(f, "#endif\n");
   fprints(f, "};\n");
-  fprintf(f, "#define %s_RECTX_EMPTY {.last_accept = LEXER_UINT%d_MAX}\n", parserupper, lexerbits);
+  fprintf(f, "#define %s_RECTX_EMPTY {.last_accept = YALE_LEXER_UINT%d_MAX}\n", parserupper, lexerbits);
   fprints(f, "\n");
   fprints(f, "static inline void\n");
   fprintf(f, "%s_init_statemachine(struct %s_rectx *ctx)\n", parsername, parsername);
   fprints(f, "{\n");
   fprintf(f, "  const struct %s_cbset empty = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprints(f, "  ctx->state = 0;\n");
-  fprintf(f, "  ctx->last_accept = LEXER_UINT%d_MAX;\n", lexerbits);
+  fprintf(f, "  ctx->last_accept = YALE_LEXER_UINT%d_MAX;\n", lexerbits);
   fprints(f, "  ctx->start_status = empty;\n");
   fprints(f, "  ctx->confirm_status = empty;\n");
   fprints(f, "  ctx->btbuf_status = empty;\n");
@@ -1555,12 +1555,12 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   if (cbssz)
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint%d_t cb1, const parser_uint%d_t *cbstack, parser_uint%d_t cbstacksz);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
   }
   else
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint%d_t cb1);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
   }
   fprints(f, "\n");
   free(parserupper);
@@ -1571,8 +1571,8 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uin
 {
   size_t i;
   size_t j;
-  fprints(f, "#ifdef SMALL_CODE\n");
-  fprintf(f, "const lexer_uint%d_t %s_transitiontbl[][256] = {\n", lexerbits, parsername);
+  fprints(f, "#ifdef YALE_SMALL_CODE\n");
+  fprintf(f, "const yale_lexer_uint%d_t %s_transitiontbl[][256] = {\n", lexerbits, parsername);
   for (i = 0; i < bufs->cnt; i++)
   {
     fprintf(f, "{");
@@ -1580,7 +1580,7 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uin
     {
       if (bufs->all[i]->transitions[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "LEXER_UINT%d_MAX, ", lexerbits);
+        fprintf(f, "YALE_LEXER_UINT%d_MAX, ", lexerbits);
       }
       else
       {
@@ -1599,7 +1599,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
          void *(*alloc)(void*,size_t), void *allocud, uint8_t parserbits, uint8_t lexerbits)
 {
   size_t i, j;
-  fprintf(f, "#if %zu > LEXER_UINT%d_MAX\n", (size_t)pick_those->dscnt, lexerbits);
+  fprintf(f, "#if %zu > YALE_LEXER_UINT%d_MAX\n", (size_t)pick_those->dscnt, lexerbits);
   fprintf(f, "#error \"Too big regexp DFA\"\n");
   fprintf(f, "#endif\n");
   for (i = 0; i < pick_those->dscnt; i++)
@@ -1607,7 +1607,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     struct dfa_node *ds = pick_those->ds[i];
     numbers_sets_emit(f, numbershash, &ds->taintidset, alloc, allocud, parserbits);
   }
-  fprintf(f, "const struct state_p%dl%d %s_states", parserbits, lexerbits, parsername);
+  fprintf(f, "const struct yale_state_p%dl%d %s_states", parserbits, lexerbits, parsername);
   for (i = 0; i < pick_those->len; i++)
   {
     fprintf(f, "_%d", pick_those->pick_those[i]);
@@ -1618,7 +1618,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     struct dfa_node *ds = pick_those->ds[i];
     if (ds->acceptid == YALE_UINT_MAX_LEGAL)
     {
-      fprintf(f, "{ .accepting = %d, .acceptid = PARSER_UINT%d_MAX, .finalflag = %d,\n",
+      fprintf(f, "{ .accepting = %d, .acceptid = YALE_PARSER_UINT%d_MAX, .finalflag = %d,\n",
                  (int)ds->accepting, parserbits, (int)ds->finalflag);
     }
     else
@@ -1662,7 +1662,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
         j++;
       }
     }
-    fprintf(f, ")/sizeof(parser_uint%d_t) - 1,\n", parserbits);
+    fprintf(f, ")/sizeof(yale_parser_uint%d_t) - 1,\n", parserbits);
     fprints(f, ".fastpathbitmask = {");
     if (ds->accepting && !ds->finalflag)
     {
@@ -1691,7 +1691,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
       fprints(f, "0");
     }
     fprints(f, "},\n");
-    fprints(f, "#ifdef SMALL_CODE\n");
+    fprints(f, "#ifdef YALE_SMALL_CODE\n");
     fprintf(f, ".transitions = %s_transitiontbl[%zu],\n", parsername, ds->transitions_id);
     fprints(f, "#else\n");
     fprints(f, ".transitions = {");
@@ -1699,7 +1699,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     {
       if (ds->d[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "LEXER_UINT%d_MAX, ", lexerbits);
+        fprintf(f, "YALE_LEXER_UINT%d_MAX, ", lexerbits);
       }
       else
       {
@@ -1837,7 +1837,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   if (!nofastpath)
   {
     fprints(f, "static inline int\n");
-    fprintf(f, "%s_is_fastpath(const struct state_p%dl%d *st, unsigned char uch)\n", parsername, parserbits, lexerbits);
+    fprintf(f, "%s_is_fastpath(const struct yale_state_p%dl%d *st, unsigned char uch)\n", parsername, parserbits, lexerbits);
     fprints(f, "{\n");
     fprints(f, "  return !!(st->fastpathbitmask[uch/64] & (1ULL<<(uch%64)));\n");
     fprints(f, "}\n");
@@ -1894,9 +1894,9 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "  p1->elems[bit/64] |= (1ULL<<(bit%64));\n");
   fprints(f, "}\n");
   fprints(f, "static inline void\n");
-  fprintf(f, "%s_bitmaybeset(struct %s_cbset *p1, parser_uint%d_t bit)\n", parsername, parsername, parserbits);
+  fprintf(f, "%s_bitmaybeset(struct %s_cbset *p1, yale_parser_uint%d_t bit)\n", parsername, parsername, parserbits);
   fprints(f, "{\n");
-  fprintf(f, "  if (bit != PARSER_UINT%d_MAX)\n", parserbits);
+  fprintf(f, "  if (bit != YALE_PARSER_UINT%d_MAX)\n", parserbits);
   fprints(f, "  {\n");
   fprintf(f, "    %s_bitset(p1, bit);\n", parsername);
   fprints(f, "  }\n");
@@ -2033,23 +2033,23 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   if (cbssz)
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint%d_t cb1, const parser_uint%d_t *cbstack, parser_uint%d_t cbstacksz)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
   }
   else
   {
     fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, parser_uint%d_t cb1)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
   }
   fprints(f, "{\n");
   fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
-  fprintf(f, "  const struct state_p%dl%d *st = NULL;\n", parserbits, lexerbits);
+  fprintf(f, "  const struct yale_state_p%dl%d *st = NULL;\n", parserbits, lexerbits);
   fprints(f, "  size_t i;\n");
   fprints(f, "  int start = 0;\n");
-  fprintf(f, "  lexer_uint%d_t newstate;\n", lexerbits);
-  fprintf(f, "  struct %s_parserctx *pctx = CONTAINER_OF(ctx, struct %s_parserctx, rctx);\n", parsername, parsername);
-  fprintf(f, "  if (ctx->state == LEXER_UINT%d_MAX)\n", lexerbits);
+  fprintf(f, "  yale_lexer_uint%d_t newstate;\n", lexerbits);
+  fprintf(f, "  struct %s_parserctx *pctx = YALE_CONTAINER_OF(ctx, struct %s_parserctx, rctx);\n", parsername, parsername);
+  fprintf(f, "  if (ctx->state == YALE_LEXER_UINT%d_MAX)\n", lexerbits);
   fprints(f, "  {\n");
-  fprintf(f, "    *state = PARSER_UINT%d_MAX;\n", parserbits);
+  fprintf(f, "    *state = YALE_PARSER_UINT%d_MAX;\n", parserbits);
   fprints(f, "    return -EINVAL;\n");
   fprints(f, "  }\n");
   fprints(f, "  if (ctx->state == 0)\n");
@@ -2058,7 +2058,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "  }\n");
   fprints(f, "  //printf(\"Called: %s\\n\", buf);\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
-  fprints(f, "  if (unlikely(ctx->backtrackmid != ctx->backtrackend))\n");
+  fprints(f, "  if (yale_unlikely(ctx->backtrackmid != ctx->backtrackend))\n");
   fprints(f, "  {\n");
   fprints(f, "    uint8_t new_backtrackstart;\n");
   fprints(f, "    new_backtrackstart = ctx->backtrackstart;\n");
@@ -2066,16 +2066,16 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    {\n");
   fprints(f, "      st = &stbl[ctx->state];\n");
   fprints(f, "      ctx->state = st->transitions[ctx->backtrack[ctx->backtrackmid]];\n");
-  fprintf(f, "      if (unlikely(ctx->state == LEXER_UINT%d_MAX))\n", lexerbits);
+  fprintf(f, "      if (yale_unlikely(ctx->state == YALE_LEXER_UINT%d_MAX))\n", lexerbits);
   fprints(f, "      {\n");
-  fprintf(f, "        if (ctx->last_accept == LEXER_UINT%d_MAX)\n", lexerbits);
+  fprintf(f, "        if (ctx->last_accept == YALE_LEXER_UINT%d_MAX)\n", lexerbits);
   fprints(f, "        {\n");
-  fprintf(f, "          *state = PARSER_UINT%d_MAX;\n", parserbits);
+  fprintf(f, "          *state = YALE_PARSER_UINT%d_MAX;\n", parserbits);
   fprints(f, "          return -EINVAL;\n");
   fprints(f, "        }\n");
   fprints(f, "        ctx->state = ctx->last_accept;\n");
   fprintf(f, "        %s_bitor(&ctx->confirm_status, &ctx->lastack_status);\n", parsername); // FIXME???
-  fprintf(f, "        ctx->last_accept = LEXER_UINT%d_MAX;\n", lexerbits);
+  fprintf(f, "        ctx->last_accept = YALE_LEXER_UINT%d_MAX;\n", lexerbits);
   fprintf(f, "        %s_bitclear(&ctx->lastack_status);\n", parsername);
   fprints(f, "        st = &stbl[ctx->state];\n");
   fprints(f, "        *state = st->acceptid;\n");
@@ -2130,7 +2130,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        {\n");
   fprints(f, "          *state = st->acceptid;\n");
   fprints(f, "          ctx->state = 0;\n");
-  fprintf(f, "          ctx->last_accept = LEXER_UINT%d_MAX;\n", lexerbits);
+  fprintf(f, "          ctx->last_accept = YALE_LEXER_UINT%d_MAX;\n", lexerbits);
   fprintf(f, "          %s_bitclear(&ctx->lastack_status);\n", parsername);
   fprints(f, "          if (st)\n");
   fprints(f, "          {\n");
@@ -2249,18 +2249,18 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      ctx->state = newstate;\n");
   fprints(f, "    }\n");
   fprints(f, "    //printf(\"New state: %d\\n\", ctx->state);\n");
-  fprintf(f, "    if (unlikely(newstate == LEXER_UINT%d_MAX)) // use newstate here, not ctx->state, faster\n", lexerbits);
+  fprintf(f, "    if (yale_unlikely(newstate == YALE_LEXER_UINT%d_MAX)) // use newstate here, not ctx->state, faster\n", lexerbits);
   fprints(f, "    {\n");
   fprintf(f, "      size_t j;\n");
-  fprintf(f, "      if (ctx->last_accept == LEXER_UINT%d_MAX)\n", lexerbits);
+  fprintf(f, "      if (ctx->last_accept == YALE_LEXER_UINT%d_MAX)\n", lexerbits);
   fprints(f, "      {\n");
-  fprintf(f, "        *state = PARSER_UINT%d_MAX;\n", parserbits);
+  fprintf(f, "        *state = YALE_PARSER_UINT%d_MAX;\n", parserbits);
   fprints(f, "        //printf(\"Error\\n\");\n");
   fprints(f, "        return -EINVAL;\n");
   fprints(f, "      }\n");
   fprints(f, "      ctx->state = ctx->last_accept;\n");
   fprintf(f, "      %s_bitor(&ctx->confirm_status, &ctx->lastack_status);\n", parsername); // FIXME???
-  fprintf(f, "      ctx->last_accept = LEXER_UINT%d_MAX;\n", lexerbits);
+  fprintf(f, "      ctx->last_accept = YALE_LEXER_UINT%d_MAX;\n", lexerbits);
   fprintf(f, "      %s_bitclear(&ctx->lastack_status);\n", parsername); // FIXME correct?
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "      ctx->backtrackmid = ctx->backtrackstart;\n");
@@ -2355,7 +2355,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      {\n");
   fprints(f, "        *state = st->acceptid;\n");
   fprints(f, "        ctx->state = 0;\n");
-  fprintf(f, "        ctx->last_accept = LEXER_UINT%d_MAX;\n", lexerbits);
+  fprintf(f, "        ctx->last_accept = YALE_LEXER_UINT%d_MAX;\n", lexerbits);
   fprintf(f, "        %s_bitclear(&ctx->lastack_status);\n", parsername); // FIXME correct?
   fprints(f, "        if (st->accepting)\n");
   fprints(f, "        {\n");
@@ -2409,7 +2409,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    }\n");
   fprints(f, "    else\n");
   fprints(f, "    {\n");
-  fprintf(f, "      if (ctx->last_accept != LEXER_UINT%d_MAX)\n", lexerbits);
+  fprintf(f, "      if (ctx->last_accept != YALE_LEXER_UINT%d_MAX)\n", lexerbits);
   fprints(f, "      {\n");
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "        if (ctx->backtrackmid != ctx->backtrackend)\n");
@@ -2432,7 +2432,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      }\n");
   fprints(f, "    }\n");
   fprints(f, "  }\n");
-  fprints(f, "  if (unlikely(eofindicator))\n");
+  fprints(f, "  if (yale_unlikely(eofindicator))\n");
   fprints(f, "  {\n");
   fprints(f, "    st = &stbl[ctx->state];\n");
   fprints(f, "    if (st->accepting)\n");
@@ -2505,15 +2505,15 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "      }\n");
   fprints(f, "      return (ssize_t)i;\n"); // FIXME what to return?
   fprints(f, "    }\n");
-  fprintf(f, "    if (ctx->last_accept == LEXER_UINT%d_MAX)\n", lexerbits);
+  fprintf(f, "    if (ctx->last_accept == YALE_LEXER_UINT%d_MAX)\n", lexerbits);
   fprints(f, "    {\n");
-  fprintf(f, "      *state = PARSER_UINT%d_MAX;\n", parserbits);
+  fprintf(f, "      *state = YALE_PARSER_UINT%d_MAX;\n", parserbits);
   fprints(f, "      //printf(\"Error\\n\");\n");
   fprints(f, "      return 0;\n");
   fprints(f, "    }\n");
   fprints(f, "    ctx->state = ctx->last_accept;\n");
   fprintf(f, "    %s_bitor(&ctx->confirm_status, &ctx->lastack_status);\n", parsername); // FIXME???
-  fprintf(f, "    ctx->last_accept = LEXER_UINT%d_MAX;\n", lexerbits);
+  fprintf(f, "    ctx->last_accept = YALE_LEXER_UINT%d_MAX;\n", lexerbits);
   fprintf(f, "    %s_bitclear(&ctx->lastack_status);\n", parsername); // FIXME correct?
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "    ctx->backtrackmid = ctx->backtrackstart;\n");
@@ -2634,7 +2634,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    ctx->btbuf_status = ctx->start_status;\n");
   fprints(f, "  }\n");
   fprintf(f, "#endif\n");
-  fprintf(f, "  *state = PARSER_UINT%d_MAX;\n", parserbits);
+  fprintf(f, "  *state = YALE_PARSER_UINT%d_MAX;\n", parserbits);
   fprints(f, "  return -EAGAIN; // Not yet\n");
   fprints(f, "}\n");
 
@@ -2686,7 +2686,7 @@ void numbers_sets_emit(FILE *f, struct numbers_sets *hash, const struct bitset *
   size_t j;
   if (numbers_sets_put(hash, numbers, alloc, allocud))
   {
-    fprintf(f, "static const parser_uint%d_t taintidsetarray", parserbits);
+    fprintf(f, "static const yale_parser_uint%d_t taintidsetarray", parserbits);
     for (j = 0; j < YALE_UINT_MAX_LEGAL + 1; /*j++*/)
     {
       yale_uint_t wordoff = j/64;
