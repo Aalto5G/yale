@@ -54,6 +54,13 @@ enum yale_flags {
   #endif
 #endif
 
+#ifdef __GNUC__
+  #if __GNUC__ >= 4
+    #undef YALE_HAS_BFFSLL
+    #define YALE_HAS_BFFSLL 1
+  #endif
+#endif
+
 static inline int yale_ffsu64(uint64_t x)
 {
 #ifdef YALE_HAS_BFFSLL
