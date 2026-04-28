@@ -1500,7 +1500,7 @@ static int fprints(FILE *f, const char *s)
 
 void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, const char *cbbitmasktype, int cbbitmaskcnt, uint8_t parserbits, uint8_t lexerbits)
 {
-  char *parserupper = strdup(parsername);
+  char *parserupper = yale_strdup(parsername);
   size_t len = strlen(parsername);
   size_t i;
   for (i = 0; i < len; i++)
@@ -1827,7 +1827,7 @@ add_cb_stack(FILE *f, const char *indent, const char *parsername, size_t cbssz)
 void
 dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t cbcnt, uint8_t parserbits, uint8_t lexerbits)
 {
-  char *parserupper = strdup(parsername);
+  char *parserupper = yale_strdup(parsername);
   size_t len = strlen(parsername);
   size_t i;
   for (i = 0; i < len; i++)

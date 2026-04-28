@@ -29,8 +29,10 @@ enum yale_flags {
 
 #ifdef __GLIBC__
   #if __GLIBC__  > 2 || (__GLIBC__  == 2 && __GLIBC_MINOR__  >= 27)
+   #ifdef _DEFAULT_SOURCE
     #undef YALE_HAS_FFSLL
     #define YALE_HAS_FFSLL 1
+   #endif
   #endif
   #ifdef _GNU_SOURCE // this is ancient but required _GNU_SOURCE before 2.27
     #undef YALE_HAS_FFSLL

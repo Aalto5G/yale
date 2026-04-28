@@ -171,7 +171,7 @@ void parsergen_init(struct ParserGen *gen, char *parsername)
   gen->userareaptr = gen->userarea;
   gen->tokencnt = 0;
   gen->nonterminalcnt = 0;
-  gen->parsername = strdup(parsername);
+  gen->parsername = yale_strdup(parsername);
   gen->state_include_str = NULL;
   gen->init_include_str = NULL;
   gen->empty_include_str = NULL;
@@ -1635,7 +1635,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
   size_t i, j, X, x;
   size_t curidx = 0;
   int special_needed;
-  char *parserupper = strdup(gen->parsername);
+  char *parserupper = yale_strdup(gen->parsername);
   size_t len = strlen(gen->parsername);
   for (i = 0; i < len; i++)
   {
@@ -2583,7 +2583,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
 {
   const char *cbbitmasktype = NULL;
-  char *parserupper = strdup(gen->parsername);
+  char *parserupper = yale_strdup(gen->parsername);
   size_t len = strlen(gen->parsername);
   size_t i;
   for (i = 0; i < len; i++)
@@ -2683,7 +2683,7 @@ void parsergen_state_include(struct ParserGen *gen, char *stateinclude)
   {
     abort();
   }
-  gen->state_include_str = strdup(stateinclude);
+  gen->state_include_str = yale_strdup(stateinclude);
 }
 
 void parsergen_empty_include(struct ParserGen *gen, char *emptyinclude)
@@ -2692,7 +2692,7 @@ void parsergen_empty_include(struct ParserGen *gen, char *emptyinclude)
   {
     abort();
   }
-  gen->empty_include_str = strdup(emptyinclude);
+  gen->empty_include_str = yale_strdup(emptyinclude);
 }
 
 void parsergen_init_include(struct ParserGen *gen, char *initinclude)
@@ -2701,7 +2701,7 @@ void parsergen_init_include(struct ParserGen *gen, char *initinclude)
   {
     abort();
   }
-  gen->init_include_str = strdup(initinclude);
+  gen->init_include_str = yale_strdup(initinclude);
 }
 
 void parsergen_set_start_state(struct ParserGen *gen, yale_uint_t start_state)

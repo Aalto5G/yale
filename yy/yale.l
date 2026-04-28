@@ -59,7 +59,7 @@ cond      return COND;
 
 
 [A-Za-z_][A-Za-z0-9_]* {
-  yylval->s = strdup(yytext);
+  yylval->s = yale_strdup(yytext);
   return FREEFORM_TOKEN;
 }
 

@@ -10,6 +10,14 @@
 #include <ctype.h>
 #include "yaleuint.h"
 
+static inline char *yale_strdup(const char *str)
+{
+  size_t sz = strlen(str);
+  char *newstr = malloc(sz+1);
+  memcpy(newstr, str, sz+1);
+  return newstr;
+}
+
 struct escaped_string {
   size_t sz;
   char *str;
@@ -264,7 +272,7 @@ static inline void dump_string(FILE *f, const char *str)
 
 static inline char *yystrtoupper(const char *oldstr)
 {
-  char *newstr = strdup(oldstr);
+  char *newstr = yale_strdup(oldstr);
   size_t i;
   if (newstr == NULL)
   {
@@ -280,7 +288,7 @@ static inline char *yystrtoupper(const char *oldstr)
 static inline void dump_python(FILE *f, struct yale *yale)
 {
   yale_uint_t i;
-  char *upparsername = strdup(yale->parsername);
+  char *upparsername = yale_strdup(yale->parsername);
   size_t len = strlen(upparsername);
   for (i = 0; i < len; i++)
   {

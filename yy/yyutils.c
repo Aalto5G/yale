@@ -31,6 +31,7 @@ void yaleyydoparse(FILE *filein, struct yale *yale)
   }
 }
 
+#if 0
 void yaleyydomemparse(char *filedata, size_t filesize, struct yale *yale)
 {
   FILE *myfile;
@@ -47,6 +48,7 @@ void yaleyydomemparse(char *filedata, size_t filesize, struct yale *yale)
     exit(1);
   }
 }
+#endif
 
 static void *memdup(const void *mem, size_t sz)
 {
@@ -170,7 +172,7 @@ void yaleyydirparse(
   const char *argv0, const char *fname, struct yale *yale, int require)
 {
   const char *dir;
-  char *copy = strdup(argv0);
+  char *copy = yale_strdup(argv0);
   char pathbuf[PATH_MAX];
   dir = dirname(copy); // NB: not for multi-threaded operation!
   snprintf(pathbuf, sizeof(pathbuf), "%s/%s", dir, fname);

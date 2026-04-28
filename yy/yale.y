@@ -476,7 +476,7 @@ ACTION maybe_token_ltgt
       yaleyyerror(scanner, yale, "error");
       YYABORT;
     }
-    yale->ns[i].name = strdup($1);
+    yale->ns[i].name = yale_strdup($1);
     it->is_action = 0;
     it->is_bytes = 0;
     it->value = i;
