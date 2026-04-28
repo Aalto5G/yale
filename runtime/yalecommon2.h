@@ -27,9 +27,35 @@ typedef uint16_t yale_parser_uint16_t;
 #endif
 
 #undef yale_likely
-#define yale_likely(x)       __builtin_expect((x),1)
 #undef yale_unlikely
-#define yale_unlikely(x)     __builtin_expect((x),0)
+
+#ifdef __has_builtin
+  #if __has_builtin (__builtin_expect)
+    #define yale_likely(x)       __builtin_expect(!!(x),1)
+    #define yale_unlikely(x)     __builtin_expect(!!(x),0)
+  #else
+    #define yale_likely(x)       (!!(x))
+    #define yale_unlikely(x)     (!!(x))
+  #endif
+#else
+  #ifdef __clang__ // LLVM 3.0 is the first to use this, no-op on LLVM 1.0
+    #define yale_likely(x)       __builtin_expect(!!(x),1)
+    #define yale_unlikely(x)     __builtin_expect(!!(x),0)
+  #else
+    #ifdef __GNUC__
+      #if __GNUC__ >= 3
+        #define yale_likely(x)       __builtin_expect(!!(x),1)
+        #define yale_unlikely(x)     __builtin_expect(!!(x),0)
+      #else
+        #define yale_likely(x)       (!!(x))
+        #define yale_unlikely(x)     (!!(x))
+      #endif
+    #else
+      #define yale_likely(x)       (!!(x))
+      #define yale_unlikely(x)     (!!(x))
+    #endif
+  #endif
+#endif
 
 #ifndef YALE_SMALL_CODE
 #define YALE_SMALL_CODE 1
