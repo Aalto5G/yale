@@ -82,6 +82,8 @@ struct ParserGen {
   yale_uint_t nonterminalcnt;
   uint8_t parserbits;
   uint8_t lexerbits;
+  int parsermax;
+  int lexermax;
   struct nfa2dfa_workarea nfa2dfa_area;
   char *parsername;
   yale_uint_t start_state;

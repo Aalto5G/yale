@@ -1567,7 +1567,7 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
 }
 
 void
-dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uint8_t lexerbits)
+dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uint8_t lexerbits, int lexermax)
 {
   size_t i;
   size_t j;
@@ -1580,7 +1580,7 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uin
     {
       if (bufs->all[i]->transitions[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "YALE_LEXER_UINT%d_MAX, ", lexerbits);
+        fprintf(f, "%d, ", lexermax);
       }
       else
       {
@@ -1596,7 +1596,7 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uin
 void
 dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
          struct numbers_sets *numbershash,
-         void *(*alloc)(void*,size_t), void *allocud, uint8_t parserbits, uint8_t lexerbits)
+         void *(*alloc)(void*,size_t), void *allocud, uint8_t parserbits, uint8_t lexerbits, int parsermax, int lexermax)
 {
   size_t i, j;
   fprintf(f, "#if %zu > YALE_LEXER_UINT%d_MAX\n", (size_t)pick_those->dscnt, lexerbits);
@@ -1699,7 +1699,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     {
       if (ds->d[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "YALE_LEXER_UINT%d_MAX, ", lexerbits);
+        fprintf(f, "%d, ", lexermax);
       }
       else
       {

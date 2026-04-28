@@ -278,12 +278,12 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz,
                   const char *cbbitmasktype, int cbbitmaskcnt, uint8_t parserbits, uint8_t lexerbits);
 
 void
-dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uint8_t lexerbits);
+dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uint8_t lexerbits, int lexermax);
 
 void
 dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
          struct numbers_sets *numbershash,
-         void *(*alloc)(void*,size_t), void *allocud, uint8_t parserbits, uint8_t lexerbits);
+         void *(*alloc)(void*,size_t), void *allocud, uint8_t parserbits, uint8_t lexerbits, int parsermax, int lexermax);
 
 void
 dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t cbcnt, uint8_t parserbits, uint8_t lexerbits);

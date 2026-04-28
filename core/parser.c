@@ -1604,6 +1604,16 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
       gen->lexerbits = 16;
     }
   }
+  gen->parsermax = UINT8_MAX;
+  if (gen->parserbits == 16)
+  {
+    gen->parsermax = UINT16_MAX;
+  }
+  gen->lexermax = UINT8_MAX;
+  if (gen->lexerbits == 16)
+  {
+    gen->lexermax = UINT16_MAX;
+  }
 }
 
 static void
@@ -1646,10 +1656,10 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
   fprintf(f, "#if %zu > YALE_PARSER_UINT%d_MAX\n", (size_t)gen->cbcnt, gen->parserbits);
   fprints(f, "#error \"Too many callbacks\"\n");
   fprints(f, "#endif\n");
-  dump_collected(f, gen->parsername, &gen->bufs, gen->lexerbits);
+  dump_collected(f, gen->parsername, &gen->bufs, gen->lexerbits, gen->lexermax);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
-    dump_one(f, gen->parsername, &gen->pick_thoses[i], &gen->numbershash, parsergen_alloc_fn, gen, gen->parserbits, gen->lexerbits);
+    dump_one(f, gen->parsername, &gen->pick_thoses[i], &gen->numbershash, parsergen_alloc_fn, gen, gen->parserbits, gen->lexerbits, gen->parsermax, gen->lexermax);
   }
   fprintf(f, "static const yale_parser_uint%d_t %s_num_terminals;\n", gen->parserbits, gen->parsername);
   fprintf(f, "static ssize_t(*const %s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
