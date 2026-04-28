@@ -1571,7 +1571,7 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uin
 {
   size_t i;
   size_t j;
-  fprints(f, "#ifdef YALE_SMALL_CODE\n");
+  fprints(f, "#if YALE_SMALL_CODE\n");
   fprintf(f, "static const yale_lexer_uint%d_t %s_transitiontbl[][256] = {\n", lexerbits, parsername);
   for (i = 0; i < bufs->cnt; i++)
   {
@@ -1691,7 +1691,7 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
       fprints(f, "0");
     }
     fprints(f, "},\n");
-    fprints(f, "#ifdef YALE_SMALL_CODE\n");
+    fprints(f, "#if YALE_SMALL_CODE\n");
     fprintf(f, ".transitions = %s_transitiontbl[%zu],\n", parsername, ds->transitions_id);
     fprints(f, "#else\n");
     fprints(f, ".transitions = {");
