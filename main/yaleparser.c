@@ -98,7 +98,7 @@ int main(int argc, char **argv)
 
   if (dir == NULL)
   {
-    dir = dirname(strdup(argv[optind+0]));
+    dir = dirname(yale_strdup(argv[optind+0]));
   }
 
   snprintf(cnamebuf, sizeof(cnamebuf), "%s/%s%s", dir, yale.parsername, "cparser.c");
