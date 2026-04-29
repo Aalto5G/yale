@@ -4,7 +4,6 @@
 typedef void *yyscan_t;
 #endif
 #include "yale.h"
-#include <sys/types.h>
 %}
 
 %{
@@ -13,7 +12,6 @@ typedef void *yyscan_t;
 #include "yyutils.h"
 #include "yale.tab.h"
 #include "yale.lex.h"
-#include <arpa/inet.h>
 
 void yaleyyerror(yyscan_t scanner, struct yale *yale, const char *str)
 {
