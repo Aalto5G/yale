@@ -23,11 +23,44 @@ enum yale_flags {
 };
 
 #if _POSIX_VERSION >= 202405L
+ // glibc incorrectly doesn't make this visible with _POSIX_C_SOURCE
+ // RFE does this also require _XOPEN_SOURCE to be set to at least 800?
+ #ifndef __GLIBC__
   #undef YALE_HAS_FFSLL
   #define YALE_HAS_FFSLL 1
+ #endif
+#endif
+
+#if _POSIX_VERSION >= 200112L
+  #if _XOPEN_VERSION >= 600
+    #ifdef _XOPEN_SOURCE
+      #if _XOPEN_SOURCE >= 600
+        #undef YALE_HAS_FFS
+        #define YALE_HAS_FFS 1
+      #endif
+    #endif
+  #endif
 #endif
 
 #ifdef __GLIBC__
+  #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 12)
+   #if _XOPEN_SOURCE >= 700 || !(_POSIX_C_SOURCE >= 200809L)
+    #undef YALE_HAS_FFS
+    #define YALE_HAS_FFS 1
+   #endif
+   #ifdef _DEFAULT_SOURCE
+    #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 20)
+     #undef YALE_HAS_FFS
+     #define YALE_HAS_FFS 1
+    #endif
+   #endif
+   #ifdef _BSD_SOURCE
+    #if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 19)
+     #undef YALE_HAS_FFS
+     #define YALE_HAS_FFS 1
+    #endif
+   #endif
+  #endif
   #if __GLIBC__  > 2 || (__GLIBC__  == 2 && __GLIBC_MINOR__  >= 27)
    #ifdef _DEFAULT_SOURCE
     #undef YALE_HAS_FFSLL
@@ -61,6 +94,25 @@ enum yale_flags {
   #endif
 #endif
 
+#ifdef YALE_HAS_FFS
+static inline int yale_ffsu32(uint32_t v)
+{
+  return ffs((int)v);
+}
+#else
+static inline int yale_ffsu32(uint32_t v)
+{
+  int r;
+  static const int MultiplyDeBruijnBitPosition[32] =
+  {
+    0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
+    31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+  };
+  r = MultiplyDeBruijnBitPosition[((uint32_t)((v & -v) * 0x077CB531U)) >> 27];
+  return v?(r+1):0;
+}
+#endif
+
 static inline int yale_ffsu64(uint64_t x)
 {
 #ifdef YALE_HAS_BFFSLL
@@ -69,12 +121,12 @@ static inline int yale_ffsu64(uint64_t x)
 #ifdef YALE_HAS_FFSLL
   return ffsll((long long)x);
 #else
-  int res = ffs((int)(x&0xFFFFFFFFU));
+  int res = yale_ffsu32((uint32_t)(x&0xFFFFFFFFU));
   if (res)
   {
     return res;
   }
-  res = ffs((int)(x>>32));
+  res = yale_ffsu32((uint32_t)(x>>32));
   if (res)
   {
     return res+32;
