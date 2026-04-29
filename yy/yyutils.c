@@ -173,9 +173,13 @@ void yaleyydirparse(
 {
   const char *dir;
   char *copy = yale_strdup(argv0);
-  char pathbuf[PATH_MAX];
+  char *pathbuf;
+  size_t sz;
   dir = dirname(copy); // NB: not for multi-threaded operation!
-  snprintf(pathbuf, sizeof(pathbuf), "%s/%s", dir, fname);
+  sz = strlen(dir)+strlen(fname)+2;
+  pathbuf = malloc(sz);
+  snprintf(pathbuf, sz, "%s/%s", dir, fname);
   free(copy);
   yaleyynameparse(pathbuf, yale, require);
+  free(pathbuf);
 }
