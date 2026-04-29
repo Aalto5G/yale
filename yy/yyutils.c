@@ -3,7 +3,6 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <libgen.h>
-#include <arpa/inet.h>
 #include "yale.h"
 #include "yyutils.h"
 
