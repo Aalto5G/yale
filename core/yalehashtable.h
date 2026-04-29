@@ -5,7 +5,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <pthread.h>
 
 typedef uint32_t (*hash_fn)(struct yale_hash_list_node *node, void *userdata);
 
