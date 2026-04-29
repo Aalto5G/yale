@@ -11,8 +11,10 @@ void yaleyydomemparse(char *filedata, size_t filesize, struct yale *yale);
 
 void yaleyynameparse(const char *fname, struct yale *yale, int require);
 
+#if 0
 void yaleyydirparse(
   const char *argv0, const char *fname, struct yale *yale, int require);
+#endif
 
 struct escaped_string yy_escape_string(char *orig);
 

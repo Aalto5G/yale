@@ -2,7 +2,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <limits.h>
+#if 0
 #include <libgen.h>
+#endif
 #include "yale.h"
 #include "yyutils.h"
 
@@ -167,6 +169,7 @@ void yaleyynameparse(const char *fname, struct yale *yale, int require)
   fclose(yalefile);
 }
 
+#if 0
 void yaleyydirparse(
   const char *argv0, const char *fname, struct yale *yale, int require)
 {
@@ -182,3 +185,4 @@ void yaleyydirparse(
   yaleyynameparse(pathbuf, yale, require);
   free(pathbuf);
 }
+#endif
