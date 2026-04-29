@@ -14,7 +14,7 @@
 
 %}
 
-%option reentrant bison-bridge
+%option reentrant bison-bridge never-interactive
 %x COMMENTS
 %x PERCENTCCOMMENTS
 %x PERCENTC
