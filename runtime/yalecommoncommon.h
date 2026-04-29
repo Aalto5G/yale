@@ -6,7 +6,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -95,6 +94,7 @@ enum yale_flags {
 #endif
 
 #ifdef YALE_HAS_FFS
+#include <strings.h>
 static inline int yale_ffsu32(uint32_t v)
 {
   return ffs((int)v);
@@ -111,6 +111,10 @@ static inline int yale_ffsu32(uint32_t v)
   r = MultiplyDeBruijnBitPosition[((uint32_t)((v & -v) * 0x077CB531U)) >> 27];
   return v?(r+1):0;
 }
+#endif
+
+#ifdef YALE_HAS_FFSLL
+#include <strings.h>
 #endif
 
 static inline int yale_ffsu64(uint64_t x)

@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <errno.h>
 #include <string.h>
-#include <strings.h>
 #include <stdio.h>
 #include <stdlib.h>
 
