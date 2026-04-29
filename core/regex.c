@@ -795,7 +795,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
   int inverse = 0;
   int has_last = 0;
   char last = 0;
-  int last_is_escape = 0;
+  //int last_is_escape = 0;
   int last_is_hexescape = 0;
   if (resz == 0)
   {
@@ -892,14 +892,14 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         set_char(bitmask, (unsigned char)last);
       }
       last = newlast;
-      last_is_escape = 1;
+      //last_is_escape = 1;
       last_is_hexescape = newlast_is_hexescape;
       has_last = 1;
     }
     else if (first == '-' && has_last && i < len)
     {
       char lastlast;
-      int lastlast_is_escape = 0;
+      //int lastlast_is_escape = 0;
       int lastlast_is_hexescape = 0;
       has_last = 0;
       first = start[i];
@@ -956,7 +956,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
           printf("Token name: %s\n", name);
           exit(1);
         }
-        lastlast_is_escape = 1;
+        //lastlast_is_escape = 1;
       }
       else if (first == '-')
       {
@@ -1021,7 +1021,7 @@ parse_bracketexpr(int casei, const char *re, size_t resz, size_t *remainderstart
         printf("Token name: %s\n", name);
         exit(1);
       }
-      last_is_escape = 0;
+      //last_is_escape = 0;
       last_is_hexescape = 0;
       last = first;
       has_last = 1;

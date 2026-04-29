@@ -1186,13 +1186,15 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
   // T[A,a] contains the rule A->w if and only if...
   for (i = 0; i < gen->rulecnt; i++)
   {
-    yale_uint_t rhs[gen->rules[i].noactcnt];
+    //yale_uint_t rhs[gen->rules[i].noactcnt];
     yale_uint_t a;
     yale_uint_t A = gen->rules[i].lhs;
+#if 0
     for (j = 0; j < gen->rules[i].noactcnt; j++)
     {
       rhs[j] = gen->rules[i].rhsnoact[j].value;
     }
+#endif
     for (a = 0; a < gen->tokencnt; a++)
     {
       struct firstset_entry2 *fi2 = firstset2_lookup(gen, gen->rules[i].rhsnoact, gen->rules[i].noactcnt);
