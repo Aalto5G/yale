@@ -2,6 +2,7 @@
 %option prefix="yaleyy"
 
 %{
+#define YY_NO_UNISTD_H 1
 #include <stdio.h>
 #include <stdlib.h>
 #include <limits.h>
