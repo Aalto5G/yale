@@ -2083,7 +2083,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        ctx->backtrackmid = new_backtrackstart;\n"); // FIXME correct?
   fprints(f, "        if (st)\n");
   fprints(f, "        {\n");
-  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parserupper, parserupper, parserupper);
+  fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, /*cbmask_orig,*/ negendmis;\n", parsername, parserupper, parserupper, parserupper);
   fprints(f, "          ssize_t cbr;\n");
   fprints(f, "          uint16_t bitoff;\n");
   fprints(f, "          size_t elemidx;\n");
@@ -2093,7 +2093,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "            %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
   fprints(f, "          }\n");
   add_cb_stack(f, "          ", parsername, cbssz);
-  fprints(f, "          cbmask_orig = cbmask;\n");
+  //fprints(f, "          cbmask_orig = cbmask;\n");
   fprintf(f, "          %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
   if_bitnz_call_cbs1_btbuf(f, "          ", parsername, "cbmask", "mid", cbcnt);
   fprintf(f, "          %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
@@ -2134,7 +2134,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "          %s_bitclear(&ctx->lastack_status);\n", parsername);
   fprints(f, "          if (st)\n");
   fprints(f, "          {\n");
-  fprintf(f, "            struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parserupper, parserupper, parserupper);
+  fprintf(f, "            struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, /*cbmask_orig,*/ negendmis;\n", parsername, parserupper, parserupper, parserupper);
   fprints(f, "            ssize_t cbr;\n");
   fprints(f, "            uint16_t bitoff;\n");
   fprints(f, "            size_t elemidx;\n");
@@ -2144,7 +2144,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "              %s_bitor(&cbmask, &cb2[st->acceptid].cbsmask);\n", parsername);
   fprints(f, "            }\n");
   add_cb_stack(f, "            ", parsername, cbssz);
-  fprints(f, "            cbmask_orig = cbmask;\n");
+  //fprints(f, "            cbmask_orig = cbmask;\n");
   fprintf(f, "            %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
   if_bitnz_call_cbs1_btbuf(f, "            ", parsername, "cbmask", "mid", cbcnt);
   fprintf(f, "            %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
@@ -2179,7 +2179,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    }\n");
   fprints(f, "    if (st)\n");
   fprints(f, "    {\n");
-  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, cbmask_orig, negendmis;\n", parsername, parserupper, parserupper, parserupper);
+  fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, /*cbmask_orig,*/ negendmis;\n", parsername, parserupper, parserupper, parserupper);
   fprints(f, "      ssize_t cbr;\n");
   fprints(f, "      size_t taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
@@ -2193,7 +2193,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "        }\n");
   fprints(f, "      }\n");
   add_cb_stack(f, "      ", parsername, cbssz);
-  fprints(f, "      cbmask_orig = cbmask;\n");
+  //fprints(f, "      cbmask_orig = cbmask;\n");
   fprintf(f, "      %s_bitandnot(&cbmask, &ctx->btbuf_status);\n", parsername);
   if_bitnz_call_cbs1_btbuf(f, "      ", parsername, "cbmask", "end", cbcnt);
   fprintf(f, "      %s_bitcopy(&endmask, &ctx->confirm_status);\n", parsername);
