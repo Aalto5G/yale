@@ -2,7 +2,6 @@
 #include "parser.h"
 #include "yalecontainerof.h"
 #include "yalemurmur.h"
-#include <sys/uio.h>
 
 #undef DO_PRINT_STACKCONFIG
 
@@ -219,8 +218,8 @@ void parsergen_free(struct ParserGen *gen)
   }
   for (i = 0; i < gen->tokencnt; i++)
   {
-    free(gen->re_by_idx[i].iov_base);
-    gen->re_by_idx[i].iov_base = NULL;
+    free(gen->re_by_idx[i].yale_iov_base);
+    gen->re_by_idx[i].yale_iov_base = NULL;
   }
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
@@ -2747,8 +2746,8 @@ yale_uint_t parsergen_add_token(struct ParserGen *gen, char *re, size_t resz, in
     printf("Token name: %s\n", name);
     exit(1);
   }
-  gen->re_by_idx[gen->tokencnt].iov_base = memdup(re, resz);
-  gen->re_by_idx[gen->tokencnt].iov_len = resz;
+  gen->re_by_idx[gen->tokencnt].yale_iov_base = memdup(re, resz);
+  gen->re_by_idx[gen->tokencnt].yale_iov_len = resz;
   gen->priorities[gen->tokencnt] = prio;
   gen->caseis[gen->tokencnt] = casei;
   return gen->tokencnt++;

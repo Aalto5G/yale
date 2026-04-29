@@ -6,10 +6,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/uio.h>
 #include <ctype.h>
 #include "bitset.h"
 #include "yalehashtable.h"
+
+struct yale_iovec {
+  void *yale_iov_base;
+  size_t yale_iov_len;
+};
 
 struct re;
 
@@ -197,7 +201,7 @@ struct re *parse_branch(int casei, const char *re, size_t resz, size_t *remainde
 // RE: branch | RE
 struct re *parse_re(int casei, const char *re, size_t resz, size_t *remainderstart, const char *name);
 
-struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz,
+struct re *parse_res(struct yale_iovec *regexps, yale_uint_t *pick_those, size_t resz,
                      int *caseis, struct yale *yale);
 
 void gennfa(struct re *regexp,
@@ -266,7 +270,7 @@ perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
 
 void
 pick(struct nfa2dfa_workarea *area, struct nfa_node **nsglobal, struct dfa_node **dsglobal,
-     struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
+     struct yale_iovec *res, struct pick_those_struct *pick_those, int *priorities,
      int *caseis, struct yale *yale);
 
 void

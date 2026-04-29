@@ -4,7 +4,6 @@
 #include "yale.h"
 #include "../runtime/yalecommon.h"
 #include "yaleuint.h"
-#include <sys/uio.h>
 
 struct bitset {
   uint64_t bitset[(YALE_UINT_MAX_LEGAL+1+63)/64];

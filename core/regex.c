@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/uio.h>
 #include <ctype.h>
 #include "regex.h"
 #include "yalemurmur.h"
@@ -1217,7 +1216,7 @@ struct re *parse_re(int casei, const char *re, size_t resz, size_t *remaindersta
   }
 }
 
-struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz, int *caseis, struct yale *yale)
+struct re *parse_res(struct yale_iovec *regexps, yale_uint_t *pick_those, size_t resz, int *caseis, struct yale *yale)
 {
   struct re **res;
   struct re *result;
@@ -1232,10 +1231,10 @@ struct re *parse_res(struct iovec *regexps, yale_uint_t *pick_those, size_t resz
   result->u.altmulti.resz = resz;
   for (i = 0; i < resz; i++)
   {
-    size_t regexplen = regexps[pick_those[i]].iov_len;
+    size_t regexplen = regexps[pick_those[i]].yale_iov_len;
     size_t remainderstart;
     const char *name = yale->ns[yale->tokens[pick_those[i]].nsitem].name;
-    res[i] = parse_re(caseis[pick_those[i]], (const char*)regexps[pick_those[i]].iov_base, regexplen, &remainderstart, name);
+    res[i] = parse_re(caseis[pick_those[i]], (const char*)regexps[pick_those[i]].yale_iov_base, regexplen, &remainderstart, name);
     if (remainderstart != regexplen)
     {
       printf("error: regexp not fully parsed to end\n");
@@ -1443,7 +1442,7 @@ perf_trans(yale_uint_t *transitions, struct transitionbufs *bufs,
 void
 pick(struct nfa2dfa_workarea *area,
      struct nfa_node **nsglobal, struct dfa_node **dsglobal,
-     struct iovec *res, struct pick_those_struct *pick_those, int *priorities,
+     struct yale_iovec *res, struct pick_those_struct *pick_those, int *priorities,
      int *caseis, struct yale *yale)
 {
   yale_uint_t i;

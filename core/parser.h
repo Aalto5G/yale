@@ -3,7 +3,6 @@
 
 #include "yale.h"
 #include "regex.h"
-#include <sys/uio.h>
 
 struct dict {
   struct bitset bitset[YALE_UINT_MAX_LEGAL + 1];
@@ -115,7 +114,7 @@ struct ParserGen {
   struct pick_those_struct pick_thoses[YALE_UINT_MAX_LEGAL];
   char *conds[YALE_UINT_MAX_LEGAL];
   struct nonterminal_conds nonterminal_conds[YALE_UINT_MAX_LEGAL];
-  struct iovec re_by_idx[YALE_UINT_MAX_LEGAL];
+  struct yale_iovec re_by_idx[YALE_UINT_MAX_LEGAL];
   int priorities[YALE_UINT_MAX_LEGAL];
   int caseis[YALE_UINT_MAX_LEGAL];
   struct yale_gen_rule rules[YALE_UINT_MAX_LEGAL]; // 382 kB

@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/uio.h>
 #include <ctype.h>
 #include "regex.h"
 
@@ -49,16 +48,16 @@ int main(int argc, char **argv)
     "\r?\n[\t ]+" ,
   };
 #endif
-  struct iovec http_res[] = {
-    {.iov_base = (void*)re0, .iov_len = sizeof(re0)-1, },
-    {.iov_base = (void*)re1, .iov_len = sizeof(re1)-1, },
-    {.iov_base = (void*)re2, .iov_len = sizeof(re2)-1, },
-    {.iov_base = (void*)re3, .iov_len = sizeof(re3)-1, },
-    {.iov_base = (void*)re4, .iov_len = sizeof(re4)-1, },
-    {.iov_base = (void*)re5, .iov_len = sizeof(re5)-1, },
-    {.iov_base = (void*)re6, .iov_len = sizeof(re6)-1, },
-    {.iov_base = (void*)re7, .iov_len = sizeof(re7)-1, },
-    {.iov_base = (void*)re8, .iov_len = sizeof(re8)-1, },
+  struct yale_iovec http_res[] = {
+    {.yale_iov_base = (void*)re0, .yale_iov_len = sizeof(re0)-1, },
+    {.yale_iov_base = (void*)re1, .yale_iov_len = sizeof(re1)-1, },
+    {.yale_iov_base = (void*)re2, .yale_iov_len = sizeof(re2)-1, },
+    {.yale_iov_base = (void*)re3, .yale_iov_len = sizeof(re3)-1, },
+    {.yale_iov_base = (void*)re4, .yale_iov_len = sizeof(re4)-1, },
+    {.yale_iov_base = (void*)re5, .yale_iov_len = sizeof(re5)-1, },
+    {.yale_iov_base = (void*)re6, .yale_iov_len = sizeof(re6)-1, },
+    {.yale_iov_base = (void*)re7, .yale_iov_len = sizeof(re7)-1, },
+    {.yale_iov_base = (void*)re8, .yale_iov_len = sizeof(re8)-1, },
   };
   int priorities[] = {
     1,
