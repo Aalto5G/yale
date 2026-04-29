@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "yale.h"
 #include "yyutils.h"
 #include <stdio.h>
@@ -195,7 +194,7 @@ int main(int argc, char **argv)
     if (c)
     {
       f = fopen(cnamebuf, "w");
-      fprintf(f, "#define _GNU_SOURCE\n");
+      //fprintf(f, "#define _GNU_SOURCE\n");
       if (yale.cs.data)
       {
         fprintf(f, "%s", yale.cs.data);

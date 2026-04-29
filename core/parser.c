@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "yale.h"
 #include "parser.h"
 #include "yalecontainerof.h"

@@ -1,4 +1,3 @@
-#define _GNU_SOURCE
 #include "parser.h"
 #include "regex.h"
 
