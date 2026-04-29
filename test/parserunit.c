@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <fcntl.h>
 #include <unistd.h>
 
 static size_t freadall(void **pbuf, size_t *pcap, FILE *stream)
