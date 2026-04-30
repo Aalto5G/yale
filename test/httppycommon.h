@@ -2,9 +2,9 @@
 #define _HTTPPYCOMMON_H_
 
 #include <stddef.h>
-#include <unistd.h>
+#include "yalecommon2.h"
 
 struct httppy_parserctx;
-ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *btn);
+yale_ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *btn);
 
 #endif

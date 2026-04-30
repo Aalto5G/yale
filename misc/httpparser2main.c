@@ -24,7 +24,7 @@ int main(int argc, char **argv)
   char buf[] = "GET / HTTP/1.1\r\n";
   size_t sz = sizeof(buf)-1;
   uint8_t state;
-  ssize_t ret = 0;
+  yale_ssize_t ret = 0;
   http_init_statemachine(&rectx);
   ret += http_feed_statemachine(&rectx, http_states_5, buf+ret, sz-ret, &state, NULL, NULL, 255);
   if (ret != 3 || state != 5)

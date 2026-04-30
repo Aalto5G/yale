@@ -20,7 +20,7 @@ static inline void myPutchar(char ch)
 
 int abort_on_mistake = 0;
 
-static ssize_t print(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
+static yale_ssize_t print(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;
@@ -69,12 +69,12 @@ static ssize_t print(const char *buf, size_t siz, int start, struct backtracktes
   return -EAGAIN;
 }
 
-ssize_t cb1(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
+yale_ssize_t cb1(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
 {
   printf("1: ");
   return print(buf, siz, start, btn);
 }
-ssize_t cb2(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
+yale_ssize_t cb2(const char *buf, size_t siz, int start, struct backtracktestcb_parserctx *btn)
 {
   printf("2: ");
   return print(buf, siz, start, btn);
@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 {
   char input1[] = "abcdf" "abde";
   struct backtracktestcb_parserctx pctx = BACKTRACKTESTCB_PARSERCTX_EMPTY;
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
 
   backtracktestcb_parserctx_init(&pctx);

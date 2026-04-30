@@ -10,13 +10,13 @@ ssl_cctx_init(struct ssl_cctx *cctx)
     ssl1_parserctx_init(&cctx->pctx);
 }
 
-ssize_t
+yale_ssize_t
 ssl_cctx_feed(struct ssl_cctx *cctx, const char *dat, size_t sz, int eof)
 {
     return ssl1_parse_block(&cctx->pctx, dat, sz, eof);
 }
 
-ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
+yale_ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -30,12 +30,12 @@ ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
+yale_ssize_t feed1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {
   return ssl2_parse_block(&pctx->ssl2, buf, siz, 0); // FIXME eofindicator
 }
 
-ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
+yale_ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -49,15 +49,15 @@ ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
+yale_ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl3_parserctx_init(&pctx->ssl3);
   }
   result = ssl3_parse_block(&pctx->ssl3, buf, siz, !!(flags & YALE_FLAG_END)); // FIXME eofindicator
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -71,13 +71,13 @@ ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pct
   return result;
 }
 
-ssize_t szset32_3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
+yale_ssize_t szset32_3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
   pctx->bytes_sz = 32;
   return -EAGAIN;
 }
 
-ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
+yale_ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -91,15 +91,15 @@ ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
+yale_ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl4_parserctx_init(&pctx->ssl4);
   }
   result = ssl4_parse_block(&pctx->ssl4, buf, siz, !!(flags & YALE_FLAG_END));
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -113,7 +113,7 @@ ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pct
   return result;
 }
 
-ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
+yale_ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -127,15 +127,15 @@ ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
+yale_ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl5_parserctx_init(&pctx->ssl5);
   }
   result = ssl5_parse_block(&pctx->ssl5, buf, siz, !!(flags & YALE_FLAG_END));
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -149,7 +149,7 @@ ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pct
   return result;
 }
 
-ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
+yale_ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -163,15 +163,15 @@ ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
+yale_ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl6_parserctx_init(&pctx->ssl6);
   }
   result = ssl6_parse_block(&pctx->ssl6, buf, siz, !!(flags & YALE_FLAG_END));
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -185,7 +185,7 @@ ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pct
   return result;
 }
 
-ssize_t szbe6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
+yale_ssize_t szbe6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -202,7 +202,7 @@ ssize_t szbe6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pct
   
 
 
-ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *btn)
+yale_ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *btn)
 {
   struct ssl5_parserctx *ctx5 = YALE_CONTAINER_OF(btn, struct ssl5_parserctx, ssl6);
   struct ssl4_parserctx *ctx4 = YALE_CONTAINER_OF(ctx5, struct ssl4_parserctx, ssl5);

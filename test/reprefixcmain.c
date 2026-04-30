@@ -14,7 +14,7 @@ static inline void myPutchar(char ch)
   }
 }
 
-ssize_t print(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
+yale_ssize_t print(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -41,7 +41,7 @@ ssize_t print(const char *buf, size_t siz, int start, struct reprefix_parserctx 
   putchar('\n');
   return -EAGAIN;
 }
-ssize_t printall(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
+yale_ssize_t printall(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -69,7 +69,7 @@ ssize_t printall(const char *buf, size_t siz, int start, struct reprefix_parserc
   putchar('\n');
   return -EAGAIN;
 }
-ssize_t printcont(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
+yale_ssize_t printcont(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -98,7 +98,7 @@ ssize_t printcont(const char *buf, size_t siz, int start, struct reprefix_parser
   return -EAGAIN;
 }
 
-ssize_t szbe(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
+yale_ssize_t szbe(const char *buf, size_t siz, int start, struct reprefix_parserctx *pctx)
 {
   size_t i;
   if (start & YALE_FLAG_START)
@@ -115,7 +115,7 @@ ssize_t szbe(const char *buf, size_t siz, int start, struct reprefix_parserctx *
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct reprefix_parserctx pctx2 = REPREFIX_PARSERCTX_EMPTY;
   struct reprefix_parserctx pctx = REPREFIX_PARSERCTX_EMPTY;
@@ -129,7 +129,7 @@ int main(int argc, char **argv)
     consumed = reprefix_parse_block(&pctx, reprefix, sizeof(reprefix)-1, 1);
     if (consumed != -EAGAIN && consumed != sizeof(reprefix)-1)
     {
-      printf("Consumed %zd expected -EAGAIN\n", consumed);
+      printf("Consumed %lld expected -EAGAIN\n", (long long)consumed);
       abort();
     }
   }
@@ -142,7 +142,7 @@ int main(int argc, char **argv)
     consumed = reprefix_parse_block(&pctx, reprefix+i, 1, i == sizeof(reprefix) - 2);
     if (consumed != -EAGAIN && !(consumed == 1 && i == sizeof(reprefix) - 2))
     {
-      printf("Consumed %zd expected -EAGAIN\n", consumed);
+      printf("Consumed %lld expected -EAGAIN\n", (long long)consumed);
       abort();
     }
   }

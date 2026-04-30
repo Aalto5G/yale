@@ -172,11 +172,11 @@ void dfa_connect_default(struct dfa_node *n, yale_uint_t node2);
 #define BITSET_HASH_EMPTY {.tblsz = 0}
 
 // FIXME this algorithm requires thorough review
-ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
+yale_ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
 
 void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities, struct yale *yale);
 
-ssize_t maximal_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
+yale_ssize_t maximal_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound);
 
 void dfaviz(struct dfa_node *ds, yale_uint_t cnt);
 

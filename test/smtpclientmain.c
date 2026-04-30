@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   struct smtpclient_parserctx pctx = SMTPCLIENT_PARSERCTX_EMPTY;
   char smtp[] =
     "HELO relay.example.com\r\n"
@@ -27,7 +27,7 @@ int main(int argc, char **argv)
 
   smtpclient_parserctx_init(&pctx);
   consumed = smtpclient_parse_block(&pctx, smtp, sizeof(smtp)-1, 1);
-  printf("consumed: %zd\n", consumed);
+  printf("consumed: %lld\n", (long long)consumed);
   if (consumed != sizeof(smtp)-1)
   {
     abort();

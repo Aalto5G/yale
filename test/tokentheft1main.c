@@ -4,7 +4,7 @@
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   struct tokentheft1_parserctx pctx = TOKENTHEFT1_PARSERCTX_EMPTY;
   char tokentheft1[] = "content-type";
 

@@ -14,7 +14,7 @@ struct http_cctx {
 void
 http_cctx_init(struct http_cctx *cctx);
 
-ssize_t
+yale_ssize_t
 http_cctx_feed(struct http_cctx *cctx, const char *dat, size_t sz, int eof);
 
 #endif

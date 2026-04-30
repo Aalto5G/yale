@@ -8,7 +8,7 @@ int main(int argc, char **argv)
   char input3[] = "abcdeghcdegi";
   char input4[] = "abcdefbcdeghcdegi";
   struct backtracktest_parserctx pctx = BACKTRACKTEST_PARSERCTX_EMPTY;
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
 
   backtracktest_parserctx_init(&pctx);

@@ -168,7 +168,7 @@ void parsergen_set_conds(struct ParserGen *gen, char **conds, yale_uint_t condcn
 
 void parsergen_set_cb(struct ParserGen *gen, const struct cb *cbs, yale_uint_t cbcnt);
 
-ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr);
+yale_ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr);
 
 void parsergen_dump_headers(struct ParserGen *gen, FILE *f);
 

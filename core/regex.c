@@ -304,7 +304,7 @@ void dfa_connect_default(struct dfa_node *n, yale_uint_t node2)
 }
 
 // FIXME this algorithm requires thorough review
-ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound)
+yale_ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound)
 {
   struct bitset tovisit = BITSET_EMPTY;
   struct bitset visited = BITSET_EMPTY;
@@ -352,7 +352,7 @@ ssize_t state_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound)
       }
     }
   }
-  return (ssize_t)max_backtrack;
+  return (yale_ssize_t)max_backtrack;
 }
 
 void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t state, int *priorities, struct yale *yale)
@@ -462,12 +462,12 @@ void __attribute__((noinline)) set_accepting(struct dfa_node **ds, yale_uint_t s
   }
 }
 
-ssize_t maximal_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound)
+yale_ssize_t maximal_backtrack(struct dfa_node **ds, yale_uint_t state, size_t bound)
 {
   struct bitset tovisit = BITSET_EMPTY;
   struct bitset visited = BITSET_EMPTY;
-  ssize_t state_bt;
-  ssize_t max_backtrack = 0;
+  yale_ssize_t state_bt;
+  yale_ssize_t max_backtrack = 0;
   size_t i;
   set_bitset(&tovisit, state);
   while (!bitset_empty(&tovisit))
@@ -1552,13 +1552,13 @@ void dump_headers(FILE *f, const char *parsername, size_t max_bt, size_t cbssz, 
   fprints(f, "\n");
   if (cbssz)
   {
-    fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
+    fprints(f, "yale_ssize_t\n");
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, yale_ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
   }
   else
   {
-    fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
+    fprints(f, "yale_ssize_t\n");
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, yale_ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1);//, void *baton);\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
   }
   fprints(f, "\n");
   free(parserupper);
@@ -1733,7 +1733,7 @@ if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, co
   fprintf(f, "%s        if (ctx->backtrack%s > ctx->backtrackstart)\n", indent, endpos);
   fprintf(f, "%s        {\n", indent);
   fprintf(f, "%s          cbr = cbtbl[64*elemidx+(size_t)bitoff]((char*)ctx->backtrack + ctx->backtrackstart, (size_t)(ctx->backtrack%s - ctx->backtrackstart), (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent, endpos);
-  fprintf(f, "%s          if (should_return(cbr, (ssize_t)(ctx->backtrack%s - ctx->backtrackstart)))\n", indent, endpos);
+  fprintf(f, "%s          if (should_return(cbr, (yale_ssize_t)(ctx->backtrack%s - ctx->backtrackstart)))\n", indent, endpos);
   fprintf(f, "%s          {\n", indent);
   fprintf(f, "%s            return cbr;\n", indent);
   fprintf(f, "%s          }\n", indent);
@@ -1741,12 +1741,12 @@ if_bitnz_call_cbs1_btbuf(FILE *f, const char *indent, const char *parsername, co
   fprintf(f, "%s        else\n", indent);
   fprintf(f, "%s        {\n", indent);
   fprintf(f, "%s          cbr = cbtbl[64*elemidx+(size_t)bitoff]((char*)ctx->backtrack + ctx->backtrackstart, sizeof(ctx->backtrack) - ctx->backtrackstart, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent);
-  fprintf(f, "%s          if (should_return(cbr, (ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart)))\n", indent);
+  fprintf(f, "%s          if (should_return(cbr, (yale_ssize_t)(sizeof(ctx->backtrack) - ctx->backtrackstart)))\n", indent);
   fprintf(f, "%s          {\n", indent);
   fprintf(f, "%s            return cbr;\n", indent);
   fprintf(f, "%s          }\n", indent);
   fprintf(f, "%s          cbr = cbtbl[64*elemidx+(size_t)bitoff]((char*)ctx->backtrack, ctx->backtrack%s, (ctx->start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n", indent, endpos);
-  fprintf(f, "%s          if (should_return(cbr, (ssize_t)ctx->backtrack%s))\n", indent, endpos);
+  fprintf(f, "%s          if (should_return(cbr, (yale_ssize_t)ctx->backtrack%s))\n", indent, endpos);
   fprintf(f, "%s          {\n", indent);
   fprintf(f, "%s            return cbr;\n", indent);
   fprintf(f, "%s          }\n", indent);
@@ -1921,16 +1921,16 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "}\n");
   fprints(f, "\n");
   fprints(f, "static inline int\n");
-  fprintf(f, "should_return(ssize_t cbr, ssize_t sz)\n");
+  fprintf(f, "should_return(yale_ssize_t cbr, yale_ssize_t sz)\n");
   fprintf(f, "{\n");
   fprintf(f, "  return cbr != sz && cbr != -EAGAIN && cbr != -EWOULDBLOCK;\n");
   fprintf(f, "}\n");
-  fprintf(f, "static ssize_t\n");
+  fprintf(f, "static yale_ssize_t\n");
   fprintf(f, "%s_call_cbs1(struct %s_parserctx *pctx, const struct %s_cbset *cbmask, const void *buf, size_t sz,\n", parsername, parsername, parsername);
-  fprintf(f, "               ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
+  fprintf(f, "               yale_ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
   fprintf(f, "{\n");
   fprintf(f, "  int bitoff;\n");
-  fprintf(f, "  ssize_t cbr;\n");
+  fprintf(f, "  yale_ssize_t cbr;\n");
   fprintf(f, "  size_t elemidx;\n");
   fprintf(f, "  for (elemidx = 0; elemidx < sizeof(cbmask->elems)/sizeof(*cbmask->elems); elemidx++)\n");
   fprintf(f, "  {\n");
@@ -1943,7 +1943,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
   fprintf(f, "        cbr = cbtbl[64*elemidx + (size_t)bitoff](buf, sz, (pctx->rctx.start_status.elems[elemidx] & (1ULL<<bitoff)) ? 0 : YALE_FLAG_START, pctx);\n");
-  fprintf(f, "        if (should_return(cbr, (ssize_t)sz))\n");
+  fprintf(f, "        if (should_return(cbr, (yale_ssize_t)sz))\n");
   fprintf(f, "        {\n");
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
@@ -1976,13 +1976,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "  }\n");
   fprintf(f, "  return -EAGAIN;\n");
   fprintf(f, "}\n");
-  fprintf(f, "static ssize_t\n");
+  fprintf(f, "static yale_ssize_t\n");
   fprintf(f, "%s_call_cbsflg(struct %s_parserctx *pctx, const struct %s_cbset *cbmask, const void *buf, size_t sz,\n", parsername, parsername, parsername);
   fprintf(f, "                 int flag,\n");
-  fprintf(f, "                 ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
+  fprintf(f, "                 yale_ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*))\n", parsername);
   fprintf(f, "{\n");
   fprintf(f, "  int bitoff;\n");
-  fprintf(f, "  ssize_t cbr;\n");
+  fprintf(f, "  yale_ssize_t cbr;\n");
   fprintf(f, "  size_t elemidx;\n");
   fprintf(f, "  for (elemidx = 0; elemidx < sizeof(cbmask->elems)/sizeof(*cbmask->elems); elemidx++)\n");
   fprintf(f, "  {\n");
@@ -1995,7 +1995,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "      if (cbmask->elems[elemidx] & (1ULL<<bitoff))\n");
   fprintf(f, "      {\n");
   fprintf(f, "        cbr = cbtbl[64*elemidx + (size_t)bitoff](buf, sz, flag, pctx);\n");
-  fprintf(f, "        if (should_return(cbr, (ssize_t)sz))\n");
+  fprintf(f, "        if (should_return(cbr, (yale_ssize_t)sz))\n");
   fprintf(f, "        {\n");
   fprintf(f, "          return cbr;\n");
   fprintf(f, "        }\n");
@@ -2030,13 +2030,13 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "}\n");
   if (cbssz)
   {
-    fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
+    fprints(f, "yale_ssize_t\n");
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, yale_ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1, const yale_parser_uint%d_t *cbstack, yale_parser_uint%d_t cbstacksz)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits, parserbits, parserbits);
   }
   else
   {
-    fprints(f, "ssize_t\n");
-    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
+    fprints(f, "yale_ssize_t\n");
+    fprintf(f, "%s_feed_statemachine(struct %s_rectx *ctx, const struct yale_state_p%dl%d *stbl, const void *buf, size_t sz, int eofindicator, yale_parser_uint%d_t *state, yale_ssize_t(*const cbtbl[])(const char*, size_t, int, struct %s_parserctx*), const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1)//, void *baton)\n", parsername, parsername, parserbits, lexerbits, parserbits, parsername, parsername, parserbits);
   }
   fprints(f, "{\n");
   fprints(f, "  const unsigned char *ubuf = (unsigned char*)buf;\n");
@@ -2082,7 +2082,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        if (st)\n");
   fprints(f, "        {\n");
   fprintf(f, "          struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, /*cbmask_orig,*/ negendmis;\n", parsername, parserupper, parserupper, parserupper);
-  fprints(f, "          ssize_t cbr;\n");
+  fprints(f, "          yale_ssize_t cbr;\n");
   fprints(f, "          uint16_t bitoff;\n");
   fprints(f, "          size_t elemidx;\n");
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
@@ -2133,7 +2133,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "          if (st)\n");
   fprints(f, "          {\n");
   fprintf(f, "            struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, /*cbmask_orig,*/ negendmis;\n", parsername, parserupper, parserupper, parserupper);
-  fprints(f, "            ssize_t cbr;\n");
+  fprints(f, "            yale_ssize_t cbr;\n");
   fprints(f, "            uint16_t bitoff;\n");
   fprints(f, "            size_t elemidx;\n");
   fprintf(f, "            %s_bitmaybeset(&cbmask, cb1);\n", parsername);
@@ -2178,7 +2178,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "    if (st)\n");
   fprints(f, "    {\n");
   fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY, /*cbmask_orig,*/ negendmis;\n", parsername, parserupper, parserupper, parserupper);
-  fprints(f, "      ssize_t cbr;\n");
+  fprints(f, "      yale_ssize_t cbr;\n");
   fprints(f, "      size_t taintidx;\n");
   fprints(f, "      uint16_t bitoff;\n");
   fprints(f, "      size_t elemidx;\n");
@@ -2292,7 +2292,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
-  fprintf(f, "          ssize_t cbr;\n");
+  fprintf(f, "          yale_ssize_t cbr;\n");
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "          if (start)\n");
   fprintf(f, "          {\n");
@@ -2344,7 +2344,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "          }\n");
   fprints(f, "        }\n");
   fprints(f, "      }\n");
-  fprints(f, "      return (ssize_t)i;\n");
+  fprints(f, "      return (yale_ssize_t)i;\n");
   fprints(f, "    }\n");
   fprints(f, "    st = &stbl[ctx->state]; // strangely, ctx->state seems faster here\n");
   fprints(f, "    if (st->accepting)\n");
@@ -2362,7 +2362,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "          struct %s_cbset endmask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "          struct %s_cbset mismask = %s_CBSET_EMPTY;\n", parsername, parserupper);
   fprintf(f, "          struct %s_cbset negendmis;\n", parsername);
-  fprintf(f, "          ssize_t cbr;\n");
+  fprintf(f, "          yale_ssize_t cbr;\n");
   fprintf(f, "          %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "          if (start)\n");
   fprintf(f, "          {\n");
@@ -2394,7 +2394,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "#if %s_BACKTRACKLEN_PLUS_1 > 1\n", parserupper);
   fprints(f, "        ctx->backtrackstart = ctx->backtrackend;\n");
   fprints(f, "#endif\n");
-  fprints(f, "        return (ssize_t)(i + 1);\n");
+  fprints(f, "        return (yale_ssize_t)(i + 1);\n");
   fprints(f, "      }\n");
   fprints(f, "      else\n");
   fprints(f, "      {\n");
@@ -2446,7 +2446,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
 #if 0 // Not needed due to this being the last block
   fprintf(f, "        struct %s_cbset negendmis;\n", parsername);
 #endif
-  fprints(f, "        ssize_t cbr;\n");
+  fprints(f, "        yale_ssize_t cbr;\n");
   fprintf(f, "        %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprints(f, "        if (start)\n");
   fprints(f, "        {\n");
@@ -2501,7 +2501,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprints(f, "        }\n");
 #endif
   fprints(f, "      }\n");
-  fprints(f, "      return (ssize_t)i;\n"); // FIXME what to return?
+  fprints(f, "      return (yale_ssize_t)i;\n"); // FIXME what to return?
   fprints(f, "    }\n");
   fprintf(f, "    if (ctx->last_accept == YALE_LEXER_UINT%d_MAX)\n", lexerbits);
   fprints(f, "    {\n");
@@ -2528,7 +2528,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
 #if 0 // Not needed due to this being the last block
   fprintf(f, "      struct %s_cbset negendmis;\n", parsername);
 #endif
-  fprintf(f, "      ssize_t cbr;\n");
+  fprintf(f, "      yale_ssize_t cbr;\n");
   fprintf(f, "      %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "      if (start)\n");
   fprintf(f, "      {\n");
@@ -2595,7 +2595,7 @@ dump_chead(FILE *f, const char *parsername, int nofastpath, size_t cbssz, size_t
   fprintf(f, "    enum yale_flags flags = 0;\n");
   fprints(f, "    size_t taintidx;\n");
   //fprints(f, "    uint16_t bitoff;\n");
-  fprintf(f, "    ssize_t cbr;\n");
+  fprintf(f, "    yale_ssize_t cbr;\n");
   fprintf(f, "    %s_bitmaybeset(&cbmask, cb1);\n", parsername);
   fprintf(f, "    if (start)\n");
   fprintf(f, "    {\n");

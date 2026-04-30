@@ -14,7 +14,7 @@ static inline void myPutchar(char ch)
   }
 }
 
-ssize_t print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+yale_ssize_t print(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -41,7 +41,7 @@ ssize_t print(const char *buf, size_t siz, int start, struct lenprefix_parserctx
   putchar('\n');
   return -EAGAIN;
 }
-ssize_t printall(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+yale_ssize_t printall(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -69,7 +69,7 @@ ssize_t printall(const char *buf, size_t siz, int start, struct lenprefix_parser
   putchar('\n');
   return -EAGAIN;
 }
-ssize_t printcont(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+yale_ssize_t printcont(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -98,7 +98,7 @@ ssize_t printcont(const char *buf, size_t siz, int start, struct lenprefix_parse
   return -EAGAIN;
 }
 
-ssize_t szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
+yale_ssize_t szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx *pctx)
 {
   size_t i;
   if (start & YALE_FLAG_START)
@@ -115,7 +115,7 @@ ssize_t szbe(const char *buf, size_t siz, int start, struct lenprefix_parserctx 
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct lenprefix_parserctx pctx2 = LENPREFIX_PARSERCTX_EMPTY;
   struct lenprefix_parserctx pctx = LENPREFIX_PARSERCTX_EMPTY;
@@ -140,7 +140,7 @@ int main(int argc, char **argv)
     consumed = lenprefix_parse_block(&pctx, lenprefix, sizeof(lenprefix)-1, 1);
     if (consumed != -EAGAIN && consumed != sizeof(lenprefix)-1)
     {
-      printf("Consumed %zd expected -EAGAIN\n", consumed);
+      printf("Consumed %lld expected -EAGAIN\n", (long long)consumed);
       abort();
     }
   }
@@ -153,7 +153,7 @@ int main(int argc, char **argv)
     consumed = lenprefix_parse_block(&pctx, lenprefix+i, 1, i == sizeof(lenprefix) - 2);
     if (consumed != -EAGAIN && !(consumed == 1 && i == sizeof(lenprefix) - 2))
     {
-      printf("Consumed %zd expected -EAGAIN\n", consumed);
+      printf("Consumed %lld expected -EAGAIN\n", (long long)consumed);
       abort();
     }
   }

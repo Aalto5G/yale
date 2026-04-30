@@ -17,7 +17,7 @@ static inline void myPutchar(char ch)
 }
 #endif
 
-ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn)
+yale_ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;
@@ -40,7 +40,7 @@ ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn
   putchar('\n');
   return -EAGAIN;
 }
-ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn)
+yale_ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn)
 {
 #ifdef DO_PRINT
   putchar('<');
@@ -53,7 +53,7 @@ ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *b
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct http_parserctx pctx = HTTP_PARSERCTX_EMPTY;
   char http[] =
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
   {
     http_parserctx_init(&pctx);
     consumed = http_parse_block(&pctx, http, sizeof(http)-1, 1);
-    printf("Consumed: %zd\n", consumed);
+    printf("Consumed: %lld\n", (long long)consumed);
     if (consumed != sizeof(http)-1)
     {
       abort();

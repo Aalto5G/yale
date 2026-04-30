@@ -18,7 +18,7 @@ static inline void myPutchar(char ch)
 }
 #endif
 
-ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *btn)
+yale_ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;
@@ -38,7 +38,7 @@ ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *b
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct httppy_parserctx pctx = HTTPPY_PARSERCTX_EMPTY;
   struct timeval tv1 = TV_EMPTY, tv2 = TV_EMPTY;

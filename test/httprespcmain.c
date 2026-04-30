@@ -3,7 +3,7 @@
 #include <sys/time.h>
 #include <ctype.h>
 
-ssize_t sztxt(const char *buf, size_t siz, int flags, struct httpresp_parserctx *pctx)
+yale_ssize_t sztxt(const char *buf, size_t siz, int flags, struct httpresp_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -23,7 +23,7 @@ ssize_t sztxt(const char *buf, size_t siz, int flags, struct httpresp_parserctx 
   return -EAGAIN;
 }
 
-ssize_t invalidate(const char *buf, size_t siz, int flags, struct httpresp_parserctx *btn)
+yale_ssize_t invalidate(const char *buf, size_t siz, int flags, struct httpresp_parserctx *btn)
 {
   printf("EINVAL 2\n");
   return -EINVAL;
@@ -32,7 +32,7 @@ ssize_t invalidate(const char *buf, size_t siz, int flags, struct httpresp_parse
 #define TV_EMPTY {.tv_sec = 0}
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct httpresp_parserctx pctx = HTTPRESP_PARSERCTX_EMPTY;
   struct timeval tv1 = TV_EMPTY, tv2 = TV_EMPTY;
@@ -1887,7 +1887,7 @@ unsigned char peer1_12[] = { /* Packet 18 */
     consumed = httpresp_parse_block(&pctx, (char*)peer1_2, sizeof(peer1_2), 0);
     if (consumed != sizeof(peer1_2) && consumed != -EAGAIN)
     {
-      printf("Fail 1 %zd\n", consumed);
+      printf("Fail 1 %lld\n", (long long)consumed);
       abort();
     }
     consumed = httpresp_parse_block(&pctx, (char*)peer1_3, sizeof(peer1_3), 0);
@@ -1955,7 +1955,7 @@ unsigned char peer1_12[] = { /* Packet 18 */
                    sizeof(peer1_10) +
                    sizeof(peer1_11) +
                    sizeof(peer1_12);
-  printf("sz %zd\n", totalsz);
+  printf("sz %zu\n", totalsz);
   printf("%g Gbps\n", totalsz*8/us/1e3);
 
   return 0;

@@ -107,7 +107,7 @@ int main(int argc, char **argv)
     {.pick_those=pick_those10, .len=sizeof(pick_those10)/sizeof(*pick_those10)},
     {.pick_those=pick_those11, .len=sizeof(pick_those11)/sizeof(*pick_those11)},
   };
-  ssize_t maxbt = 0;
+  yale_ssize_t maxbt = 0;
   FILE *f;
 
   //yale_uint_t transitions[256] = {0};
@@ -232,7 +232,7 @@ int main(int argc, char **argv)
     collect(pick_thoses, sizeof(pick_thoses)/sizeof(*pick_thoses), &bufs, malloc_fn, NULL);
     for (i = 0; i < sizeof(pick_thoses)/sizeof(*pick_thoses); i++)
     {
-      ssize_t curbt;
+      yale_ssize_t curbt;
       curbt = maximal_backtrack(pick_thoses[i].ds, 0, 250);
       if (curbt < 0)
       {

@@ -42,7 +42,7 @@ void printsp(const char *buf, size_t siz, int start, void *btn)
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct http_parserctx pctx = HTTP_PARSERCTX_EMPTY;
   char http[] =

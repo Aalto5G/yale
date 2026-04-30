@@ -13,7 +13,7 @@ struct ssl_cctx {
 void
 ssl_cctx_init(struct ssl_cctx *cctx);
 
-ssize_t
+yale_ssize_t
 ssl_cctx_feed(struct ssl_cctx *cctx, const char *dat, size_t sz, int eof);
 
 #endif

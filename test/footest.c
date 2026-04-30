@@ -1,7 +1,7 @@
 #include "fooparsercparser.h"
 #include "foocommon.h"
 
-ssize_t barcb(const char *buf, size_t siz, int start, struct fooparser_parserctx *btn)
+yale_ssize_t barcb(const char *buf, size_t siz, int start, struct fooparser_parserctx *btn)
 {
   const char *ubuf = buf;
   size_t i;
@@ -31,7 +31,7 @@ ssize_t barcb(const char *buf, size_t siz, int start, struct fooparser_parserctx
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct fooparser_parserctx pctx = FOOPARSER_PARSERCTX_EMPTY;
   char stream[] = "foobarfoobar";
@@ -40,7 +40,7 @@ int main(int argc, char **argv)
   {
     fooparser_parserctx_init(&pctx);
     consumed = fooparser_parse_block(&pctx, stream, sizeof(stream)-1, 1);
-    printf("Consumed: %zd\n", consumed);
+    printf("Consumed: %lld\n", (long long)consumed);
     if (consumed != sizeof(stream)-1 && consumed != -EAGAIN)
     {
       abort();

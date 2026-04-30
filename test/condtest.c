@@ -1,12 +1,12 @@
 #include "condparsercparser.h"
 #include "condparsercommon.h"
 
-ssize_t setzero(const char *buf, size_t siz, int start, struct condparser_parserctx *btn)
+yale_ssize_t setzero(const char *buf, size_t siz, int start, struct condparser_parserctx *btn)
 {
   btn->condval = 0;
   return -EAGAIN;
 }
-ssize_t setone(const char *buf, size_t siz, int start, struct condparser_parserctx *btn)
+yale_ssize_t setone(const char *buf, size_t siz, int start, struct condparser_parserctx *btn)
 {
   btn->condval = 1;
   return -EAGAIN;
@@ -14,7 +14,7 @@ ssize_t setone(const char *buf, size_t siz, int start, struct condparser_parserc
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   struct condparser_parserctx pctx = CONDPARSER_PARSERCTX_EMPTY;
   char msggood[] =
     "\x00\x00\x00\x00"
@@ -29,7 +29,7 @@ int main(int argc, char **argv)
 
   condparser_parserctx_init(&pctx);
   consumed = condparser_parse_block(&pctx, msggood, sizeof(msggood)-1, 1);
-  printf("Consumed: %zd\n", consumed);
+  printf("Consumed: %lld\n", (long long)consumed);
   if (consumed != sizeof(msggood)-1 && consumed != -EAGAIN)
   {
     printf("Fail 1\n");
@@ -38,7 +38,7 @@ int main(int argc, char **argv)
 
   condparser_parserctx_init(&pctx);
   consumed = condparser_parse_block(&pctx, msgbad, sizeof(msgbad)-1, 1);
-  printf("Consumed: %zd\n", consumed);
+  printf("Consumed: %lld\n", (long long)consumed);
   if (consumed == sizeof(msgbad)-1 || consumed == -EAGAIN)
   {
     printf("Fail 2\n");

@@ -18,7 +18,7 @@ static inline void myPutchar(char ch)
 }
 #endif
 
-ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn)
+yale_ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn)
 {
 #ifdef DO_PRINT
   const char *ubuf = buf;
@@ -33,7 +33,7 @@ ssize_t print(const char *buf, size_t siz, int start, struct http_parserctx *btn
 #endif
   return -EAGAIN;
 }
-ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn)
+yale_ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *btn)
 {
 #ifdef DO_PRINT
   putchar('<');
@@ -48,7 +48,7 @@ ssize_t printsp(const char *buf, size_t siz, int start, struct http_parserctx *b
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct http_parserctx pctx = HTTP_PARSERCTX_EMPTY;
   struct timeval tv1 = TV_EMPTY, tv2 = TV_EMPTY;

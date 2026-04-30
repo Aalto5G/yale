@@ -3,7 +3,7 @@
 #include "ssl1cparser.h"
 #include <sys/time.h>
 
-ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
+yale_ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -17,12 +17,12 @@ ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
+yale_ssize_t feed1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {
   return ssl2_parse_block(&pctx->ssl2, buf, siz, 0);
 }
 
-ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
+yale_ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -36,15 +36,15 @@ ssize_t szbe2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
+yale_ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl3_parserctx_init(&pctx->ssl3);
   }
   result = ssl3_parse_block(&pctx->ssl3, buf, siz, !!(flags & YALE_FLAG_END));
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -58,7 +58,7 @@ ssize_t feed2(const char *buf, size_t siz, int flags, struct ssl2_parserctx *pct
   return result;
 }
 
-ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
+yale_ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -72,15 +72,15 @@ ssize_t szbe3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
+yale_ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl4_parserctx_init(&pctx->ssl4);
   }
   result = ssl4_parse_block(&pctx->ssl4, buf, siz, !!(flags & YALE_FLAG_END));
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -94,7 +94,7 @@ ssize_t feed3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pct
   return result;
 }
 
-ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
+yale_ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -108,15 +108,15 @@ ssize_t szbe4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
+yale_ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl5_parserctx_init(&pctx->ssl5);
   }
   result = ssl5_parse_block(&pctx->ssl5, buf, siz, !!(flags & YALE_FLAG_END));
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -130,7 +130,7 @@ ssize_t feed4(const char *buf, size_t siz, int flags, struct ssl4_parserctx *pct
   return result;
 }
 
-ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
+yale_ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -144,15 +144,15 @@ ssize_t szbe5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pct
   }
   return -EAGAIN;
 }
-ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
+yale_ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pctx)
 {
-  ssize_t result;
+  yale_ssize_t result;
   if (flags & YALE_FLAG_START)
   {
     ssl6_parserctx_init(&pctx->ssl6);
   }
   result = ssl6_parse_block(&pctx->ssl6, buf, siz, !!(flags & YALE_FLAG_END));
-  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (ssize_t)siz)
+  if (result != -EAGAIN && result != -EWOULDBLOCK && result != (yale_ssize_t)siz)
   {
     return result;
   }
@@ -166,7 +166,7 @@ ssize_t feed5(const char *buf, size_t siz, int flags, struct ssl5_parserctx *pct
   return result;
 }
 
-ssize_t szbe6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
+yale_ssize_t szbe6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
 {
   size_t i;
   if (flags & YALE_FLAG_START)
@@ -193,7 +193,7 @@ static inline void myPutchar(char ch)
   }
 }
 
-ssize_t print6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
+yale_ssize_t print6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pctx)
 {
   const char *ubuf = buf;
   size_t i;
@@ -225,7 +225,7 @@ ssize_t print6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pc
   return -EAGAIN;
 }
 
-ssize_t szset32_3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
+yale_ssize_t szset32_3(const char *buf, size_t siz, int flags, struct ssl3_parserctx *pctx)
 {
   pctx->bytes_sz = 32;
   return -EAGAIN;
@@ -233,7 +233,7 @@ ssize_t szset32_3(const char *buf, size_t siz, int flags, struct ssl3_parserctx 
 
 int main(int argc, char **argv)
 {
-  ssize_t consumed;
+  yale_ssize_t consumed;
   size_t i;
   struct ssl1_parserctx pctx = SSL1_PARSERCTX_EMPTY;
   unsigned char withsni[] = {
@@ -293,7 +293,7 @@ int main(int argc, char **argv)
     consumed = ssl1_parse_block(&pctx, (char*)withsni, sizeof(withsni), 1);
     if (consumed != -EAGAIN && consumed != sizeof(withsni))
     {
-      printf("Consumed %zd expected -EAGAIN/%d\n", consumed, (int)sizeof(withsni));
+      printf("Consumed %lld expected -EAGAIN/%d\n", (long long)consumed, (int)sizeof(withsni));
       abort();
     }
   }
@@ -308,13 +308,13 @@ int main(int argc, char **argv)
     {
       if (consumed != 1 && consumed != -EAGAIN)
       {
-        printf("Consumed %zd expected -EAGAIN/1 i=%d\n", consumed, (int)i);
+        printf("Consumed %lld expected -EAGAIN/1 i=%d\n", (long long)consumed, (int)i);
         abort();
       }
     }
     else if (consumed != -EAGAIN)
     {
-      printf("Consumed %zd expected -EAGAIN i=%d\n", consumed, (int)i);
+      printf("Consumed %lld expected -EAGAIN i=%d\n", (long long)consumed, (int)i);
       abort();
     }
   }

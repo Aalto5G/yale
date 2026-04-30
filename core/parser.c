@@ -15,7 +15,7 @@ static void *parsergen_alloc(struct ParserGen *gen, size_t sz)
   {
     return NULL;
   }
-  if (gen->userareaptr + alloc_sz - gen->userarea > (ssize_t)(gen->userareasz))
+  if (gen->userareaptr + alloc_sz - gen->userarea > (yale_ssize_t)(gen->userareasz))
   {
     size_t sz = 16*1024*1024;
     char *userarea2 = malloc(sz);
@@ -26,7 +26,7 @@ static void *parsergen_alloc(struct ParserGen *gen, size_t sz)
     gen->userarea = userarea2;
     gen->userareaptr = userarea2;
     gen->userareasz = sz;
-    if (gen->userareaptr + alloc_sz - gen->userarea > (ssize_t)(gen->userareasz))
+    if (gen->userareaptr + alloc_sz - gen->userarea > (yale_ssize_t)(gen->userareasz))
     {
       return NULL;
     }
@@ -818,7 +818,7 @@ static size_t stackconfig_append(struct ParserGen *gen, const struct stackconfig
 int parsergen_is_terminal(struct ParserGen *gen, yale_uint_t x);
 
 
-ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
+yale_ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
 {
   size_t maxsz = 1;
   size_t maxcbsz = 0;
@@ -1013,7 +1013,7 @@ ssize_t max_stack_sz(struct ParserGen *gen, size_t *maxcbszptr)
     }
   }
   *maxcbszptr = maxcbsz;
-  return (ssize_t)maxsz;
+  return (yale_ssize_t)maxsz;
 }
 
 static int has_firstset(struct firstset_values *vals, yale_uint_t terminal)
@@ -1034,7 +1034,7 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
   int changed;
   size_t i, j;
   size_t tmpsz;
-  ssize_t tmpssz;
+  yale_ssize_t tmpssz;
 
   // Computing first-sets, step 1:
   // 1. initialize every FI(Ai) with the empty set
@@ -1414,7 +1414,7 @@ void gen_parser(struct ParserGen *gen, struct yale *yale)
   collect(gen->pick_thoses, gen->pick_thoses_cnt, &gen->bufs, parsergen_alloc_fn, gen);
   for (i = 0; i < gen->pick_thoses_cnt; i++)
   {
-    ssize_t curbt;
+    yale_ssize_t curbt;
     curbt = maximal_backtrack(gen->pick_thoses[i].ds, 0, 250);
     if (curbt < 0)
     {
@@ -1621,7 +1621,7 @@ if_bitnz_call_cbsflg(FILE *f, const char *indent, const char *parsername, const 
 {
   fprintf(f, "%sif (%s_bitnz(&%s) && 1)\n", indent, parsername, varname);
   fprintf(f, "%s{\n", indent);
-  fprintf(f, "%s  ssize_t cbr2 = %s_call_cbsflg(pctx, &%s, blk, 0, %s, %s_callbacks);\n", indent, parsername, varname, flagname, parsername);
+  fprintf(f, "%s  yale_ssize_t cbr2 = %s_call_cbsflg(pctx, &%s, blk, 0, %s, %s_callbacks);\n", indent, parsername, varname, flagname, parsername);
   fprintf(f, "%s  if (cbr2 != -EAGAIN)\n", indent);
   fprintf(f, "%s  {\n", indent);
   fprintf(f, "%s    return cbr2;\n", indent);
@@ -1632,7 +1632,7 @@ if_bitnz_call_cbsflg(FILE *f, const char *indent, const char *parsername, const 
 static void
 end_cbs(FILE *f, const char *indent)
 {
-  fprintf(f, "%sssize_t end_cbs_ret = end_cbs(pctx, blk);\n", indent);
+  fprintf(f, "%syale_ssize_t end_cbs_ret = end_cbs(pctx, blk);\n", indent);
   fprintf(f, "%sif (end_cbs_ret != -EAGAIN)\n", indent);
   fprintf(f, "%s{\n", indent);
   fprintf(f, "%s  pctx->stacksz = STACKSZ_ERR;\n", indent);
@@ -1662,7 +1662,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     dump_one(f, gen->parsername, &gen->pick_thoses[i], &gen->numbershash, parsergen_alloc_fn, gen, gen->parserbits, gen->lexerbits, gen->parsermax, gen->lexermax);
   }
   fprintf(f, "static const yale_parser_uint%d_t %s_num_terminals;\n", gen->parserbits, gen->parsername);
-  fprintf(f, "static ssize_t(*const %s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
+  fprintf(f, "static yale_ssize_t(*const %s_callbacks[])(const char*, size_t, int, struct %s_parserctx*) = {\n", gen->parsername, gen->parsername);
   for (i = 0; i < gen->cbcnt; i++)
   {
     fprintf(f, "%s, ", gen->cbs[i].name);
@@ -1935,7 +1935,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     fprints(f, "},\n");
   }
   fprints(f, "};\n");
-  fprints(f, "static inline ssize_t\n");
+  fprints(f, "static inline yale_ssize_t\n");
   fprintf(f, "%s_get_saved_token(struct %s_parserctx *pctx, const struct yale_state_p%dl%d *restates,\n", gen->parsername, gen->parsername, gen->parserbits, gen->lexerbits);
   fprintf(f, "                const char *blkoff, size_t szoff, int eofindicator, yale_parser_uint%d_t *state,\n"
              "                const struct %s_callbacks *cb2, yale_parser_uint%d_t cb1)//, void *baton)\n"
@@ -1955,7 +1955,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     fprintf(f, "  return %s_feed_statemachine(&pctx->rctx, restates, blkoff, szoff, eofindicator, state, %s_callbacks, cb2, cb1);//, baton);\n", gen->parsername, gen->parsername);
   }
   fprints(f, "}\n");
-  fprintf(f, "static ssize_t __attribute__((noinline)) end_cbs(struct %s_parserctx *pctx, const void *blk)\n", gen->parsername);
+  fprintf(f, "static yale_ssize_t __attribute__((noinline)) end_cbs(struct %s_parserctx *pctx, const void *blk)\n", gen->parsername);
   fprints(f, "{\n");
   fprintf(f, "  struct %s_cbset endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, parserupper, parserupper);
   fprintf(f, "  %s_bitcopy(&endmask, &pctx->rctx.confirm_status);\n", gen->parsername);
@@ -1970,10 +1970,10 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "\n"
              "#define STACKSZ_ERR YALE_PARSER_UINT%d_MAX\n"
              "\n", gen->parserbits);
-  fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator)//, void *baton)\n", gen->parsername, gen->parsername);
+  fprintf(f, "yale_ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator)//, void *baton)\n", gen->parsername, gen->parsername);
   fprintf(f, "{\n"
              "  size_t off = 0;\n"
-             "  ssize_t ret;\n"
+             "  yale_ssize_t ret;\n"
              "  yale_parser_uint%d_t curstateoff;\n"
              "  yale_parser_uint%d_t curstate;\n"
              "  yale_parser_uint%d_t curcb;\n"
@@ -1984,7 +1984,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "  const struct yale_state_p%dl%d *restates;\n"
              "  const struct yale_rule%d *rule;\n"
              "  const struct %s_callbacks *cb2;\n", gen->parserbits, gen->parserbits, gen->parserbits, gen->parserbits, gen->parserbits, gen->parserbits, gen->parserbits, gen->parserbits, gen->lexerbits, gen->parserbits, gen->parsername);
-  fprintf(f, "  ssize_t (*cb1f)(const char *, size_t, int, struct %s_parserctx*);\n", gen->parsername);
+  fprintf(f, "  yale_ssize_t (*cb1f)(const char *, size_t, int, struct %s_parserctx*);\n", gen->parsername);
   fprintf(f, "\n"
              "  for (;;)\n"
              "  {\n"
@@ -2002,7 +2002,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "        {\n");
   end_cbs(f, "          ");
   fprints(f, "        }\n"
-             "        return (ssize_t)sz; // EOF\n"
+             "        return (yale_ssize_t)sz; // EOF\n"
              "      }\n"
              "      else\n"
              "      {\n");
@@ -2022,14 +2022,14 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     fprintf(f, "    if (curstate == YALE_PARSER_UINT%d_MAX - 1)\n", gen->parserbits);
     fprints(f, "    {\n");
     fprintf(f, "      struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, parserupper, parserupper, parserupper);
-    fprintf(f, "      ssize_t cbr;\n");
+    fprintf(f, "      yale_ssize_t cbr;\n");
     if (gen->max_cb_stack_size)
     {
       fprintf(f, "      size_t cbidx;\n");
     }
     //fprintf(f, "      uint16_t bitoff;\n");
     fprintf(f, "      yale_parser_uint%d_t bytes_cb = curcb;\n", gen->parserbits);
-    fprintf(f, "      ret = (ssize_t)(pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off));\n");
+    fprintf(f, "      ret = (yale_ssize_t)(pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off));\n");
 #if 0
     fprintf(f, "      if (bytes_cb != YALE_PARSER_UINT%d_MAX)\n", gen->parserbits);
     fprints(f, "      {\n");
@@ -2212,14 +2212,14 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
     {
       //fprintf(f, "        yale_parser_uint%d_t bytes_cb = %s_parserstatetblentries[curstateoff].bytes_cb;\n", gen->parserbits, gen->parsername);
       fprintf(f, "        struct %s_cbset cbmask = %s_CBSET_EMPTY, endmask = %s_CBSET_EMPTY, mismask = %s_CBSET_EMPTY;\n", gen->parsername, parserupper, parserupper, parserupper);
-      fprintf(f, "        ssize_t cbr;\n");
+      fprintf(f, "        yale_ssize_t cbr;\n");
       if (gen->max_cb_stack_size)
       {
         fprintf(f, "        size_t cbidx;\n");
       }
       //fprintf(f, "        uint16_t bitoff;\n");
       fprintf(f, "        const struct %s_callbacks *bytes_cb2 = &%s_parserstatetblentries[curstateoff].bytes_cb2;\n", gen->parsername, gen->parsername);
-      fprintf(f, "        ret = (ssize_t)(pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off));\n");
+      fprintf(f, "        ret = (yale_ssize_t)(pctx->bytes_sz < (sz-off) ? pctx->bytes_sz : (sz-off));\n");
 #if 0
       fprintf(f, "        if (curcb != YALE_PARSER_UINT%d_MAX)\n", gen->parserbits);
       fprintf(f, "        {\n");
@@ -2541,7 +2541,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
   fprints(f, "      }\n"
              "      else\n"
              "      {\n"
-             "        ssize_t cbr;\n");
+             "        yale_ssize_t cbr;\n");
   fprintf(f, "        cb1f = %s_callbacks[curcb];\n", gen->parsername);
   fprintf(f, "        cbr = cb1f(NULL, 0, YALE_FLAG_ACTION, pctx);//, baton);\n"
              "        if (cbr != 0 && cbr != -EAGAIN && cbr != -EWOULDBLOCK)\n"
@@ -2571,7 +2571,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "        abort();\n"
              "      }\n"
              "#endif\n"
-             "      return (ssize_t)sz; // EOF\n");
+             "      return (yale_ssize_t)sz; // EOF\n");
   fprints(f, "    }\n"
              "  }\n"
              "#ifdef EXTRA_SANITY\n"
@@ -2584,7 +2584,7 @@ void parsergen_dump_parser(struct ParserGen *gen, struct yale *yale, FILE *f)
              "  {\n"
              "    pctx->stacksz = STACKSZ_ERR;\n"
              "  }\n"
-             "  return eofindicator ? (ssize_t)off : (-EAGAIN);\n"
+             "  return eofindicator ? (yale_ssize_t)off : (-EAGAIN);\n"
              "}\n");
   free(parserupper);
 }
@@ -2683,7 +2683,7 @@ void parsergen_dump_headers(struct ParserGen *gen, FILE *f)
   }
   fprints(f, "}\n");
   fprints(f, "\n");
-  fprintf(f, "ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator);//, void *baton);\n", gen->parsername, gen->parsername);
+  fprintf(f, "yale_ssize_t %s_parse_block(struct %s_parserctx *pctx, const char *blk, size_t sz, int eofindicator);//, void *baton);\n", gen->parsername, gen->parsername);
   free(parserupper);
 }
 
