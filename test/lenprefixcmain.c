@@ -1,6 +1,5 @@
 #include "lenprefixcparser.h"
 #include "lenprefixcommon.h"
-#include <sys/time.h>
 
 static inline void myPutchar(char ch)
 {

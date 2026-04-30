@@ -1,7 +1,6 @@
 #include "sslcommon.h"
 #include <stddef.h>
 #include "ssl1cparser.h"
-#include <sys/time.h>
 
 yale_ssize_t szbe1(const char *buf, size_t siz, int flags, struct ssl1_parserctx *pctx)
 {

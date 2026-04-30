@@ -1,6 +1,5 @@
 #include "smtpclientcparser.h"
 #include "smtpclientcommon.h"
-#include <sys/time.h>
 
 int main(int argc, char **argv)
 {

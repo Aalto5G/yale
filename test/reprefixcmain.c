@@ -1,6 +1,5 @@
 #include "reprefixcparser.h"
 #include "reprefixcommon.h"
-#include <sys/time.h>
 
 static inline void myPutchar(char ch)
 {
