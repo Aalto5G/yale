@@ -29,3 +29,7 @@ executable files.
 Also, the build system uses the stirmake tool which is only available for POSIX
 systems, so non-POSIX systems require some alternative way of doing the build
 process.
+
+Also, the main program that uses dirname() also assumes that directory
+separator is forward slash. On non-POSIX systems, this assumption may not be
+true and the directory separator may need changing.
