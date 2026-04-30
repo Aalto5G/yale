@@ -140,4 +140,14 @@ static inline int yale_ffsu64(uint64_t x)
 #endif
 }
 
+#if SIZE_MAX == UINT16_MAX
+typedef int16_t yale_ssize_t;
+#elif SIZE_MAX == UINT32_MAX
+typedef int32_t yale_ssize_t;
+#elif SIZE_MAX == UINT64_MAX
+typedef int64_t yale_ssize_t;
+#else
+typedef ptrdiff_t yale_ssize_t;
+#endif
+
 #endif

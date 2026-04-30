@@ -27,13 +27,13 @@ static inline uint32_t yale_ntohl(uint32_t n)
 {
   unsigned char buf[4];
   memcpy(buf, &n, sizeof(n));
-  return (buf[0]<<24) | (buf[1]<<16) | (buf[2]<<8) | (buf[3]<<0);
+  return (((uint32_t)buf[0])<<24) | (((uint32_t)buf[1])<<16) | (((uint32_t)buf[2])<<8) | (((uint32_t)buf[3])<<0);
 }
 static inline uint16_t yale_ntohs(uint16_t n)
 {
   unsigned char buf[2];
   memcpy(buf, &n, sizeof(n));
-  return (buf[0]<<8) | (buf[1]<<0);
+  return (((uint16_t)buf[0])<<8) | (((uint16_t)buf[1])<<0);
 }
 
 static inline uint64_t yale_hdr_get64h(const void *buf)
