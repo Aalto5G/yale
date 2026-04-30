@@ -1,0 +1,31 @@
+This software requires several features from POSIX:
+
+1. errno.h, error codes used all over the place and also flex requires errno
+
+2. libgen.h which has dirname(), used by yaleparser main program
+
+3. unistd.h for getopt(), used by yaleparser main program
+
+4. unistd.h for access(), used by parser test program
+
+5. popen() and pclose() from POSIX stdio.h, used by parser test program
+
+6. sys/time.h for some performance tests, not for core parser code
+
+Compiling the core code on non-POSIX systems requires a custom implementation
+of dirname(), a custom implementation of getopt() and custom header errno.h
+that declares a dummy errno variable for flex, and also declares the used error
+code constants as positive integers with different values (except EAGAIN and
+EWOULDBLOCK may share the same value).
+
+Compiling the performance tests may require OS-dependent changes to use a
+timing API with resolution better than that of C standard which has 1 second
+resolution.
+
+Compiling the parser test program on non-POSIX requires a way to execute a
+child process while capturing its output, and checking for the existence of
+executable files.
+
+Also, the build system uses the stirmake tool which is only available for POSIX
+systems, so non-POSIX systems require some alternative way of doing the build
+process.
