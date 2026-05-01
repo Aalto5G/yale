@@ -125,6 +125,7 @@ static inline int yale_ffsu64(uint64_t x)
 #ifdef YALE_HAS_FFSLL
   return ffsll((long long)x);
 #else
+#if 0
   int res = yale_ffsu32((uint32_t)(x&0xFFFFFFFFU));
   if (res)
   {
@@ -136,6 +137,19 @@ static inline int yale_ffsu64(uint64_t x)
     return res+32;
   }
   return 0;
+#else
+  int r;
+  static const int MultiplyDeBruijnBitPosition[64] =
+  {
+    0,
+    1,  2, 53,  3,  7, 54, 27, 4, 38, 41,  8, 34, 55, 48, 28,
+    62,  5, 39, 46, 44, 42, 22,  9, 24, 35, 59, 56, 49, 18, 29, 11,
+    63, 52,  6, 26, 37, 40, 33, 47, 61, 45, 43, 21, 23, 58, 17, 10,
+    51, 25, 36, 32, 60, 20, 57, 16, 50, 31, 19, 15, 30, 14, 13, 12
+  };
+  r = MultiplyDeBruijnBitPosition[((uint64_t)((v & -v) * 0x022fdd63cc95386dULL)) >> 58];
+  return v?(r+1):0;
+#endif
 #endif
 #endif
 }
