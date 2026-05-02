@@ -99,6 +99,14 @@ static inline int yale_ffsu32(uint32_t v)
 {
   return ffs((int)v);
 }
+static inline int yale_ffsu16(uint16_t v)
+{
+  return ffs((int)v);
+}
+static inline int yale_ffsu8(uint8_t v)
+{
+  return ffs((int)v);
+}
 #else
 static inline int yale_ffsu32(uint32_t v)
 {
@@ -109,6 +117,26 @@ static inline int yale_ffsu32(uint32_t v)
     31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
   };
   r = MultiplyDeBruijnBitPosition[((uint32_t)((v & -v) * 0x077CB531U)) >> 27];
+  return v?(r+1):0;
+}
+static inline int yale_ffsu16(uint16_t v)
+{
+  int r;
+  static const int MultiplyDeBruijnBitPosition[16] =
+  {
+    0,1,2,5,3,9,6,11,15,4,8,10,14,7,13,12
+  };
+  r = MultiplyDeBruijnBitPosition[((uint16_t)((v & -v) * 0x09af)) >> 12];
+  return v?(r+1):0;
+}
+static inline int yale_ffsu8(uint8_t v)
+{
+  int r;
+  static const int MultiplyDeBruijnBitPosition[8] =
+  {
+    0,1,6,2,7,5,4,3
+  };
+  r = MultiplyDeBruijnBitPosition[((uint8_t)((v & -v) * 0x1d)) >> 5];
   return v?(r+1):0;
 }
 #endif
