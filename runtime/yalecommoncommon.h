@@ -21,12 +21,22 @@ enum yale_flags {
   YALE_FLAG_MAJOR_MISTAKE = (1<<3),
 };
 
+#if defined (__unix__) || (defined (__APPLE__) && defined (__MACH__))
+// For _POSIX_VERSION and _XOPEN_VERSION
+#include <unistd.h>
+#endif
+
 #if _POSIX_VERSION >= 202405L
- // glibc incorrectly doesn't make this visible with _POSIX_C_SOURCE
- // RFE does this also require _XOPEN_SOURCE to be set to at least 800?
+ // glibc incorrectly doesn't make this visible
  #ifndef __GLIBC__
-  #undef YALE_HAS_FFSLL
-  #define YALE_HAS_FFSLL 1
+  #if _XOPEN_VERSION >= 800
+    #ifdef _XOPEN_SOURCE
+      #if _XOPEN_SOURCE >= 800
+        #undef YALE_HAS_FFSLL
+        #define YALE_HAS_FFSLL 1
+      #endif
+    #endif
+  #endif
  #endif
 #endif
 
