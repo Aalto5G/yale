@@ -184,12 +184,20 @@ static inline int yale_ffsu64(uint64_t x)
 
 #if SIZE_MAX == UINT16_MAX
 typedef int16_t yale_ssize_t;
+#define YALE_SSIZE_MIN INT16_MIN
+#define YALE_SSIZE_MAX INT16_MAX
 #elif SIZE_MAX == UINT32_MAX
 typedef int32_t yale_ssize_t;
+#define YALE_SSIZE_MIN INT32_MIN
+#define YALE_SSIZE_MAX INT32_MAX
 #elif SIZE_MAX == UINT64_MAX
 typedef int64_t yale_ssize_t;
+#define YALE_SSIZE_MIN INT64_MIN
+#define YALE_SSIZE_MAX INT64_MAX
 #else
 typedef ptrdiff_t yale_ssize_t;
+#define YALE_SSIZE_MIN PTRDIFF_MIN
+#define YALE_SSIZE_MAX PTRDIFF_MAX
 #endif
 
 #endif
