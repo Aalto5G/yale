@@ -1578,11 +1578,11 @@ dump_collected(FILE *f, const char *parsername, struct transitionbufs *bufs, uin
     {
       if (bufs->all[i]->transitions[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "%d, ", lexermax);
+        fprintf(f, "%d,", lexermax);
       }
       else
       {
-        fprintf(f, "%d, ", (int)bufs->all[i]->transitions[j]);
+        fprintf(f, "%d,", (int)bufs->all[i]->transitions[j]);
       }
     }
     fprints(f, "},\n");
@@ -1697,11 +1697,11 @@ dump_one(FILE *f, const char *parsername, struct pick_those_struct *pick_those,
     {
       if (ds->d[j] == YALE_UINT_MAX_LEGAL)
       {
-        fprintf(f, "%d, ", lexermax);
+        fprintf(f, "%d,", lexermax);
       }
       else
       {
-        fprintf(f, "%d, ", (int)ds->d[j]);
+        fprintf(f, "%d,", (int)ds->d[j]);
       }
     }
     fprints(f, "},\n");
