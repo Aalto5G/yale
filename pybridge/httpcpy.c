@@ -12,7 +12,7 @@ struct http_pyctx {
 
 
 typedef struct {
-  PyObject_HEAD;
+  PyObject_HEAD
   struct http_pyctx pyctx;
 } HttpObject;
 
@@ -46,7 +46,7 @@ Http_init(HttpObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMemberDef Http_members[] = {
-  {}
+  {.name = NULL}
 };
 
 static PyObject *
@@ -70,7 +70,7 @@ Http_feed(HttpObject *self, PyObject *args)
   {
     return NULL;
   }
-  consumed = httppy_parse_block(&self->pyctx.pctx, dat, size, !!p);
+  consumed = httppy_parse_block(&self->pyctx.pctx, dat, (size_t)size, !!p);
   return PyLong_FromLong(consumed);
 }
 
@@ -81,7 +81,7 @@ static PyMethodDef Http_methods[] = {
     {"feed", (PyCFunction) Http_feed, METH_VARARGS,
      "Return the host"
     },
-    {}  /* Sentinel */
+    {.ml_name = NULL}  /* Sentinel */
 };
 
 static PyTypeObject HttpType = {

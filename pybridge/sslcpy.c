@@ -12,7 +12,7 @@ struct ssl_pyctx {
 
 
 typedef struct {
-  PyObject_HEAD;
+  PyObject_HEAD
   struct ssl_pyctx pyctx;
 } SslObject;
 
@@ -46,7 +46,7 @@ Ssl_init(SslObject *self, PyObject *args, PyObject *kwds)
 }
 
 static struct PyMemberDef Ssl_members[] = {
-  {}
+  {.name = NULL}
 };
 
 static PyObject *
@@ -70,7 +70,7 @@ Ssl_feed(SslObject *self, PyObject *args)
   {
     return NULL;
   }
-  consumed = ssl1_parse_block(&self->pyctx.pctx, dat, size, !!p);
+  consumed = ssl1_parse_block(&self->pyctx.pctx, dat, (size_t)size, !!p);
   return PyLong_FromLong(consumed);
 }
 
@@ -81,7 +81,7 @@ static PyMethodDef Ssl_methods[] = {
     {"feed", (PyCFunction) Ssl_feed, METH_VARARGS,
      "Return the host"
     },
-    {}  /* Sentinel */
+    {.ml_name = NULL}  /* Sentinel */
 };
 
 static PyTypeObject SslType = {
