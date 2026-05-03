@@ -57,9 +57,39 @@ $(BYACC) ?= @nil
 $(BYACC_AVAILABLE) ?= @true
 
 # You can modify these for compilation
-$WITH_WERROR ?= @false
-$WITH_PYTHON ?= @false
-$WITH_NEW_CPU ?= @false
+$(WITH_PYTHON) ?= @nil
+@if(@type($(WITH_PYTHON)) == @type(@nil))
+  $(WITH_PYTHON) `= ["sh", "-c", "echo -n $YALE_WITH_PYTHON"]
+  @if(@strcmp($(WITH_PYTHON), "") == 0)
+    $(WITH_PYTHON) = @false
+  @elseif(@strcmp($(WITH_PYTHON), "0") == 0)
+    $(WITH_PYTHON) = @false
+  @elseif(@strcmp($(WITH_PYTHON), "1") == 0)
+    $(WITH_PYTHON) = @true
+  @endif
+@endif
+$(WITH_WERROR) ?= @nil
+@if(@type($(WITH_WERROR)) == @type(@nil))
+  $(WITH_WERROR) `= ["sh", "-c", "echo -n $YALE_WITH_WERROR"]
+  @if(@strcmp($(WITH_WERROR), "") == 0)
+    $(WITH_WERROR) = @false
+  @elseif(@strcmp($(WITH_WERROR), "0") == 0)
+    $(WITH_WERROR) = @false
+  @elseif(@strcmp($(WITH_WERROR), "1") == 0)
+    $(WITH_WERROR) = @true
+  @endif
+@endif
+$(WITH_NEW_CPU) ?= @nil
+@if(@type($(WITH_NEW_CPU)) == @type(@nil))
+  $(WITH_NEW_CPU) `= ["sh", "-c", "echo -n $YALE_WITH_NEW_CPU"]
+  @if(@strcmp($(WITH_NEW_CPU), "") == 0)
+    $(WITH_NEW_CPU) = @false
+  @elseif(@strcmp($(WITH_NEW_CPU), "0") == 0)
+    $(WITH_NEW_CPU) = @false
+  @elseif(@strcmp($(WITH_NEW_CPU), "1") == 0)
+    $(WITH_NEW_CPU) = @true
+  @endif
+@endif
 
 @if($WITH_WERROR)
   $CFLAGS = [@$CFLAGS, "-Werror"]
