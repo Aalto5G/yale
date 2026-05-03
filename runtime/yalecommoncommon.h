@@ -126,7 +126,7 @@ static inline int yale_ffsu32(uint32_t v)
     0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
     31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
   };
-  r = MultiplyDeBruijnBitPosition[((uint32_t)((v & -(uintmax_t)(v)) * 0x077CB531U)) >> 27];
+  r = MultiplyDeBruijnBitPosition[((uint32_t)(((uint32_t)(v & (uint32_t)(-v))) * 0x077CB531U)) >> 27];
   return v?(r+1):0;
 }
 static inline int yale_ffsu16(uint16_t v)
@@ -136,7 +136,7 @@ static inline int yale_ffsu16(uint16_t v)
   {
     0,1,2,5,3,9,6,11,15,4,8,10,14,7,13,12
   };
-  r = MultiplyDeBruijnBitPosition[((uint16_t)((v & -(uintmax_t)(v)) * 0x09af)) >> 12];
+  r = MultiplyDeBruijnBitPosition[((uint16_t)(((uint16_t)(v & (uint16_t)(-v))) * 0x09af)) >> 12];
   return v?(r+1):0;
 }
 static inline int yale_ffsu8(uint8_t v)
@@ -146,7 +146,7 @@ static inline int yale_ffsu8(uint8_t v)
   {
     0,1,6,2,7,5,4,3
   };
-  r = MultiplyDeBruijnBitPosition[((uint8_t)((v & -(uintmax_t)(v)) * 0x1d)) >> 5];
+  r = MultiplyDeBruijnBitPosition[((uint8_t)(((uint8_t)(v & (uint8_t)(-v))) * 0x1d)) >> 5];
   return v?(r+1):0;
 }
 #endif
@@ -185,7 +185,7 @@ static inline int yale_ffsu64(uint64_t x)
     63, 52,  6, 26, 37, 40, 33, 47, 61, 45, 43, 21, 23, 58, 17, 10,
     51, 25, 36, 32, 60, 20, 57, 16, 50, 31, 19, 15, 30, 14, 13, 12
   };
-  r = MultiplyDeBruijnBitPosition[((uint64_t)((v & -(uintmax_t)(v)) * 0x022fdd63cc95386dULL)) >> 58];
+  r = MultiplyDeBruijnBitPosition[((uint64_t)(((uint64_t)(v & (uint64_t)(-v))) * 0x022fdd63cc95386dULL)) >> 58];
   return v?(r+1):0;
 #endif
 #endif
