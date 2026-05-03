@@ -27,8 +27,6 @@ enum yale_flags {
 #endif
 
 #if _POSIX_VERSION >= 202405L
- // glibc incorrectly doesn't make this visible
- #ifndef __GLIBC__
   #if _XOPEN_VERSION >= 800
     #ifdef _XOPEN_SOURCE
       #if _XOPEN_SOURCE >= 800
@@ -37,7 +35,6 @@ enum yale_flags {
       #endif
     #endif
   #endif
- #endif
 #endif
 
 #if _POSIX_VERSION >= 200112L
