@@ -27,22 +27,22 @@ $UNITCMDS = []
           '../test/ssl5cparser.h' '../test/ssl6cparser.h'
 
 'httpcpy.o': 'httpcpy.c' 'httpcpy.d'
-@	[$(CC), @$(CFLAGS), "-c", "-o", @D$@, @D$<]
+@	[@$(CC), @$(CFLAGS), "-c", "-o", @D$@, @D$<]
 
 'sslcpy.o': 'sslcpy.c' 'sslcpy.d'
-@	[$(CC), @$(CFLAGS), "-c", "-o", @D$@, @D$<]
+@	[@$(CC), @$(CFLAGS), "-c", "-o", @D$@, @D$<]
 
 'httpcpy.d': 'httpcpy.c'
-@	[$(CC), @$(CFLAGS), "-M", "-o", @D$@, @D$<]
+@	[@$(CC), @$(CFLAGS), "-M", "-o", @D$@, @D$<]
 
 'sslcpy.d': 'sslcpy.c'
-@	[$(CC), @$(CFLAGS), "-M", "-o", @D$@, @D$<]
+@	[@$(CC), @$(CFLAGS), "-M", "-o", @D$@, @D$<]
 
 'httpparser.so': 'httpcpy.o' $LIBS
-@	[$(CC), @$(CFLAGS), "-shared", "-o", @D$@, @@D$^]
+@	[@$(CC), @$(CFLAGS), "-shared", "-o", @D$@, @@D$^]
 
 'sslparser.so': 'sslcpy.o' $LIBS
-@	[$(CC), @$(CFLAGS), "-shared", "-o", @D$@, @@D$^]
+@	[@$(CC), @$(CFLAGS), "-shared", "-o", @D$@, @@D$^]
 
 @cdepincludes @autophony @autotarget @ignore \
   @sufsuball([@$SRC_PROG, @$SRC_LIB, "httpcpy.c", "sslcpy.c"], ".c", ".d")

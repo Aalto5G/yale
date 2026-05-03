@@ -312,12 +312,12 @@ ssize_t szbe6(const char *buf, size_t siz, int flags, struct ssl6_parserctx *pct
 
 ssize_t print6(const char *buf, size_t siz, int start, struct ssl6_parserctx *btn)
 {
-  struct ssl5_parserctx *ctx5 = CONTAINER_OF(btn, struct ssl5_parserctx, ssl6);
-  struct ssl4_parserctx *ctx4 = CONTAINER_OF(ctx5, struct ssl4_parserctx, ssl5);
-  struct ssl3_parserctx *ctx3 = CONTAINER_OF(ctx4, struct ssl3_parserctx, ssl4);
-  struct ssl2_parserctx *ctx2 = CONTAINER_OF(ctx3, struct ssl2_parserctx, ssl3);
-  struct ssl1_parserctx *ctx1 = CONTAINER_OF(ctx2, struct ssl1_parserctx, ssl2);
-  struct ssl_pyctx *pyctx = CONTAINER_OF(ctx1, struct ssl_pyctx, pctx);
+  struct ssl5_parserctx *ctx5 = YALE_CONTAINER_OF(btn, struct ssl5_parserctx, ssl6);
+  struct ssl4_parserctx *ctx4 = YALE_CONTAINER_OF(ctx5, struct ssl4_parserctx, ssl5);
+  struct ssl3_parserctx *ctx3 = YALE_CONTAINER_OF(ctx4, struct ssl3_parserctx, ssl4);
+  struct ssl2_parserctx *ctx2 = YALE_CONTAINER_OF(ctx3, struct ssl2_parserctx, ssl3);
+  struct ssl1_parserctx *ctx1 = YALE_CONTAINER_OF(ctx2, struct ssl1_parserctx, ssl2);
+  struct ssl_pyctx *pyctx = YALE_CONTAINER_OF(ctx1, struct ssl_pyctx, pctx);
   if (pyctx->sz + siz > sizeof(pyctx->buf) - 1)
   {
     siz = sizeof(pyctx->buf) - pyctx->sz - 1;

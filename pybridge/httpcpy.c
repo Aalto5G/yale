@@ -127,7 +127,7 @@ PyInit_httpparser(void)
 
 ssize_t store(const char *buf, size_t siz, int start, struct httppy_parserctx *btn)
 {
-  struct http_pyctx *pyctx = CONTAINER_OF(btn, struct http_pyctx, pctx);
+  struct http_pyctx *pyctx = YALE_CONTAINER_OF(btn, struct http_pyctx, pctx);
   if (pyctx->sz + siz > sizeof(pyctx->buf) - 1)
   {
     siz = sizeof(pyctx->buf) - pyctx->sz - 1;
