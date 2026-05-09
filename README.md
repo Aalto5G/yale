@@ -22,8 +22,10 @@ How to install:
 First, install stirmake:
 
 ```
+sudo apt install git build-essential (Debian-based)
 sudo apt install flex byacc (Debian-based)
-sudo yum install flex byacc (RedHat-based)
+sudo yum groupinstall 'Development Tools' (RedHat-based)
+sudo yum install git flex byacc (RedHat-based)
 git clone --recursive https://github.com/Aalto5G/stirmake
 cd stirmake/stirc
 ./bootstrapnomake.sh
